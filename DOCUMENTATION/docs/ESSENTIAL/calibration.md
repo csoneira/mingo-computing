@@ -77,7 +77,6 @@ Two components:
    `~/bin/calibrate_charge.sh` produces a lookup table used by the offline
    analysis to convert raw widths to charge units.
 
-![FEE calibration setup](https://github.com/cayesoneira/miniTRASGO-documentation/assets/93153458/c8b0de84-0890-4c57-9012-c443c591541c)
 
 
 ## 6. Other calibrations

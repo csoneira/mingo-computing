@@ -130,6 +130,7 @@ OPERATIONS/OPERATIONS_RUNTIME/LOG_THROTTLE/*.ts
 # Images and office documents
 # ----------------------------------------------------------------------
 *.png
+!DOCUMENTATION/docs/**/*.png
 *.jpg
 *.jpeg
 *.gif

@@ -10,7 +10,7 @@ The coordinate system used throughout the project is defined as follows:
 This frame is later associated with cardinal directions, which simplifies
 transformations to equatorial or galactic coordinates for physics analyses.
 
-![mingo](https://github.com/cayesoneira/miniTRASGO-documentation/assets/21690353/f9801f0b-73a7-4bb7-98f7-d1948eaadc27)
+![Coordinate frame: x along the detector strips, z downward toward incoming cosmic rays, and y completing the right-handed frame](../assets/figures/hardware/coordinate_frame.png)
 
 ## Geometry of the telescope
 
@@ -34,26 +34,26 @@ implementation details.
 - High voltage power supply between detectors 2 and 3.
 - Independent R134a gas tank, injected with calibrated holes and a flow-monitor in the output for each RPC (mutom like).
 
-![image](https://github.com/cayesoneira/miniTRASGO/assets/21690353/0b2716cf-5745-44cd-9137-250d9f6d70d8)
+![miniTRASGO four-RPC telescope overview](../assets/photos/minitrasgo/telescope_overview.webp)
 
 _Figure 1_
 
 ---
 
-![image](https://github.com/cayesoneira/miniTRASGO/assets/93153458/3c83d2de-22cb-4d7d-b89d-8f52a7710ed9)
+![RPC cross-section showing the detector layers and gas gaps](../assets/figures/hardware/rpc_cross_section.png)
 
 _Figure 2_
 
 ---
 
-![image](https://github.com/cayesoneira/miniTRASGO/assets/93153458/8e34e594-e490-4610-9654-66b07d65f65d)
+![RPC readout strips](../assets/photos/minitrasgo/readout_strips.webp)
 
 _Figure 3_
 
 ---
 
 ## Electronics
-![General diagram](https://github.com/cayesoneira/miniTRASGO/assets/21690353/86c4fdca-18d2-4233-8ca4-95511cd59bbe)
+![General miniTRASGO electronics and readout diagram](../assets/figures/hardware/electronics_system_diagram.png)
 
 _Figure 4. General diagram._
 
@@ -100,7 +100,7 @@ _Figure 4. General diagram._
     - Outputs: 12 V, 30??? V
 - Watchdog: ensures the electronics are turned on continuously.
 
-![image](https://github.com/cayesoneira/miniTRASGO/assets/93153458/95f912cf-b274-4cfb-8519-419436ef5dd8)
+![miniTRASGO electronics box](../assets/photos/minitrasgo/electronics_box.webp)
 
 _Figure 5_
 
