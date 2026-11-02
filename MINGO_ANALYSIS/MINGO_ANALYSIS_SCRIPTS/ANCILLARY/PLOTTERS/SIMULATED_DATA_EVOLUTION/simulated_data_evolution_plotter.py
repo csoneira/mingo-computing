@@ -135,7 +135,7 @@ def _load_registry_map(registry_path: Path) -> Dict[str, str]:
 def _find_ground_truth_basenames(station_root: Path) -> set[str]:
     basenames: set[str] = set()
 
-    stage01 = station_root / "STAGE_0_to_1"
+    stage01 = station_root / "STAGE_0_TO_1"
     for path in stage01.rglob("*"):
         if path.is_file():
             stem = path.stem
@@ -1389,7 +1389,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     dt_twin_files = REPO_ROOT / "MINGO_DIGITAL_TWIN" / "SIMULATION_OUTPUTS" / "SIMULATED_DATA" / "FILES"
     station_root = STATIONS_ROOT / station
-    stage0_to_1_dir = station_root / "STAGE_0_to_1"
+    stage0_to_1_dir = station_root / "STAGE_0_TO_1"
     task1_input_root = station_root / "STAGE_1" / "EVENT_DATA" / "STEP_1" / "TASK_1" / "INPUT_FILES"
     task1_completed = task1_input_root / "COMPLETED_DIRECTORY"
     task1_processing = task1_input_root / "PROCESSING_DIRECTORY"

@@ -159,7 +159,7 @@ def _load_registry_map(registry_path: Path) -> Dict[str, str]:
 def _find_ground_truth_basenames(station_root: Path) -> set[str]:
     basenames: set[str] = set()
 
-    stage01 = station_root / "STAGE_0_to_1"
+    stage01 = station_root / "STAGE_0_TO_1"
     for path in stage01.rglob("*"):
         if path.is_file():
             stem = path.stem
