@@ -629,14 +629,23 @@ else:
         start = min(max(0, position - len(label) // 2), graph_width - len(label))
         for offset, char in enumerate(label):
             ruler[start + offset] = char
-    print(f"{'':<{label_width}}{''.join(ruler).rstrip()}")
+    print(f"{'':<{label_width}}{DIM}{''.join(ruler).rstrip()}{RESET}")
 
     for station, filename in selected_files:
         events = by_file[(station, filename)]
         canvas = [" "] * graph_width
+        cell_colors = [""] * graph_width
         event_positions = []
         for event in events:
             token = event.get("token", "?")[:3]
+            if token == "!":
+                token_color = RED + BOLD
+            elif token.startswith("A"):
+                token_color = YELLOW + BOLD
+            elif token == "S0":
+                token_color = CYAN + BOLD
+            else:
+                token_color = GREEN + BOLD
             center = time_position(event["observed_at_utc"])
             if center is None:
                 continue
@@ -648,6 +657,7 @@ else:
             for offset, char in enumerate(token):
                 pos = start + offset
                 canvas[pos] = char
+                cell_colors[pos] = token_color
             event_positions.append((start, end))
 
         # Keep each file's state-change nodes connected with plain hyphens.
@@ -655,15 +665,32 @@ else:
             for pos in range(right_a + 1, left_b):
                 if canvas[pos] == " ":
                     canvas[pos] = "-"
+                    cell_colors[pos] = DIM
 
         label = f"{shorten(station, 8):<8} {shorten(filename, 20):<20}"
-        print(f"{label:<{label_width}}{''.join(canvas).rstrip()}")
+        rendered = []
+        index = 0
+        while index < graph_width:
+            color = cell_colors[index]
+            end = index + 1
+            while end < graph_width and cell_colors[end] == color:
+                end += 1
+            chunk = "".join(canvas[index:end])
+            rendered.append(f"{color}{chunk}{RESET}" if color else chunk)
+            index = end
+        print(f"{CYAN}{label}{RESET}{''.join(rendered).rstrip()}")
 
     hidden = len(by_file) - len(selected_files)
     if hidden > 0:
         print(f"{DIM}… {hidden} additional files with state changes hidden; set TIMELINE_FILES to show more.{RESET}")
 
-    print(f"{DIM}S0=Stage 0  T0-T5=highest task  A0-A5=active task  P=valid Parquet  !=review{RESET}")
+    print(
+        f"{CYAN}{BOLD}S0{RESET}=Stage 0  "
+        f"{GREEN}{BOLD}T0-T5{RESET}=highest task  "
+        f"{YELLOW}{BOLD}A0-A5{RESET}=active task  "
+        f"{GREEN}{BOLD}P{RESET}=valid Parquet  "
+        f"{RED}{BOLD}!{RESET}=review"
+    )
     if test_mode:
         print(f"{DIM}TEST MODE uses synthetic CSV data only; production runtime files are untouched.{RESET}")
 PY
