@@ -7,9 +7,8 @@ selection:
 complete_reanalysis: true
 force_replacement: true
 article_format: false
-# create_plots options: null | debug | usual | essential | all
-# Task 1 plot alias statuses live in config_plots_task_1.yaml
-create_plots: null
+# create_plots is a global true/false switch. Runtime aliases are selected in config_plots_task_1.yaml.
+create_plots: true
 keep_all_columns_output: false
 save_removed_channel_values: false
 joined_analysis_files: 3

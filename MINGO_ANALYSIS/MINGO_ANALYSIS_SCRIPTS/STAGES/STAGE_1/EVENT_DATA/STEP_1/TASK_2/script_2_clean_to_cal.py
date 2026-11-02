@@ -41,7 +41,6 @@ No dataframe with a name suggesting “final”, “filtered”, “output”, o
 may exist unless it is derived immediately from working_df at the write boundary.
 """
 # Standard Library
-import atexit
 import ast
 import builtins
 from collections import defaultdict
@@ -7410,7 +7409,7 @@ plt.figure = _guarded_figure
 plt.subplots = _guarded_subplots
 plt.close = _guarded_close
 
-atexit.register(finalize_task2_plots_to_pdf)
+# Runtime figures are PNG-only; FINAL reporting is standalone.
 
 CALIBRATION_METADATA_PATTERN = re.compile(
     r"^P[1-4]_s[1-4]_((?:Q_FB|Q_TDIF)_coeffs(?:__[0-9]+)?|Q_sum|Q_F|Q_B|T_sum|T_dif|T_slew_[A-Za-z0-9_]+)$"

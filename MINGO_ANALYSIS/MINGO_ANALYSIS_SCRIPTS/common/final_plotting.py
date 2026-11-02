@@ -170,6 +170,80 @@ def _charge_plot(df: pd.DataFrame, task: int, alias: str):
     return _hist_grid(df, task, alias)
 
 
+def _task5_gate_charge_spectra(df: pd.DataFrame, gate_name: str, alias: str):
+    """Plot per-plane charge spectra for passing/failing Task-5 gate events."""
+    if "gate" not in df.columns:
+        return None
+    tt_column = _tt_column(df, 5)
+    charge_columns = [f"p{plane}_qsum" for plane in range(1, 5)]
+    if tt_column is None or not all(column in df.columns for column in charge_columns):
+        return None
+
+    labels = df["gate"].fillna("").astype(str).str.split("|")
+    passed = labels.map(lambda event_gates: gate_name in event_gates).to_numpy(dtype=bool)
+    tt_values = pd.to_numeric(df[tt_column], errors="coerce").fillna(0).astype(int)
+    trigger_types = sorted(int(value) for value in tt_values.unique() if int(value) != 0)
+    if not trigger_types:
+        return None
+
+    all_charge = np.concatenate(
+        [
+            _numeric(df, column).to_numpy(dtype=float)
+            for column in charge_columns
+        ]
+    )
+    all_charge = all_charge[np.isfinite(all_charge) & (all_charge != 0)]
+    if not all_charge.size:
+        return None
+    low, high = np.quantile(all_charge, [0.005, 0.995])
+    if not np.isfinite(low) or not np.isfinite(high) or high <= low:
+        low, high = float(np.min(all_charge)), float(np.max(all_charge))
+    if high <= low:
+        low, high = low - 0.5, high + 0.5
+    bins = np.linspace(low, high, 81)
+
+    fig, axes = plt.subplots(
+        4,
+        len(trigger_types),
+        figsize=(max(8, 2.6 * len(trigger_types)), 10),
+        sharex=True,
+        squeeze=False,
+    )
+    for plane_index, column in enumerate(charge_columns):
+        values = _numeric(df, column).to_numpy(dtype=float)
+        for tt_index, tt in enumerate(trigger_types):
+            ax = axes[plane_index, tt_index]
+            tt_mask = tt_values.to_numpy() == tt
+            pass_mask = tt_mask & passed
+            fail_mask = tt_mask & ~passed
+            pass_charge = values[pass_mask & np.isfinite(values) & (values != 0)]
+            fail_charge = values[fail_mask & np.isfinite(values) & (values != 0)]
+            pass_counts = np.histogram(pass_charge, bins=bins)[0]
+            fail_counts = np.histogram(fail_charge, bins=bins)[0]
+            if np.any(pass_counts):
+                ax.stairs(pass_counts, bins, color="tab:blue", label="Pass")
+            if np.any(fail_counts):
+                ax.stairs(fail_counts, bins, color="tab:red", linestyle="--", label="Fail")
+            ax.set_yscale("log")
+            positive = np.concatenate((pass_counts[pass_counts > 0], fail_counts[fail_counts > 0]))
+            if positive.size:
+                ax.set_ylim(bottom=max(float(positive.min()) * 0.5, 0.1))
+            else:
+                ax.set_ylim(0.1, 1)
+                ax.text(0.5, 0.5, "No entries", transform=ax.transAxes, ha="center", fontsize=7)
+            ax.set_title(f"P{plane_index + 1} · TT{tt}\npass {pass_mask.sum()} / fail {fail_mask.sum()}", fontsize=8)
+            ax.grid(alpha=0.2)
+            if tt_index == 0:
+                ax.set_ylabel("Events / bin")
+            if plane_index == 3:
+                ax.set_xlabel("Plane charge Q_sum")
+            if plane_index == 0 and tt_index == 0 and (np.any(pass_counts) or np.any(fail_counts)):
+                ax.legend(fontsize=7)
+    fig.suptitle(f"{alias.replace('_', ' ')} · solid = pass, dashed = fail", fontsize=12)
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    return fig
+
+
 def _pair_matrix(df: pd.DataFrame, task: int, alias: str, mode: str):
     columns = _preferred_numeric_columns(df, task, 5 if task == 4 else 4)
     if len(columns) < 2:
@@ -393,6 +467,8 @@ def _projection_plot(df: pd.DataFrame, alias: str):
 
 def render_final_alias(df: pd.DataFrame, task: int, alias: str):
     key = alias.lower()
+    if task == 5 and key.startswith("gate_charge_spectra_"):
+        return _task5_gate_charge_spectra(df, key.removeprefix("gate_charge_spectra_"), alias)
     if "rate_vs_time" in key or "events_per_second" in key:
         return _rate_plot(df, task, alias)
     if "theta_phi" in key or "polar_theta_phi" in key:
@@ -428,6 +504,17 @@ def render_final_alias(df: pd.DataFrame, task: int, alias: str):
 
 
 def _enabled_aliases(config: dict) -> list[str]:
+    if "-plot" in config or "-not_plot" in config:
+        plotted = config.get("-plot", []) or []
+        not_plotted = config.get("-not_plot", []) or []
+        if not isinstance(plotted, list) or not isinstance(not_plotted, list):
+            raise ValueError("'-plot' and '-not_plot' must each contain a YAML list of aliases.")
+        plotted = [str(alias) for alias in plotted]
+        not_plotted = [str(alias) for alias in not_plotted]
+        overlap = sorted(set(plotted) & set(not_plotted))
+        if overlap:
+            raise ValueError(f"FINAL plot aliases cannot be in both '-plot' and '-not_plot': {overlap}")
+        return list(dict.fromkeys(plotted))
     mode = str(config.get("plot_mode", "all")).strip().lower()
     statuses = config.get("plots", {}) or {}
     enabled: list[str] = []

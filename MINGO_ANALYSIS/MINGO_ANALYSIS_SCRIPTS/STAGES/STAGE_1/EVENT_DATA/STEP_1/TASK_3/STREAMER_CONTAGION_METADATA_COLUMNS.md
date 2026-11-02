@@ -37,9 +37,9 @@ where:
 
 ## Per-Plane Streamer Rate Columns
 
-- `streamer_rate_plane_1`, `streamer_rate_plane_2`, `streamer_rate_plane_3`, `streamer_rate_plane_4`
+- `P1_streamer_rate`, `P2_streamer_rate`, `P3_streamer_rate`, `P4_streamer_rate`
   - For each plane `p`:
-  - `streamer_rate_plane_p = N(Q_sum_p > streamer_threshold_selected) / N(Q_sum_p > 0)`
+  - `P<plane>_streamer_rate = N(Q_sum_p > streamer_threshold_selected) / N(Q_sum_p > 0)`
   - Empty if threshold cannot be determined or plane data is unavailable.
 
 ## Per-TT Strip Contagion Matrix Families

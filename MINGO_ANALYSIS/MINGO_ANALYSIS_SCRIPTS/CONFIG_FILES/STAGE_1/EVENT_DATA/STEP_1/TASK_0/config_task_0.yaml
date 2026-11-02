@@ -7,7 +7,7 @@ selection:
 last_file_test: false
 complete_reanalysis: true
 force_replacement: true
-create_plots: null
+create_plots: true
 limit_number: null
 EXPECTED_COLUMNS_config: 71
 joined_analysis_files: 3

@@ -723,13 +723,42 @@ def _normalize_metadata_tt_key(key: str) -> str:
     return f"{prefix}_tt_{normalized_fragment}{suffix}"
 
 
+def _normalize_metadata_plane_key(key: str) -> str:
+    """Canonicalize legacy plane-qualified metadata names as ``P<n>_*``."""
+    patterns = (
+        (r"^p([1-4])_s([1-4])_(.+)$", lambda m: f"P{m[1]}_s{m[2]}_{m[3]}"),
+        (r"^eff([1-4])_(.+)$", lambda m: f"P{m[1]}_eff_{m[2]}"),
+        (r"^eff([1-4])$", lambda m: f"P{m[1]}_eff"),
+        (r"^z_P([1-4])$", lambda m: f"P{m[1]}_z"),
+        (r"^streamer_P([1-4])$", lambda m: f"P{m[1]}_streamer"),
+        (r"^active_strips_P([1-4])_(.+)$", lambda m: f"P{m[1]}_active_strips_{m[2]}"),
+        (r"^charge_topology_plane_([1-4])_(.+)$", lambda m: f"P{m[1]}_charge_topology_{m[2]}"),
+        (r"^streamer_rate_plane_filtered_([1-4])$", lambda m: f"P{m[1]}_streamer_rate_filtered"),
+        (
+            r"^raw_channel_swap_plane([1-4])_([1-4])_([1-4])_applied$",
+            lambda m: f"P{m[1]}_raw_channel_swap_s{m[2]}_s{m[3]}_applied",
+        ),
+        (r"^tt_(.+)_outside_plane([1-4])_(.+)$", lambda m: f"P{m[2]}_tt_{m[1]}_outside_{m[3]}"),
+        (r"^(.+)_P([1-4])$", lambda m: f"P{m[2]}_{m[1]}"),
+    )
+    for pattern, replacement in patterns:
+        # Preserve pair-valued fields such as ``..._P1_to_P2``: the terminal
+        # plane is part of a relationship, not a qualifier for the whole key.
+        if pattern == r"^(.+)_P([1-4])$" and re.search(r"_P[1-4]_to_", key):
+            continue
+        match = re.match(pattern, key)
+        if match:
+            return replacement(match)
+    return key
+
+
 def _normalize_metadata_fieldnames(fieldnames: Iterable[str]) -> List[str]:
     normalized: List[str] = []
     seen: set[str] = set()
     for raw_name in fieldnames:
         if raw_name is None:
             continue
-        name = _normalize_metadata_tt_key(str(raw_name))
+        name = _normalize_metadata_plane_key(_normalize_metadata_tt_key(str(raw_name)))
         if name in seen:
             continue
         seen.add(name)
@@ -2132,7 +2161,11 @@ def _normalize_metadata_row(raw: Dict[str, object]) -> Dict[str, object]:
     for key, value in raw.items():
         if key is None:
             continue
-        out_key = _normalize_metadata_tt_key(str(key)) if isinstance(key, str) else str(key)
+        out_key = (
+            _normalize_metadata_plane_key(_normalize_metadata_tt_key(str(key)))
+            if isinstance(key, str)
+            else str(key)
+        )
         for normalized_key, normalized_value in _iter_normalized_metadata_items(out_key, value):
             if normalized_key in normalized:
                 if _metadata_value_is_empty(normalized[normalized_key]) and not _metadata_value_is_empty(

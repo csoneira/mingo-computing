@@ -1984,3 +1984,7 @@
 # ============================================================================
 # _direct_pdf_temp_path: str | None = None
 
+
+# 2026-10-30: obsolete runtime PDF callback removed; target function no longer exists.
+# atexit.register(finalize_task2_plots_to_pdf)
+# import atexit  # removed together with the obsolete callback registration above.

@@ -5,3 +5,23 @@ gates:
     bit: 0
     description: "All events loaded by Task 5."
     expression: "(event_id == event_id)"
+  at_most_1_strip_per_plane:
+    bit: 1
+    description: "Each plane has zero or one active strip."
+    expression: "(task5_gate_max_strips_per_plane <= 1)"
+  at_most_2_adjacent_strips_per_plane:
+    bit: 2
+    description: "Each plane has at most two active strips, and each plane's strips are contiguous."
+    expression: "(task5_gate_max_strips_per_plane <= 2) & (task5_gate_all_planes_adjacent == True)"
+  at_most_3_adjacent_strips_per_plane:
+    bit: 3
+    description: "Each plane has at most three active strips, and each plane's strips are contiguous."
+    expression: "(task5_gate_max_strips_per_plane <= 3) & (task5_gate_all_planes_adjacent == True)"
+  at_most_4_adjacent_strips_per_plane:
+    bit: 4
+    description: "Every plane's active strips form one contiguous cluster (up to all four strips)."
+    expression: "(task5_gate_all_planes_adjacent == True)"
+  any_plane_has_nonadjacent_strips:
+    bit: 5
+    description: "At least one plane has two or more active strips with a gap between them."
+    expression: "(task5_gate_any_plane_nonadjacent == True)"

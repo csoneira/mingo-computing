@@ -1,8 +1,8 @@
 selection:
   stations: [0, 1, 2, 3, 4]
   date_ranges:
-    - start: 2024-09-27
-      end: 2024-10-01
+    - start: 2026-10-19
+      end: 2027-01-31
 
 # Optional per-step overrides. A list, including an empty list, takes priority
 # over the corresponding list in STEP_N/config_step_N.yaml. Use null to keep

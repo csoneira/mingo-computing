@@ -1,0 +1,7 @@
+# Initial broad transfer/sanity limits. Finite channel values outside the
+# inclusive limits are replaced with zero; event rows are retained.
+filtering:
+  enabled: true
+  action: zero_out_of_range
+  charge: [-1000, 1000]
+  time: [-1000, 1000]

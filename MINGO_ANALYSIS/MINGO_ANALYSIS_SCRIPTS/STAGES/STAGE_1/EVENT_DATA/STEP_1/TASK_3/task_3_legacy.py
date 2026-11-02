@@ -3409,3 +3409,6 @@
 # ============================================================================
 # atexit.register(close_direct_pdf_writer)
 
+
+# 2026-10-30: obsolete runtime PDF callback removed; target function no longer exists.
+# finalize_saved_plots_to_pdf()

@@ -60,6 +60,16 @@ def duration_seconds(frame: pd.DataFrame) -> int:
     return max(0, int((values.iloc[-1] - values.iloc[0]).total_seconds()))
 
 
+def active_seconds(frame: pd.DataFrame) -> int:
+    """Count distinct acquisition seconds represented by valid event rows."""
+    if frame.empty or "datetime" not in frame.columns:
+        return 0
+    values = pd.to_datetime(frame["datetime"], errors="coerce").dropna()
+    if values.empty:
+        return 0
+    return int(values.dt.floor("s").nunique())
+
+
 def rate_hz(count: int, duration_seconds_value: int) -> float:
     if duration_seconds_value <= 0:
         return 0.0

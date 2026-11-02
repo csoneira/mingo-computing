@@ -1,0 +1,11 @@
+# Parallel self-trigger Task 2: broad filtering and configured offset application.
+selection:
+  stations: [0, 1, 2, 3, 4]
+
+# Shared STEP_1 settings (including complete_reanalysis and file_selection_mode)
+# are applied by the task at runtime.
+create_plots: true
+force_replacement: false
+complete_reanalysis: false
+filtering_config_yaml: config_filtering_task_2_selftrigger.yaml
+calibration_config_yaml: config_calibration_task_2_selftrigger.yaml

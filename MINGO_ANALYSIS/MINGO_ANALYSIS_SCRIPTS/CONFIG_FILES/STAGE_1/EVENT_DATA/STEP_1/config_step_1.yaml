@@ -9,8 +9,19 @@ event_data_step1_run_matrix:
     "0": [0, 1, 2, 3, 4, 5]
     "1": [0, 1, 2, 3, 4, 5]
     "2": [0, 1, 2, 3, 4, 5]
-    "3": [0, 1, 2, 3, 4, 5]
-    "4": [0, 1, 2, 3, 4, 5]
+    "3": []
+    "4": []
+
+self_trigger_step1_run_matrix:
+  enabled: true
+  mode: whitelist
+  default_tasks: []
+  stations:
+    "0": [1, 2]
+    "1": [1, 2]
+    "2": [1, 2]
+    "3": []
+    "4": []
 
 event_data_resource_limits:
   mem_used_pct_max: 95
@@ -22,14 +33,14 @@ event_data_resource_limits:
 step_1_overrides:
   # Non-empty values override lower-level STEP_1 task configs.
   # Leave a value blank to defer to each TASK_*/config_task_*.yaml.
-  # Periodic plotting enables the configured usual plot catalog on schedule.
-  # Set the interval to null to disable periodic plotting; create_plots can
-  # still select a mode explicitly when no periodic interval is configured.
+  # Periodic plotting enables the explicitly listed aliases on schedule.
+  # Set the interval to null to disable periodic plotting; each task's
+  # create_plots boolean remains the global on/off switch.
   complete_reanalysis: true
   create_plots:
   # Generate each task's configured QA plots at most once per interval (hours).
   # Alias selections remain controlled by TASK_*/config_plots_task_*.yaml.
-  periodic_plotting_interval_hours: 1
+  periodic_plotting_interval_hours: null
   keep_all_columns_output: true
   save_removed_channel_values: false
   save_time_slewing_pair_residuals: false

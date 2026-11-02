@@ -59,7 +59,10 @@ from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import (
     get_repo_root,
     resolve_home_path_from_config,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import pdf_save_rasterized_page
+from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import (
+    pdf_save_rasterized_page,
+    runtime_plot_directory_name,
+)
 
 
 # -----------------------------------------------------------------------------
@@ -615,7 +618,7 @@ base_directories = {
     
     "pdf_directory": os.path.join(acc_working_directory, "PLOTS/PDF_DIRECTORY"),
     "base_figure_directory": os.path.join(acc_working_directory, "PLOTS/FIGURE_DIRECTORY"),
-    "figure_directory": os.path.join(acc_working_directory, f"PLOTS/FIGURE_DIRECTORY/FIGURES_EXEC_ON_{date_execution}"),
+    "figure_directory": os.path.join(acc_working_directory, "PLOTS/FIGURE_DIRECTORY"),
     
     "unprocessed_directory": os.path.join(acc_working_directory, "INPUT_FILES/UNPROCESSED"),
     "processing_directory": os.path.join(acc_working_directory, "INPUT_FILES/PROCESSING"),
@@ -662,15 +665,6 @@ def _quarantine_invalid_input(path: str, error_directory: str, reason: str) -> N
 
 # Path to big_event_data.csv
 big_event_file = os.path.join(working_directory, "big_event_data.csv")
-
-# Erase all files in the figure_directory
-figure_directory = base_directories["figure_directory"]
-files = os.listdir(figure_directory) if os.path.exists(figure_directory) else []
-
-if files:  # Check if the directory contains any files
-    print("Removing all files in the figure_directory...")
-    for file in files:
-        os.remove(os.path.join(figure_directory, file))
 
 output_schema = resolve_output_schema(config)
 theta_boundaries = output_schema["theta_boundaries"]
@@ -950,6 +944,13 @@ else:
 # This is for all cases
 file_path = processing_file_path
 reference_filename = os.path.basename(file_path)
+runtime_plot_dir_name = runtime_plot_directory_name(reference_filename, date_execution)
+figure_directory = os.path.join(
+    base_directories["base_figure_directory"],
+    runtime_plot_dir_name,
+)
+base_directories["figure_directory"] = figure_directory
+os.makedirs(figure_directory, exist_ok=True)
 
 now = time.time()
 os.utime(processing_file_path, (now, now))

@@ -52,13 +52,15 @@ selection:
     # - start: 2024-09-23 # mingo01 HV scan
     #   end: 2024-10-05
     #   stations: [1]
-    - start: 2026-01-01 # mingo02 HV scan,  end actually on 2026-01-03, i extended because it finisehd
-      end: 2026-01-31 # end actually on 2026-01-14, i extended because it finisehd
-      stations: [0, 1, 2, 3, 4]
-    - start: 2026-01-01
-      end: 2026-08-31
-      stations: [2]
-    - start: 2026-07-24 # Present data.
+    # Preserved for future targeted runs; excluded from the current
+    # October 19 reprocessing window.
+    # - start: 2026-01-01 # MINGO02 HV scan period
+    #   end: 2026-01-31
+    #   stations: [2]
+    # - start: 2026-01-01
+    #   end: 2026-08-31
+    #   stations: [2]
+    - start: 2026-10-19 # Reprocessing window from 19 October 2026.
       end: 2027-01-31
       stations: [0, 1, 2, 3, 4]
     # - start: 2025-09-19 # mingo03 change of trigger epoch in between

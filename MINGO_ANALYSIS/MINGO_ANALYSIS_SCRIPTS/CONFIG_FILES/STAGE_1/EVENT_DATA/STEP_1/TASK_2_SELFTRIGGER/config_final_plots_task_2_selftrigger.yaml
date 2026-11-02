@@ -1,0 +1,42 @@
+# Standalone reports from self-trigger Task 2 calibrated parquet.
+save_png: true
+save_pdf: true
+
+final_minimal:
+  plots:
+    - calibrated_filtered_removed_zeroes
+    - selftrigger_front_back_charge_spectra
+    - selftrigger_tt_event_rates
+    - selftrigger_charge_spectra_by_tt
+    - selftrigger_tdif_spectra_by_tt
+    - selftrigger_tdif_calibrated_histograms
+    - selftrigger_tdif_calibrated_charge_classes
+    - selftrigger_tdif_calibrated_rate_surface
+    - selftrigger_tdif_calibrated_rate_map
+  non_plots: []
+
+final_maximal:
+  plots: []
+  non_plots: []
+
+# Geometry comes from the coincidence Task-2 parameter table in millimetres.
+# The surface rate is converted to Hz/cm² using 100 mm² per cm².
+tdif_hit_map:
+  calibrated_tdif_cut_ns: [-1.2, 1.2]
+  x_bins: 100
+  tdif_histogram_bins: 80
+  strip_speed_mm_per_ns: 199.8616
+  strip_length_mm: 300.0
+  narrow_strip_width_mm: 63.0
+  wide_strip_width_mm: 98.0
+  # Planes 1/3: strips 1-3 narrow, strip 4 wide.
+  # Planes 2/4: strip 1 wide, strips 2-4 narrow.
+  plane_strip_widths_mm:
+    - [63.0, 63.0, 63.0, 98.0]
+    - [98.0, 63.0, 63.0, 63.0]
+    - [63.0, 63.0, 63.0, 98.0]
+    - [98.0, 63.0, 63.0, 63.0]
+
+tdif_charge_split:
+  low_charge_limit: 10.0
+  streamer_limit: 80.0

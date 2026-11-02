@@ -1,0 +1,15 @@
+# Display limits for self-trigger Task 1 diagnostics only.
+# Values outside these ranges are clipped to the nearest boundary in plots;
+# input data and output parquet values remain unchanged.
+value_limits:
+  sanity:
+    charge: [-300, 400]
+    time: [-200, 300]
+  physical:
+    charge: [70, 250]
+    time: [-110, -80]
+
+# Task 0 FINAL coincidence/self-trigger spectrum comparison.
+coincidence_comparison:
+  charge_cut: [70, 300]
+  time_range: [-150, 0]

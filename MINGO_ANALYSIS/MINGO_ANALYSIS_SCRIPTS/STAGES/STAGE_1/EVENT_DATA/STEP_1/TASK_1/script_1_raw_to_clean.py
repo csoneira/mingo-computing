@@ -5876,7 +5876,7 @@ pass
 # -----------------------------------------------------------------------------
 # Create and save the PDF (deferred until all plots are generated) ------------
 # -----------------------------------------------------------------------------
-finalize_saved_plots_to_pdf()
+# Runtime figures are PNG-only; FINAL reporting is standalone.
 _prof["s_pdf_finalize_s"] = round(time.perf_counter() - _t_sec, 2)
 _t_sec = time.perf_counter()
 

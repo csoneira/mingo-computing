@@ -1,0 +1,13 @@
+# Standalone FINAL comparisons for the parallel self-trigger Task 1 output.
+save_png: true
+save_pdf: true
+
+final_minimal:
+  plots: []
+  non_plots: []
+
+final_maximal:
+  plots:
+    - coincidence_vs_selftrigger_channel_charge
+    - coincidence_vs_selftrigger_channel_time
+  non_plots: []

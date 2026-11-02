@@ -143,6 +143,8 @@ from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.step1_shared import (
 from analysis_functions import (
     _charge_series_is_usable,
     _task5_parse_optional_top_n,
+    add_task5_strip_topology_gate_columns,
+    TASK5_TOPOLOGY_GATE_COLUMNS,
 )
 from plotting_functions import _task5_channel_hist_range
 
@@ -2058,7 +2060,9 @@ if not simulated_param_hash and "param_hash" in working_df.columns:
 
 task5_gate_definitions = _load_task5_gate_config(task5_gate_config_path)
 print(f"Loaded {len(task5_gate_definitions)} Task 5 gate definition(s) from {task5_gate_config_path}")
+working_df = add_task5_strip_topology_gate_columns(working_df)
 working_df = apply_task5_gates(working_df, task5_gate_definitions)
+working_df.drop(columns=list(TASK5_TOPOLOGY_GATE_COLUMNS), inplace=True)
 # print("Columns loaded from parquet:")
 # for col in working_df.columns:
 #     print(f" - {col}")

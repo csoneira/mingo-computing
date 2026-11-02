@@ -7392,7 +7392,7 @@ if task3_plot_enabled("strip_activation_matrix_before_after"):
 # FINAL plot block moved out of the runtime flow: acquisition_rate_vs_time_by_task_tt_with_histograms
 pass
 
-finalize_saved_plots_to_pdf()
+# Runtime figures are PNG-only; FINAL reporting is standalone.
 _prof["s_pdf_finalize_s"] = round(time.perf_counter() - _t_sec, 2)
 _t_sec = time.perf_counter()
 _finalize_stage_t0 = _t_sec

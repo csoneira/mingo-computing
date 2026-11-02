@@ -1,0 +1,7 @@
+# Explicit runtime PNG plot selection for the self-trigger diagnostic pass.
+plots:
+  - column_histograms
+  - histogram_binning_comparison
+  - channel_qt_scatter
+  - channel_qt_scatter_physical
+non_plots: []

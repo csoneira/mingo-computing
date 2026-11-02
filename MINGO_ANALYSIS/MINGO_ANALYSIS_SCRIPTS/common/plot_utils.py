@@ -15,6 +15,7 @@ Notes: Keep behavior configuration-driven and reproducible.
 
 from __future__ import annotations
 
+from datetime import datetime
 import os
 import matplotlib
 import yaml
@@ -30,6 +31,7 @@ from matplotlib.artist import Artist  # noqa: E402
 from matplotlib.offsetbox import DrawingArea, TextArea, HPacker, VPacker  # noqa: E402
 from matplotlib.spines import Spine  # noqa: E402
 from .path_config import get_master_config_root
+from .file_selection import extract_run_datetime_from_name
 
 __all__ = [
     "collect_saved_plot_paths",
@@ -38,10 +40,31 @@ __all__ = [
     "pdf_save_rasterized_page",
     "save_rasterized_pdf",
     "metadata_output_status_suffix",
+    "runtime_plot_directory_name",
 ]
 
 
 UNSUPPORTED_RASTER_TYPES = (TextArea, DrawingArea, HPacker, VPacker, Spine)
+
+
+def runtime_plot_directory_name(data_file_name: str | os.PathLike[str], execution_timestamp: str) -> str:
+    """Name runtime plot folders by acquisition date and execution timestamp."""
+    data_datetime = extract_run_datetime_from_name(Path(data_file_name).name)
+    if data_datetime is None:
+        raise ValueError(
+            "Cannot derive the acquisition date for runtime plots from "
+            f"the task input filename: {Path(data_file_name).name}"
+        )
+    parsed_execution = None
+    for time_format in ("%y-%m-%d_%H.%M.%S", "%Y-%m-%d_%H.%M.%S"):
+        try:
+            parsed_execution = datetime.strptime(execution_timestamp, time_format)
+            break
+        except ValueError:
+            continue
+    if parsed_execution is None:
+        raise ValueError(f"Unrecognized runtime plot execution timestamp: {execution_timestamp!r}")
+    return f"{data_datetime:%Y_%m_%d}_FIGURES_EXEC_ON_{parsed_execution:%Y_%m_%d_%H.%M.%S}"
 
 
 def metadata_output_status_suffix(output_type: str) -> str:

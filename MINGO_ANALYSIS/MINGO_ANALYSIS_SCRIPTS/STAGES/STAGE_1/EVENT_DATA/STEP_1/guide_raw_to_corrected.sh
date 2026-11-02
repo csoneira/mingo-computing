@@ -90,11 +90,13 @@ guide_raw_to_corrected.sh
 Launches the STAGE_1 EVENT_DATA STEP_1 pipeline for a station.
 
 Usage:
-  guide_raw_to_corrected.sh [--station <list>] [--task <list>] [--run-anyway] [--verbose]
+  guide_raw_to_corrected.sh [--station <list>] [--task <list>] [--self-trigger] [--run-anyway] [--verbose]
 
 Options:
   -s, --station   Station numbers (0-4). Comma-separated or space-separated. Default: all.
-  -t, --task      Task IDs to run: 0-5 or "all" (default: all tasks).
+  -t, --task      Task IDs to run (default: all tasks for selected flow).
+  --self-trigger  Select the parallel self-trigger task sequence instead of coincidence Tasks 0-5.
+                  Self-trigger tasks run as a parallel numbered sequence (currently 1-2).
   --run-anyway    Skip the check that prevents overlapping guide_raw_to_corrected.sh runs.
   -v, --verbose   Pass --verbose to each inner STEP_1 Python task script.
   -h, --help      Show this help message and exit.
@@ -105,7 +107,7 @@ looping continuously. If another guide_raw_to_corrected.sh is already running
 for a station, that station is skipped for this invocation.
 
 This script also re-reads config_step_1.yaml on every outer loop iteration to
-optionally enable/disable station-task pairs via `event_data_step1_run_matrix`.
+optionally enable/disable station-task pairs via the selected run matrix.
 EOF
 }
 
@@ -113,6 +115,7 @@ station_filter_raw="all"
 task_filter_raw="all"
 run_anyway=false
 task_verbose=false
+self_trigger_mode=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -123,6 +126,10 @@ while [[ $# -gt 0 ]]; do
     -t|--task)
       task_filter_raw="${2:-}"
       shift 2
+      ;;
+    --self-trigger)
+      self_trigger_mode=true
+      shift
       ;;
     --run-anyway)
       run_anyway=true
@@ -176,6 +183,15 @@ TASK_LABELS=(
   "list_to_fit"
   "fit_to_corr"
 )
+
+# A separate numeric namespace for the parallel self-trigger line. Add future
+# self-trigger task N scripts at index N without changing coincidence IDs.
+SELF_TRIGGER_TASK_SCRIPTS=(
+  ""
+  "$SCRIPT_DIR/TASK_1_SELFTRIGGER/script_1_selftrigger_raw_to_diagnostic.py"
+  "$SCRIPT_DIR/TASK_2_SELFTRIGGER/script_2_selftrigger_clean_to_cal.py"
+)
+SELF_TRIGGER_TASK_LABELS=("" "task_1_selftrigger_raw_to_diagnostic" "task_2_selftrigger_clean_to_cal")
 
 TRAFFIC_LIGHT_DIR="${DATAFLOW_ROOT}/OPERATIONS/OPERATIONS_RUNTIME/TRAFFIC_LIGHT"
 TRAFFIC_QUEUE_FILE=""
@@ -391,7 +407,16 @@ parse_list() {
 }
 
 ALL_STATIONS=(0 1 2 3 4)
-ALL_TASK_IDS=(0 1 2 3 4 5)
+COINCIDENCE_TASK_IDS=(0 1 2 3 4 5)
+SELF_TRIGGER_TASK_IDS=(1 2)
+if [[ "$self_trigger_mode" == true ]]; then
+  ALL_TASK_IDS=("${SELF_TRIGGER_TASK_IDS[@]}")
+  TRAFFIC_QUEUE_FILE_PREFIX="stage1_selftrigger_station_task_queue"
+  RUN_MATRIX_KEY="self_trigger_step1_run_matrix"
+else
+  ALL_TASK_IDS=("${COINCIDENCE_TASK_IDS[@]}")
+  RUN_MATRIX_KEY="event_data_step1_run_matrix"
+fi
 
 LOCK_BASE_DIR="${DATAFLOW_ROOT}/OPERATIONS/OPERATIONS_RUNTIME/LOCKS/guide_raw_to_corrected"
 ARG_LOCK_FILE=""
@@ -514,14 +539,27 @@ validate_tasks() {
   local arr=("$@")
   local validated=()
   for t in "${arr[@]}"; do
-    if [[ "$t" =~ ^[0-5]$ ]]; then
-      validated+=("$t")
+    if [[ "$self_trigger_mode" == true ]]; then
+      if [[ "$t" =~ ^[1-9][0-9]*$ ]] && (( t < ${#SELF_TRIGGER_TASK_SCRIPTS[@]} )) && [[ -n "${SELF_TRIGGER_TASK_SCRIPTS[$t]:-}" ]]; then
+        validated+=("$t")
+      else
+        local registered_ids=()
+        local registered_id
+        for registered_id in "${!SELF_TRIGGER_TASK_SCRIPTS[@]}"; do
+          [[ -n "${SELF_TRIGGER_TASK_SCRIPTS[$registered_id]:-}" ]] && registered_ids+=("$registered_id")
+        done
+        log_warn "ignoring invalid self-trigger task '$t' (registered IDs: ${registered_ids[*]})"
+      fi
     else
-      log_warn "ignoring invalid task '$t' (must be 0-5)"
+      if [[ "$t" =~ ^[0-5]$ ]]; then
+        validated+=("$t")
+      else
+        log_warn "ignoring invalid coincidence task '$t' (must be 0-5)"
+      fi
     fi
   done
   if [[ ${#validated[@]} -eq 0 ]]; then
-    echo "Error: no valid tasks to process." >&2
+    echo "Error: no valid tasks to process in the selected flow." >&2
     exit 1
   fi
   tasks_requested=("${validated[@]}")
@@ -566,10 +604,10 @@ refresh_execution_pairs_from_config() {
     return 0
   fi
 
-  result=$(python3 - "$cfg_path" "$stations_csv" "$tasks_csv" <<'PY'
+  result=$(python3 - "$cfg_path" "$stations_csv" "$tasks_csv" "$RUN_MATRIX_KEY" <<'PY'
 import sys
 
-cfg_path, stations_csv, tasks_csv = sys.argv[1:4]
+cfg_path, stations_csv, tasks_csv, matrix_key = sys.argv[1:5]
 
 stations = [s.strip() for s in stations_csv.split(",") if s.strip()]
 tasks_raw = [t.strip() for t in tasks_csv.split(",") if t.strip()]
@@ -610,7 +648,7 @@ try:
 except Exception:
     data = {}
 
-runtime = data.get("event_data_step1_run_matrix") or {}
+runtime = data.get(matrix_key) or {}
 resource_limits = data.get("event_data_resource_limits") or {}
 
 idle_sleep = _to_int(runtime.get("idle_sleep_seconds"))
@@ -619,7 +657,7 @@ config_refresh = _to_int(runtime.get("config_refresh_seconds"))
 resource_backoff = _to_int(resource_limits.get("resource_backoff_seconds"))
 emit_cfg()
 
-node = data.get("event_data_step1_run_matrix") or {}
+node = data.get(matrix_key) or {}
 enabled = bool(node.get("enabled", False))
 
 def normalize_tasks(value):
@@ -736,21 +774,16 @@ PY
   done <<<"$result"
 }
 
-# Max runtime watchdog (minutes); override with STEP1_MAX_RUNTIME_MIN env
-MAX_RUNTIME_MIN=${STEP1_MAX_RUNTIME_MIN:-120}
-watchdog_pid=""
-
-
 cleanup() {
-  if [[ -n "$watchdog_pid" ]]; then
-    kill "$watchdog_pid" 2>/dev/null || true
-  fi
   release_argument_lock
 }
 trap cleanup EXIT
-start_runtime_watchdog
 
-log_info "guide_raw_to_corrected.sh started (stations=${stations_requested[*]} tasks=${tasks_requested[*]})."
+if [[ "$self_trigger_mode" == true ]]; then
+  log_info "guide_raw_to_corrected.sh started (flow=self-trigger stations=${stations_requested[*]} tasks=${tasks_requested[*]})."
+else
+  log_info "guide_raw_to_corrected.sh started (flow=coincidence stations=${stations_requested[*]} tasks=${tasks_requested[*]})."
+fi
 refresh_execution_pairs_from_config true
 log_info "Enabled station-task pairs: ${execution_pairs[*]}"
 
@@ -885,6 +918,12 @@ pipeline_already_running() {
     # guide arguments. It is not another guide execution.
     [[ "$cmd" == *"/CRON_RUN_LOGGED/cron_run_logged.sh"* ]] && continue
 
+    # Coincidence and self-trigger runs are separate flows. They can overlap;
+    # duplicate runs within the same flow and station remain blocked.
+    if ! command_matches_selected_flow "$cmd"; then
+      continue
+    fi
+
     if command_targets_station "$cmd" "$target_station"; then
       if is_tty; then
         log_info "Detected running guide_raw_to_corrected.sh for station ${target_station}: ${pid} ${cmd}"
@@ -893,6 +932,22 @@ pipeline_already_running() {
     fi
   done < <(ps -eo pid=,comm=,args=)
   return 1
+}
+
+command_matches_selected_flow() {
+  local cmd="$1"
+  local process_self_trigger=false
+  local -a tokens=()
+  # shellcheck disable=SC2206
+  read -ra tokens <<< "$cmd"
+  local token
+  for token in "${tokens[@]}"; do
+    if [[ "$token" == "--self-trigger" ]]; then
+      process_self_trigger=true
+      break
+    fi
+  done
+  [[ "$process_self_trigger" == "$self_trigger_mode" ]]
 }
 
 station_value_matches_target() {
@@ -981,7 +1036,7 @@ while true; do
   refresh_execution_pairs_from_config
   if [[ ${#execution_pairs[@]} -eq 0 ]]; then
     log_rate_limited_global "no_enabled_pairs_${stations_requested[*]}_${tasks_requested[*]}" "$STEP1_IDLE_SLEEP_S" \
-      "No enabled station-task pairs (event_data_step1_run_matrix). Sleeping ${STEP1_IDLE_SLEEP_S}s..."
+      "No enabled station-task pairs (${RUN_MATRIX_KEY}). Sleeping ${STEP1_IDLE_SLEEP_S}s..."
     sleep "$STEP1_IDLE_SLEEP_S"
     iteration=$((iteration + 1))
     continue
@@ -999,12 +1054,21 @@ while true; do
       fi
     done
     if [[ "$allowed" != true ]]; then
-      log_rate_limited "disabled_pair_${pair}" 300 "Skipping station $station task${task_id}: disabled by event_data_step1_run_matrix."
+      log_rate_limited "disabled_pair_${pair}" 300 "Skipping station $station task${task_id}: disabled by ${RUN_MATRIX_KEY}."
       continue
     fi
     task_index=$((task_id))
-    task_script="${TASK_SCRIPTS[$task_index]}"
-    task_label="${TASK_LABELS[$task_index]}"
+    if [[ "$self_trigger_mode" == true ]]; then
+      task_script="${SELF_TRIGGER_TASK_SCRIPTS[$task_index]:-}"
+      task_label="${SELF_TRIGGER_TASK_LABELS[$task_index]:-}"
+    else
+      task_script="${TASK_SCRIPTS[$task_index]:-}"
+      task_label="${TASK_LABELS[$task_index]:-}"
+    fi
+    if [[ -z "$task_script" ]]; then
+      log_warn "No script is registered for task ${task_id} in the selected flow. Skipping."
+      continue
+    fi
     rotate_pair_to_queue_end "$pair"
     if pipeline_already_running "$station"; then
       if is_tty; then
@@ -1027,10 +1091,18 @@ while true; do
     if [[ "$station" == "0" ]]; then
       selection_order="${STEP1_SELECTION_ORDER_MINGO00:-oldest}"
     fi
-    log_info "Running station $station task${task_id} (${task_label}) [selection_order=${selection_order}] ..."
+    if [[ "$self_trigger_mode" == true ]]; then
+      log_info "Running station $station self-trigger task${task_id} (${task_label}) [selection_order=${selection_order}] ..."
+    else
+      log_info "Running station $station task${task_id} (${task_label}) [selection_order=${selection_order}] ..."
+    fi
 
     if DATAFLOW_STEP1_SELECTION_ORDER="${selection_order}" python3 -u "$task_script" "$station" "${TASK_VERBOSE_ARGS[@]}"; then
-      log_info "Completed station $station task${task_id} (${task_label})."
+      if [[ "$self_trigger_mode" == true ]]; then
+        log_info "Completed station $station self-trigger task${task_id} (${task_label})."
+      else
+        log_info "Completed station $station task${task_id} (${task_label})."
+      fi
       log_info "----------"
     else
       task_rc=$?

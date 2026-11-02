@@ -6,9 +6,8 @@ selection:
       end: 2024-10-01
 complete_reanalysis: true
 article_format: false
-# create_plots options: null | debug | usual | essential | all
-# Task 2 plot alias statuses live in config_plots_task_2.yaml
-create_plots: null
+# create_plots is a global true/false switch. Runtime aliases are selected in config_plots_task_2.yaml.
+create_plots: true
 keep_all_columns_output: false
 filter_parameter_config_csv: config_filter_parameters_task_2.csv
 calibration_subsample_config_yaml: config_calibration_subsample_task_2.yaml
