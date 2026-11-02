@@ -230,6 +230,7 @@ import fcntl
 import json
 import os
 import re
+import shutil
 import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
@@ -254,6 +255,23 @@ YELLOW = "\033[33m"
 BLUE = "\033[34m"
 MAGENTA = "\033[35m"
 CYAN = "\033[36m"
+
+if os.environ.get("NO_COLOR") or (
+    not sys.stdout.isatty() and not os.environ.get("FILE_FLOW_FORCE_COLOR")
+):
+    RESET = BOLD = DIM = RED = GREEN = YELLOW = BLUE = MAGENTA = CYAN = ""
+
+try:
+    terminal_width = max(
+        60,
+        int(
+            os.environ.get("FILE_FLOW_TERMINAL_WIDTH")
+            or os.environ.get("COLUMNS")
+            or shutil.get_terminal_size(fallback=(100, 24)).columns
+        ),
+    )
+except (TypeError, ValueError):
+    terminal_width = 100
 
 
 def true_value(value):
@@ -286,6 +304,11 @@ def parse_time(value):
 def display_time(value):
     parsed = parse_datetime(value)
     return parsed.strftime("%Y-%m-%d %H:%M:%S") if parsed else (str(value or "-") or "-")
+
+
+def display_short_time(value):
+    parsed = parse_datetime(value)
+    return parsed.strftime("%m-%d %H:%M") if parsed else "-"
 
 
 def task_symbol(value):
@@ -421,6 +444,7 @@ def update_runtime_history(current_rows, cutoff):
 
         last_seen = state.get("last_seen", {})
         events = state.get("events", [])
+        had_snapshot_baseline = bool(state.get("last_snapshot"))
         observed_values = [row.get("observed_at_utc", "") for row in current_rows if row.get("observed_at_utc", "")]
         snapshot = max(observed_values, key=parse_time) if observed_values else ""
 
@@ -432,7 +456,11 @@ def update_runtime_history(current_rows, cutoff):
                 key = f"{row.get('station', '')}|{row.get('filename_base', '')}"
                 signature = state_signature(row)
                 previous = last_seen.get(key)
-                if previous is None or previous.get("signature") != signature:
+                # The first read only establishes a baseline. Do not pretend
+                # every old file changed state at the time the watcher started.
+                if previous is not None and previous.get("signature") != signature:
+                    events.append(event_from_row(row, previous))
+                elif previous is None and had_snapshot_baseline:
                     events.append(event_from_row(row, previous))
                 new_last_seen[key] = {
                     "signature": signature,
@@ -486,69 +514,103 @@ action_counts = Counter(row.get("recommended_action", "").strip() or "(none)" fo
 station_counts = Counter(row.get("station", "").strip() or "(unknown)" for row in rows)
 
 print(f"{BOLD}{CYAN}FILE FLOW TRACKER — {display_scope}{RESET}")
-print(f"{DIM}Current:  {now.strftime('%Y-%m-%d %H:%M:%S')} UTC\nSnapshot: {display_time(observed)} UTC{RESET}")
-print(
-    f"CSV files: {BOLD}{len(csv_paths)}{RESET}   "
-    f"Stations: {BOLD}{len(stations)}{RESET}   "
-    f"Files: {BOLD}{total}{RESET}   "
-    f"In range: {BLUE}{selected}{RESET}   "
-    f"Consistent: {GREEN}{consistent}{RESET}   "
-    f"Reprocess: {YELLOW}{reprocess}{RESET}   "
-    f"Active: {CYAN}{active}{RESET}   "
-    f"Anomalies: {RED}{anomalous}{RESET}"
-)
+print(f"{DIM}Updated {now.strftime('%Y-%m-%d %H:%M')} UTC  |  Snapshot {display_time(observed)} UTC{RESET}")
+print(f"Sources {len(csv_paths)} | stations {len(stations)} | files {total}")
+print(f"Selected {selected} | consistent {consistent} | reprocess {reprocess}")
+print(f"Active {active} | anomalies {anomalous}")
 if len(stations) > 1:
-    print(f"{BOLD}Stations: {RESET}" + "  ".join(f"{name}={count}" for name, count in station_counts.most_common()))
-print(f"{BOLD}Lifecycle:{RESET} " + "  ".join(f"{name}={count}" for name, count in lifecycle_counts.most_common(5)))
-print(f"{BOLD}Actions:  {RESET} " + "  ".join(f"{name}={count}" for name, count in action_counts.most_common(4)))
+    print("Stations: " + "  ".join(f"{name} {count}" for name, count in station_counts.most_common()))
+
+
+def print_count_groups(label, counts, limit):
+    entries = [f"{name} {count}" for name, count in counts.most_common(limit)]
+    prefix = f"{label}: "
+    line = prefix
+    for entry in entries:
+        addition = ("" if line == prefix else " | ") + entry
+        if len(line) + len(addition) > terminal_width and line != prefix:
+            print(line)
+            line = "  " + entry
+        else:
+            line += addition
+    if line:
+        print(line)
+
+
+print_count_groups("Lifecycle", lifecycle_counts, 5)
+print_count_groups("Actions", action_counts, 4)
 print()
 
-print(
-    f"{BOLD}{'STATION':<8} {'FILE':<20} {'LAST MODIFIED':<19} {'EVENT TIME':<19} "
-    f"{'R':<1} {'LIFECYCLE':<25} {'HIGH':>4} {'TASK FLOW':<23} {'ACTION / ANOMALY'}{RESET}"
+station_width = 7
+file_width = 15
+time_width = 11
+selected_width = 1
+task_width = 6
+lifecycle_width = 10
+separator_width = 7
+detail_width = max(
+    8,
+    terminal_width
+    - station_width
+    - file_width
+    - (2 * time_width)
+    - selected_width
+    - task_width
+    - lifecycle_width
+    - separator_width,
 )
-print("─" * 158)
+print(
+    f"{BOLD}{'STATION':<{station_width}} {'FILE':<{file_width}} "
+    f"{'UPDATED':<{time_width}} {'DATA TIME':<{time_width}} R "
+    f"{'TASKS':<{task_width}} {'STATE':<{lifecycle_width}} DETAIL{RESET}"
+)
+print("─" * terminal_width)
 for row in rows[:max_rows]:
     selected_mark = f"{BLUE}●{RESET}" if true_value(row.get("in_selected_range", "")) else f"{DIM}·{RESET}"
-    flow = " ".join(f"{task}:{task_symbol(row.get(f'task_{task}_state'))}" for task in range(6))
+    flow = "".join(task_symbol(row.get(f"task_{task}_state")) for task in range(6))
     lifecycle = row.get("lifecycle_state", "")
-    lifecycle_text = f"{shorten(lifecycle, 25):<25}"
-    if "manual_review" in lifecycle.lower():
-        lifecycle_display = f"{RED}{lifecycle_text}{RESET}"
-    elif true_value(row.get("active_reprocessing", "")):
-        lifecycle_display = f"{CYAN}{lifecycle_text}{RESET}"
+    anomaly = row.get("anomaly_codes", "").strip()
+    task_active = any(
+        any(
+            marker in str(row.get(f"task_{task}_state", "")).lower()
+            for marker in ("running", "processing", "active", "in_progress")
+        )
+        for task in range(6)
+    )
+    if anomaly:
+        lifecycle_label, lifecycle_color = "REVIEW", RED
+    elif true_value(row.get("active_reprocessing", "")) or task_active:
+        lifecycle_label, lifecycle_color = "ACTIVE", CYAN
     elif true_value(row.get("needs_reprocessing", "")):
-        lifecycle_display = f"{YELLOW}{lifecycle_text}{RESET}"
+        lifecycle_label, lifecycle_color = "REPROCESS", YELLOW
+    elif true_value(row.get("archive_valid", "")):
+        lifecycle_label, lifecycle_color = "ARCHIVED", GREEN
     else:
-        lifecycle_display = lifecycle_text
+        lifecycle_label, lifecycle_color = lifecycle, ""
+    lifecycle_text = f"{shorten(lifecycle_label, lifecycle_width):<{lifecycle_width}}"
+    lifecycle_display = f"{lifecycle_color}{lifecycle_text}{RESET}" if lifecycle_color else lifecycle_text
 
     action = row.get("recommended_action", "").strip()
-    anomaly = row.get("anomaly_codes", "").strip()
     detail = f"{action}; {anomaly}" if action and anomaly else (anomaly or action)
     if anomaly:
-        detail = f"{RED}{shorten(detail, 35)}{RESET}"
+        detail = f"{RED}{shorten(detail, detail_width)}{RESET}"
     else:
-        detail = shorten(detail, 35)
+        detail = shorten(detail, detail_width)
 
     print(
-        f"{shorten(row.get('station', '?'), 8):<8} "
-        f"{shorten(row.get('filename_base', ''), 20):<20} "
-        f"{shorten(display_time(row.get('newest_artifact_mtime_utc', '')), 19):<19} "
-        f"{shorten(display_time(row.get('event_time_utc', '')), 19):<19} "
+        f"{shorten(row.get('station', '?'), station_width):<{station_width}} "
+        f"{shorten(row.get('filename_base', ''), file_width):<{file_width}} "
+        f"{display_short_time(row.get('newest_artifact_mtime_utc', '')):<{time_width}} "
+        f"{display_short_time(row.get('event_time_utc', '')):<{time_width}} "
         f"{selected_mark} "
         f"{lifecycle_display} "
-        f"{shorten(row.get('highest_task_reached', ''), 4):>4} "
-        f"{flow:<68} "
+        f"{flow:<{task_width}} "
         f"{detail}"
     )
 
 print()
-print(f"{DIM}Sorted by LAST MODIFIED, newest first.{RESET}")
-print(
-    f"{DIM}Legend: {GREEN}✓ complete{RESET}{DIM}, {CYAN}▶ active{RESET}{DIM}, "
-    f"{YELLOW}○ pending/outdated{RESET}{DIM}, {RED}! error/review{RESET}{DIM}, "
-    f"· not reached, {BLUE}● selected range{RESET}"
-)
+print(f"{DIM}Newest updates first. Task symbols are ordered 0-5.{RESET}")
+print(f"{DIM}✓ done  ▶ active  ○ pending  ! review  · not reached  ● selected range{RESET}")
 
 # ---------------------------------------------------------------------------
 # Recent state-change timeline
@@ -566,6 +628,10 @@ if not valid_events:
     print(f"{DIM}No file state changes have been observed in this window yet.{RESET}")
 else:
     all_times = sorted({event["observed_at_utc"] for event in valid_events}, key=parse_time)
+    timeline_left_width = 30
+    timeline_slot_width = 6
+    visible_columns = max(3, (terminal_width - timeline_left_width) // timeline_slot_width)
+    timeline_columns = min(timeline_columns, visible_columns)
     if len(all_times) > timeline_columns:
         all_times = all_times[-timeline_columns:]
     time_set = set(all_times)
@@ -583,8 +649,8 @@ else:
         reverse=True,
     )[:timeline_files]
 
-    slot_width = 8
-    left_width = 30
+    slot_width = timeline_slot_width
+    left_width = timeline_left_width
     centers = [index * slot_width + slot_width // 2 for index in range(len(all_times))]
     time_index = {value: index for index, value in enumerate(all_times)}
 
@@ -635,10 +701,10 @@ else:
         print(f"{DIM}… {hidden} additional files with state changes hidden; set TIMELINE_FILES to show more.{RESET}")
 
     print(
-        f"{DIM}Timeline nodes: S0=Stage 0, T0…T5=highest completed task, "
-        f"A0…A5=active task, P=valid Parquet, !=error/review. "
-        f"Hyphens connect successive observed state changes of the same file.{RESET}"
+        f"{DIM}Nodes: S0=Stage 0, T0-T5=highest task, A0-A5=active task.{RESET}"
     )
+    print(f"{DIM}P=valid Parquet, !=error/review.{RESET}")
+    print(f"{DIM}Hyphens connect successive observations of the same file.{RESET}")
     if test_mode:
         print(f"{DIM}TEST MODE uses synthetic CSV data only; production runtime files are untouched.{RESET}")
 PY

@@ -97,11 +97,27 @@ if [[ ! -t 0 || ! -t 1 ]]; then
 fi
 
 refresh_seconds="${FILE_FLOW_REFRESH_SECONDS:-2}"
+if [[ -z "${FILE_FLOW_TERMINAL_WIDTH:-}" ]]; then
+    FILE_FLOW_TERMINAL_WIDTH="${COLUMNS:-}"
+    if [[ -z "$FILE_FLOW_TERMINAL_WIDTH" && -t 1 ]] && command -v tput >/dev/null 2>&1; then
+        FILE_FLOW_TERMINAL_WIDTH="$(tput cols 2>/dev/null || true)"
+    fi
+    FILE_FLOW_TERMINAL_WIDTH="${FILE_FLOW_TERMINAL_WIDTH:-100}"
+    export FILE_FLOW_TERMINAL_WIDTH
+fi
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+    export FILE_FLOW_FORCE_COLOR=1
+fi
+
 printf '\033[2J\033[H'
+last_frame=""
 while :; do
     frame="$(render_mode)"
     frame+=$'\n\033[2mPress T to switch table/timeline; Q to quit. Current: '"$MODE"$'.\033[0m'
-    printf '\033[H%s\033[J' "$frame"
+    if [[ "$frame" != "$last_frame" ]]; then
+        printf '\033[H%s\033[J' "$frame"
+        last_frame="$frame"
+    fi
     key=""
     IFS= read -r -s -n 1 -t "$refresh_seconds" key || true
     case "${key,,}" in
