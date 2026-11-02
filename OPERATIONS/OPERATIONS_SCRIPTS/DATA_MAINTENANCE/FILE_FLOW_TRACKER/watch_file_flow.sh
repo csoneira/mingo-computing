@@ -96,7 +96,7 @@ if [[ ! -t 0 || ! -t 1 ]]; then
     exit 2
 fi
 
-refresh_seconds="${FILE_FLOW_REFRESH_SECONDS:-2}"
+refresh_seconds="${FILE_FLOW_REFRESH_SECONDS:-60}"
 if [[ -z "${FILE_FLOW_TERMINAL_WIDTH:-}" ]]; then
     FILE_FLOW_TERMINAL_WIDTH="${COLUMNS:-}"
     if [[ -z "$FILE_FLOW_TERMINAL_WIDTH" && -t 1 ]] && command -v tput >/dev/null 2>&1; then
@@ -111,12 +111,22 @@ fi
 
 printf '\033[2J\033[H'
 last_frame=""
+last_mode=""
 while :; do
     frame="$(render_mode)"
     frame+=$'\n\033[2mPress T to switch table/timeline; Q to quit. Current: '"$MODE"$'.\033[0m'
     if [[ "$frame" != "$last_frame" ]]; then
-        printf '\033[H%s\033[J' "$frame"
+        if [[ "$MODE" != "$last_mode" ]]; then
+            printf '\033[H\033[2J'
+        else
+            printf '\033[H'
+        fi
+        while IFS= read -r line; do
+            printf '\r%s\033[K\n' "$line"
+        done <<< "$frame"
+        printf '\033[J'
         last_frame="$frame"
+        last_mode="$MODE"
     fi
     key=""
     IFS= read -r -s -n 1 -t "$refresh_seconds" key || true
