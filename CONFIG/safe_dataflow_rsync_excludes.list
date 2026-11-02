@@ -1,8 +1,8 @@
 # Safe mirror policy:
 # Keep source code, configs, docs, and lightweight operational scripts.
 # Exclude generated data, local environments, caches, logs, archives, and
-# simulation/analysis products. The daily cron rsync in CONFIG/add_to_crontab.info
-# uses this file to populate $HOME/SAFE_DATAFLOW_v3.
+# simulation/analysis products. The daily cron rsync in CONFIG/CONTENTS/cron/analysis_pc.crontab
+# uses this file to populate $HOME/.safe-mingo-computing.
 
 # Repository/runtime internals
 .git/
@@ -13,6 +13,10 @@
 .venv/
 .vscode/
 OPERATIONS/OPERATIONS_RUNTIME/
+
+# Local-only recovery archives under legacy/; may contain sensitive old snapshots.
+/legacy/DATAFLOW_v3/***
+/legacy/DATAFLOW_v3-precleanup-20261021-090510/***
 
 # Top-level data/archive trees that should not be mirrored
 .ATTIC/

@@ -327,7 +327,7 @@ def stage_info(row):
     for task in range(6):
         state = str(row.get(f"task_{task}_state", "")).lower()
         if any(marker in state for marker in ("running", "processing", "active", "in_progress")):
-            return f"▶{task}", 10 + task
+            return f"A{task}", 10 + task
 
     if true_value(row.get("archive_valid", "")):
         return "P", 20
@@ -636,9 +636,9 @@ else:
 
     print(
         f"{DIM}Timeline nodes: S0=Stage 0, T0…T5=highest completed task, "
-        f"▶n=task n active, P=valid Parquet, !=error/review. "
-        f"Lines join successive observed state changes of the same file.{RESET}"
+        f"A0…A5=active task, P=valid Parquet, !=error/review. "
+        f"Hyphens connect successive observed state changes of the same file.{RESET}"
     )
     if test_mode:
-        print(f"{DIM}TEST MODE uses synthetic CSV data only; production runtime files are untouched.{RESET}"
+        print(f"{DIM}TEST MODE uses synthetic CSV data only; production runtime files are untouched.{RESET}")
 PY

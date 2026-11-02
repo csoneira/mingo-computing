@@ -782,6 +782,12 @@ while true; do
     all)
       autoclean_conflicting_runs
       failed_steps=0
+      completed_lines=0
+      max_completed_lines="${RUN_STEP_MAX_COMPLETED_LINES:-0}"
+      if [[ ! "$max_completed_lines" =~ ^[0-9]+$ ]]; then
+        log_warn "RUN_STEP_MAX_COMPLETED_LINES must be a nonnegative integer"
+        exit 2
+      fi
       while true; do
         refresh_work_cache_or_disable
         progressed=0
@@ -838,6 +844,16 @@ while true; do
           fi
         done
 
+        # Yield to the outer controller's consumed-intermediate cleanup regularly.
+        # A line is complete only after STEP_10 produced a new output directory.
+        if [[ "$progressed" -eq 1 && "$step" -eq 10 ]]; then
+          completed_lines=$((completed_lines + 1))
+          if (( max_completed_lines > 0 && completed_lines >= max_completed_lines )); then
+            log_info "batch status=complete completed_lines=$completed_lines; yielding for housekeeping"
+            break
+          fi
+        fi
+
         # End the "all" cycle when there is no pending cached work,
         # or when no step produced progress in this pass.
         if [[ "$attempted" -eq 0 || "$progressed" -eq 0 ]]; then
@@ -846,7 +862,7 @@ while true; do
       done
       cycle_end_epoch=$(date +%s)
       cycle_elapsed=$((cycle_end_epoch - cycle_start_epoch))
-      log_info "all steps completed in ${cycle_elapsed}s"
+      log_info "processing batch finished in ${cycle_elapsed}s (completed_lines=${completed_lines})"
       if [[ "$RUN_STEP_INCLUDE_FINAL_IN_ALL" == "1" ]]; then
         # run the final formatting step as well; the standalone
         # run_main_simulation_cycle wrapper normally handles this,

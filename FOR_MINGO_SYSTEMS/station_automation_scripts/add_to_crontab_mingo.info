@@ -65,7 +65,7 @@ BASE_DIR=/home/rpcuser/station_automation_scripts
 # Odroid
 */5 * * * * sleep 4; /home/rpcuser/gate/mingo01/daqScripts/octave/readOdroid.sh
 
-# SelfTrigger for 1 minute each hour. Minute 17 avoids the DAQ watchdog at :00/:30.
+# SelfTrigger for 1 minute each hour on all stations. Minute 17 avoids the DAQ watchdog at :00/:30.
 17 * * * * /home/rpcuser/station_automation_scripts/trigger/activateST.sh
 
 # keep remoteTunnelOpen

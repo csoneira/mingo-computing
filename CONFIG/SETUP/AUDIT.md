@@ -1,7 +1,7 @@
 # Analysis PC recovery audit (2026-09-22)
 
 The clone contains the code and schedules, not the machine's credentials or
-historical data. The analysis PC is `mingo` at `/home/mingo/DATAFLOW_v3` on
+historical data. The analysis PC is `mingo` at `/home/mingo/mingo-computing` on
 Ubuntu 24.04. The original user crontab had 73 active lines, including a
 per-minute self-reinstaller. Its backup is in
 `~/.local/state/dataflow-recovery/20260922T064712Z-audit/crontab.before`.

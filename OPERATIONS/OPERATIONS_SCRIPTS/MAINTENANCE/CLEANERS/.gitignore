@@ -1,0 +1,2 @@
+# Checked-in cleaner policy, not runtime state.
+!cleaner_config.json

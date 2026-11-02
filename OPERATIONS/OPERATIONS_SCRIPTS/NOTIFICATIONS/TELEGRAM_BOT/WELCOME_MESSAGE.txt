@@ -1,54 +1,9 @@
-===========================================
-      mingo_analysis_bot - Command Guide
-===========================================
+MINGO metadata plotting bot
 
-Quick Start:
-  /start or /help - Show this guide.
-  /taskpdf - Interactive latest task PDF (station + task).
-  /mingo01_recent - Send recent MINGO01 calibration, rate and environment plots.
-  /cal_charge - MINGO01 charge calibration offsets.
-  /cal_tdif - MINGO01 time-difference calibration offsets.
-  /cal_tsum - MINGO01 time-sum calibration offsets.
-  /cal_slew - MINGO01 calibration slewing parameters.
-  /cal_available - MINGO01 calibration metadata availability.
-  /rates_recent - MINGO01 trigger, multiplexer and coincidence rates.
-  /env_recent - MINGO01 temperature, pressure, humidity, HV and flow context.
-  /term <password> - Enable terminal mode.
-  /exit - Disable terminal mode.
-  /restart - Restart this bot.
+/plot_metadata_gui - choose station, task, metadata CSV, numeric column, and date basis using buttons.
+/plot_metadata_cli - choose the same options by replying with numbers.
+/round_in_the_chamber - send the newest file staged in the bot-local GUN_CHAMBER folder.
 
-Simulation PDFs (short commands):
-  /mesh - Param mesh summary PDF.
-  /sim_time - Simulation execution time histogram PDF.
-  /backpressure - Latest STEP_0 backpressure monitor PDF.
+Choose execution / processing date or acquisition / data date. Lookback accepts fractional days, from greater than 0 up to 3650 days.
 
-Noise-Control PDFs (short commands):
-  /noise_meta - Offender percent PDF.
-  /noise_rate - Offender rate PDF.
-  /noise_eff1 - Task 1 cumulative efficiency PDF.
-  /noise_eff2 - Task 2 cumulative efficiency PDF.
-  /noise_eff3 - Task 3 cumulative efficiency PDF.
-  /noise_plane - Plane-combination rate PDF.
-
-Other Analysis PDFs (short commands):
-  /exec_map - Definitive execution map PDF.
-  /filter_meta - Filter metadata PDF.
-  /trig_rate - Trigger-rate metadata PDF.
-  /config_meta - [📄 configurations_metadata_report.pdf] Configuration z-position metadata PDF.
-  /rates_meta - Rates metadata PDF.
-  Note: /rates_meta is currently empty because rate-histogram metadata is disabled;
-  use /rates_recent for rates from the station log data. Logged HV is zero in
-  the current window, so its derived reduced-field value is not physically meaningful.
-  /chi2_4p - [📄 task4_chi2_four_plane_report.pdf] Task 4 chi2 four-plane histogram PDF.
-  /exec_meta - Execution metadata PDF.
-  /eff_meta - Efficiency metadata PDF.
-  /eff_34 - Three-to-four efficiency metadata PDF.
-  /sim_evo - Simulated data evolution PDF.
-
-Maintenance:
-  /clean_status - Run clean_dataflow.sh --compact (disk usage check).
-  /clean_force - Run clean_dataflow.sh --force --compact.
-
-Compatibility:
-  Legacy long command names remain supported.
-===========================================
+Reply `cancel` at any prompt to stop. Use /help to show this guide.

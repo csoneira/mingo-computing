@@ -34,5 +34,6 @@ if (( deletions > 0 )) && [[ "$mode" != --allow-delete ]]; then
     echo "Review proposed deletions with --dry-run before using --allow-delete manually" >&2
     exit 1
 fi
-exec rsync -avz --delete --exclude-from="$excludes" -e "${ssh_command[*]}" \
+rsync -avz --delete --exclude-from="$excludes" -e "${ssh_command[*]}" \
     "$source_dir" "rpcuser@$alias:$remote_dir/"
+"${ssh_command[@]}" "$alias" "bash '$remote_dir/trigger/install_selftrigger_cron.sh'"

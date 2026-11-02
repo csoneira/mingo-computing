@@ -1,0 +1,4 @@
+# Runtime reports copied here for Telegram delivery; keep generated results out of Git.
+*
+!.gitignore
+!README.md

@@ -32,7 +32,7 @@ unset _repo_probe
 show_help() {
   cat <<'EOF'
 top_large_dirs.sh
-Lists the largest directories under the current checkout and SAFE_DATAFLOW_v3.
+Lists the largest directories under the current checkout and .safe-mingo-computing.
 
 Usage:
   top_large_dirs.sh [count] [--depth N]
@@ -45,7 +45,7 @@ Arguments:
   count         Number of entries to show (default: 30).
 
 By default the script runs without sudo and only examines the current checkout
-and SAFE_DATAFLOW_v3 under the current user's home.
+and .safe-mingo-computing under the current user's home.
 EOF
 }
 
@@ -98,7 +98,7 @@ fi
 HOME_DIR="${HOME:?HOME is not set}"
 SEARCH_ROOTS=(
   "${DATAFLOW_ROOT}"
-  "${HOME_DIR}/SAFE_DATAFLOW_v3"
+  "${HOME_DIR}/.safe-mingo-computing"
 )
 
 ROOTS=()

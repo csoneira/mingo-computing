@@ -6,5 +6,5 @@ case ":$PATH:" in
     *) export PATH="$HOME/.local/bin:$PATH" ;;
 esac
 watch_file_flow() {
-    watch -n 1 -c -t /bin/bash "$DATAFLOW_ROOT/OPERATIONS/OPERATIONS_SCRIPTS/DATA_MAINTENANCE/FILE_FLOW_TRACKER/watch_file_flow.sh" "$@"
+    /bin/bash "$DATAFLOW_ROOT/OPERATIONS/OPERATIONS_SCRIPTS/DATA_MAINTENANCE/FILE_FLOW_TRACKER/watch_file_flow.sh" --interactive "$@"
 }

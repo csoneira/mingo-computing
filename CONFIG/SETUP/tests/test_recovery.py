@@ -54,9 +54,17 @@ class RecoverySafetyTests(unittest.TestCase):
             if line.strip() and not line.startswith('#') and not re.match(r'^\w+=', line)
         ]
         self.assertEqual(len(commands), len(scheduled_lines))
-        # The checked-in schedule intentionally keeps simulation cron disabled.
-        self.assertFalse(any('run_main_simulation_cycle.sh' in c for c in commands))
-        self.assertTrue(any('guide_raw_to_corrected.sh -s 4' in c for c in commands))
+        # The simulation cycle is intentionally enabled and must be wrapped by
+        # the same managed execution gate as the rest of the production jobs.
+        simulation_commands = [c for c in commands if 'run_main_simulation_cycle.sh' in c]
+        self.assertEqual(len(simulation_commands), 1)
+        self.assertIn('/CONFIG/SETUP/run-job.sh -- ', simulation_commands[0])
+        for station in (1, 2):
+            self.assertTrue(
+                any(f'guide_raw_to_corrected.sh -s {station}' in c for c in commands)
+            )
+        self.assertFalse(any('guide_raw_to_corrected.sh -s 3' in c for c in commands))
+        self.assertFalse(any('guide_raw_to_corrected.sh -s 4' in c for c in commands))
         for command in commands:
             self.assertIn('/CONFIG/SETUP/run-job.sh -- ', command)
             self.assertNotIn('/usr/bin/python3', command)

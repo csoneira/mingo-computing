@@ -47,14 +47,14 @@ Mutable backup data is stored separately under:
 Run the backup manually:
 
 ```bash
-bash /home/mingo/DATAFLOW_v3/OPERATIONS/OPERATIONS_SCRIPTS/DATA_MAINTENANCE/REMOTE_LOG_BACKUP/run_log_backup.sh
+bash /home/mingo/mingo-computing/OPERATIONS/OPERATIONS_SCRIPTS/DATA_MAINTENANCE/REMOTE_LOG_BACKUP/run_log_backup.sh
 ```
 
 The analysis-PC setup installs the fixed schedule, including the 12-hour
 remote-log backup job:
 
 ```bash
-bash /home/mingo/DATAFLOW_v3/CONFIG/SETUP/setup.sh --apply
+bash /home/mingo/mingo-computing/CONFIG/SETUP/setup.sh --apply
 ```
 
 The schedule is versioned in `CONFIG/CONTENTS/cron/analysis_pc.crontab`.

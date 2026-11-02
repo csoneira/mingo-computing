@@ -287,7 +287,7 @@ def doctor(args):
     paths, cmds = cron_paths(render_cron())
     bad = []
     for p in sorted(paths):
-        if p.suffix in ('.log', '.lock') or p == HOME / 'SAFE_DATAFLOW_v3': continue
+        if p.suffix in ('.log', '.lock') or p == HOME / '.safe-mingo-computing': continue
         if not p.exists(): bad.append(str(p))
     report.check(not bad, 'Cron command references exist' + (': ' + ', '.join(bad) if bad else ''))
     missing_plotter = ROOT / 'MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/PLOTTERS/create_metadata_plots.sh'

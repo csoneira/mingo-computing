@@ -1,1035 +1,595 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: OPERATIONS/OPERATIONS_SCRIPTS/NOTIFICATIONS/TELEGRAM_BOT/mingo_analysis_bot.py
-Purpose: Telegram bot that serves analysis PDFs on demand.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 OPERATIONS/OPERATIONS_SCRIPTS/NOTIFICATIONS/TELEGRAM_BOT/mingo_analysis_bot.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+"""On-demand metadata plotting for the MINGO computing Telegram bot."""
 
 from __future__ import annotations
 
 import logging
+import configparser
+import math
 import os
-import shlex
-import subprocess
+import re
 import sys
-import threading
-from datetime import datetime
+import tempfile
+from datetime import datetime, timedelta
 from pathlib import Path
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import pandas as pd
 import telebot
 
 
 BASE_DIR = Path(__file__).resolve().parents[4]
-TELEGRAM_DIR = Path(__file__).resolve().parent
-TOKEN_PATH = TELEGRAM_DIR / "API_TOKEN.txt"
-RESTART_SCRIPT = TELEGRAM_DIR / "kill_bot_and_restart.sh"
-TERMINAL_PASSWORD_PATH = TELEGRAM_DIR / "TERMINAL_PASSWORD.txt"
-WELCOME_MESSAGE_PATH = TELEGRAM_DIR / "WELCOME_MESSAGE.txt"
-MINGO01_RECENT_OUTPUT = BASE_DIR / "OPERATIONS" / "OPERATIONS_RUNTIME" / "TELEGRAM_RECENT_MINGO01"
-MINGO01_RECENT_BUILDER = (
-    BASE_DIR / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "STAGES"
-    / "STAGE_1_PRODUCTS_TESTS" / "build_mingo01_telegram_recent.py"
-)
-MINGO01_RECENT_BUILD_LOCK = threading.Lock()
-
-PDF_TARGETS = {
-    "definitive_execution_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "DEFINITIVE_EXECUTION"
-        / "PLOTS"
-        / "definitive_execution_map_report.pdf",
-        "description": "Definitive execution map report",
-    },
-    "filter_metadata_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "FILTER"
-        / "PLOTS"
-        / "filter_metadata_report.pdf",
-        "description": "Filter metadata report",
-    },
-    "noise_control_metadata_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "NOISE_CONTROL"
-        / "PLOTS"
-        / "noise_control_metadata_report.pdf",
-        "description": "Noise-control offender percent report",
-    },
-    "noise_control_metadata_rate_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "NOISE_CONTROL"
-        / "PLOTS"
-        / "noise_control_metadata_rate_report.pdf",
-        "description": "Noise-control offender rate report",
-    },
-    "noise_control_efficiency_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "NOISE_CONTROL"
-        / "PLOTS"
-        / "task_1_noise_control_efficiency_report.pdf",
-        "description": "Noise-control Task 1 cumulative efficiency report (compatibility alias)",
-    },
-    "noise_control_efficiency_task1": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "NOISE_CONTROL"
-        / "PLOTS"
-        / "task_1_noise_control_efficiency_report.pdf",
-        "description": "Noise-control Task 1 cumulative efficiency report",
-    },
-    "noise_control_efficiency_task2": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "NOISE_CONTROL"
-        / "PLOTS"
-        / "task_2_noise_control_efficiency_report.pdf",
-        "description": "Noise-control Task 2 cumulative efficiency report",
-    },
-    "noise_control_efficiency_task3": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "NOISE_CONTROL"
-        / "PLOTS"
-        / "task_3_noise_control_efficiency_report.pdf",
-        "description": "Noise-control Task 3 cumulative efficiency report",
-    },
-    "noise_control_plane_combination_rate_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "NOISE_CONTROL"
-        / "PLOTS"
-        / "noise_control_plane_combination_rate_report.pdf",
-        "description": "Noise-control plane-combination rate report",
-    },
-    "trigger_rate_metadata_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "TRIGGER_RATES"
-        / "PLOTS"
-        / "trigger_rate_metadata_report.pdf",
-        "description": "Trigger-rate metadata report",
-    },
-    "configurations_metadata_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "CONFIGURATIONS"
-        / "PLOTS"
-        / "configurations_metadata_report.pdf",
-        "description": "[📄 configurations_metadata_report.pdf] Configuration z-position metadata report",
-    },
-    "rates_metadata_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "RATES"
-        / "PLOTS"
-        / "rates_metadata_report.pdf",
-        "description": "Rates metadata report",
-    },
-    "task4_chi2_four_plane_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "TASK_4"
-        / "PLOTS"
-        / "task4_chi2_four_plane_report.pdf",
-        "description": "[📄 task4_chi2_four_plane_report.pdf] Task 4 chi2 four-plane histogram report",
-    },
-    "execution_metadata_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "EXECUTION"
-        / "PLOTS"
-        / "execution_metadata_report.pdf",
-        "description": "Execution metadata report",
-    },
-    "efficiency_metadata_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "EFFICIENCIES"
-        / "PLOTS"
-        / "efficiency_metadata_report.pdf",
-        "description": "Efficiency metadata report",
-    },
-    "efficiencies_three_to_four_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "METADATA"
-        / "EFFICIENCIES_THREE_TO_FOUR"
-        / "PLOTS"
-        / "efficiencies_three_to_four_report.pdf",
-        "description": "Three-to-four efficiency metadata report",
-    },
-    "simulated_data_evolution_report": {
-        "path": BASE_DIR
-        / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS"
-        / "ANCILLARY"
-        / "PLOTTERS"
-        / "SIMULATED_DATA_EVOLUTION"
-        / "PLOTS"
-        / "simulated_data_evolution_report.pdf",
-        "description": "Simulated data evolution report",
-    },
-    "param_mesh_summary": {
-        "path": BASE_DIR
-        / "MINGO_DIGITAL_TWIN"
-        / "PLOTTERS"
-        / "EXECUTION"
-        / "MESH"
-        / "param_mesh_summary.pdf",
-        "description": "Param mesh summary PDF",
-    },
-    "simulation_execution_time_hist": {
-        "path": BASE_DIR
-        / "MINGO_DIGITAL_TWIN"
-        / "PLOTTERS"
-        / "EXECUTION"
-        / "SIMULATION_TIME"
-        / "simulation_execution_time_hist.pdf",
-        "description": "Simulation execution time histogram",
-    },
-    "backpressure_monitor": {
-        "path": BASE_DIR
-        / "MINGO_DIGITAL_TWIN"
-        / "PLOTTERS"
-        / "EXECUTION"
-        / "BACKPRESSURE"
-        / "backpressure_monitor.pdf",
-        "description": "STEP_0 backpressure monitor PDF",
-    },
-}
-
-PDF_COMMAND_ALIASES: dict[str, tuple[str, ...]] = {
-    "definitive_execution_report": ("exec_map",),
-    "filter_metadata_report": ("filter_meta",),
-    "noise_control_metadata_report": ("noise_meta",),
-    "noise_control_metadata_rate_report": ("noise_rate",),
-    "noise_control_efficiency_report": ("noise_eff",),
-    "noise_control_efficiency_task1": ("noise_eff1",),
-    "noise_control_efficiency_task2": ("noise_eff2",),
-    "noise_control_efficiency_task3": ("noise_eff3",),
-    "noise_control_plane_combination_rate_report": ("noise_plane",),
-    "trigger_rate_metadata_report": ("trig_rate",),
-    "configurations_metadata_report": ("config_meta",),
-    "rates_metadata_report": ("rates_meta",),
-    "task4_chi2_four_plane_report": ("chi2_4p", "chi2_t4"),
-    "execution_metadata_report": ("exec_meta",),
-    "efficiency_metadata_report": ("eff_meta",),
-    "efficiencies_three_to_four_report": ("eff_34",),
-    "simulated_data_evolution_report": ("sim_evo",),
-    "param_mesh_summary": ("mesh",),
-    "simulation_execution_time_hist": ("sim_time",),
-    "backpressure_monitor": ("backpressure",),
-}
-
-RECENT_IMAGE_TARGETS = {
-    "mingo01_charge_offsets": {
-        "path": MINGO01_RECENT_OUTPUT / "calibration" / "01_charge_offsets.png",
-        "aliases": ("cal_charge",),
-        "description": "MINGO01 rolling 7-day calibration charge offsets",
-    },
-    "mingo01_tdif_offsets": {
-        "path": MINGO01_RECENT_OUTPUT / "calibration" / "02_tdif_offsets.png",
-        "aliases": ("cal_tdif",),
-        "description": "MINGO01 rolling 7-day calibration time-difference offsets",
-    },
-    "mingo01_tsum_offsets": {
-        "path": MINGO01_RECENT_OUTPUT / "calibration" / "03_tsum_offsets.png",
-        "aliases": ("cal_tsum",),
-        "description": "MINGO01 rolling 7-day calibration time-sum offsets",
-    },
-    "mingo01_slewing": {
-        "path": MINGO01_RECENT_OUTPUT / "calibration" / "04_slewing_parameters.png",
-        "aliases": ("cal_slew",),
-        "description": "MINGO01 rolling 7-day calibration slewing parameters",
-    },
-    "mingo01_calibration_availability": {
-        "path": MINGO01_RECENT_OUTPUT / "calibration" / "05_calibration_availability.png",
-        "aliases": ("cal_available",),
-        "description": "MINGO01 rolling 7-day calibration metadata availability",
-    },
-    "mingo01_recent_rates": {
-        "path": MINGO01_RECENT_OUTPUT / "environment" / "02_rates_and_reduced_field.png",
-        "aliases": ("rates_recent",),
-        "description": "MINGO01 rolling 7-day trigger, multiplexer and coincidence rates",
-    },
-    "mingo01_recent_environment": {
-        "path": MINGO01_RECENT_OUTPUT / "environment" / "01_environment_overview.png",
-        "aliases": ("env_recent",),
-        "description": "MINGO01 rolling 7-day temperature, pressure, humidity, HV and flow context",
-    },
-}
-
-BOT_COMMAND_ALIASES: dict[str, tuple[str, ...]] = {
-    "task_pdfs": ("taskpdf",),
-    "clean_dataflow_status": ("clean_status",),
-    "clean_dataflow_force": ("clean_force",),
-    "terminal": ("term",),
-    "restart_bot": ("restart",),
-}
-
-CLEANER_SCRIPT = (
-    BASE_DIR
-    / "OPERATIONS"
-    / "OPERATIONS_SCRIPTS"
-    / "MAINTENANCE"
-    / "CLEANERS"
-    / "clean_dataflow.sh"
-)
-MAX_MESSAGE_CHARS = 3500
-TERMINAL_COMMAND_TIMEOUT_SEC = 300
-DEFAULT_HELP_TEXT = (
-    "===========================================\n"
-    "      mingo_analysis_bot - Command Guide\n"
-    "===========================================\n\n"
-    "Quick Start:\n"
-    "  /start or /help - Show this guide.\n"
-    "  /taskpdf - Interactive latest task PDF (station + task).\n"
-    "  /mingo01_recent - Send the recent MINGO01 calibration and rate plots.\n"
-    "  /cal_charge, /cal_tdif, /cal_tsum, /cal_slew - Calibration plots.\n"
-    "  /rates_recent, /env_recent - Recent rates and environment plots.\n"
-    "  /term <password> - Enable terminal mode.\n"
-    "  /exit - Disable terminal mode.\n"
-    "  /restart - Restart this bot.\n\n"
-    "Simulation PDFs (short commands):\n"
-    "  /mesh - Param mesh summary PDF.\n"
-    "  /sim_time - Simulation execution time histogram PDF.\n"
-    "  /backpressure - Latest STEP_0 backpressure monitor PDF.\n\n"
-    "Noise-Control PDFs (short commands):\n"
-    "  /noise_meta - Offender percent PDF.\n"
-    "  /noise_rate - Offender rate PDF.\n"
-    "  /noise_eff1 - Task 1 cumulative efficiency PDF.\n"
-    "  /noise_eff2 - Task 2 cumulative efficiency PDF.\n"
-    "  /noise_eff3 - Task 3 cumulative efficiency PDF.\n"
-    "  /noise_plane - Plane-combination rate PDF.\n\n"
-    "Other Analysis PDFs (short commands):\n"
-    "  /exec_map - Definitive execution map PDF.\n"
-    "  /filter_meta - Filter metadata PDF.\n"
-    "  /trig_rate - Trigger-rate metadata PDF.\n"
-    "  /config_meta - [📄 configurations_metadata_report.pdf] Configuration z-position metadata PDF.\n"
-    "  /rates_meta - Rates metadata PDF.\n"
-    "  /chi2_4p - [📄 task4_chi2_four_plane_report.pdf] Task 4 chi2 four-plane histogram PDF.\n"
-    "  /exec_meta - Execution metadata PDF.\n"
-    "  /eff_meta - Efficiency metadata PDF.\n"
-    "  /eff_34 - Three-to-four efficiency metadata PDF.\n"
-    "  /sim_evo - Simulated data evolution PDF.\n\n"
-    "Maintenance:\n"
-    "  /clean_status - Run clean_dataflow.sh --compact (disk usage check).\n"
-    "  /clean_force - Run clean_dataflow.sh --force --compact.\n\n"
-    "Compatibility:\n"
-    "  Legacy long command names remain supported.\n"
-    "==========================================="
-)
+BOT_DIR = Path(__file__).resolve().parent
+TOKEN_PATH = BOT_DIR / "API_TOKEN.txt"
+PAGE_SIZE = 18
+MAX_DAYS = 3650.0
+REQUESTS: dict[int, dict[str, object]] = {}
+PLOT_CONFIG_PATH = BOT_DIR / "plot_metadata.ini"
+GUN_CHAMBER_DIR = BOT_DIR / "GUN_CHAMBER"
 
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+def load_plot_config(path: Path = PLOT_CONFIG_PATH) -> dict[str, float]:
+    config = configparser.ConfigParser()
+    if not config.read(path, encoding="utf-8"):
+        raise FileNotFoundError(f"Metadata plot config not found: {path}")
+    quantile_percent = config.getfloat("plot", "clip_quantile_percent")
+    if not math.isfinite(quantile_percent) or not 0 <= quantile_percent < 50:
+        raise ValueError("clip_quantile_percent must be at least 0 and less than 50")
+    return {"clip_quantile_percent": quantile_percent}
 
 
-def load_help_text(path: Path) -> str:
-    try:
-        text = path.read_text(encoding="utf-8").strip()
-    except FileNotFoundError:
-        logging.warning("Welcome/help message file not found at %s; using built-in default.", path)
-        return DEFAULT_HELP_TEXT
-    if not text:
-        logging.warning("Welcome/help message file %s is empty; using built-in default.", path)
-        return DEFAULT_HELP_TEXT
-    return text
+PLOT_CONFIG = load_plot_config()
 
 
-def load_token(token_path: Path) -> str:
-    try:
-        token = token_path.read_text(encoding="utf-8").strip()
-    except FileNotFoundError as exc:
-        raise RuntimeError(f"Token file not found: {token_path}") from exc
+def load_token() -> str:
+    token = TOKEN_PATH.read_text(encoding="utf-8").strip()
     if not token:
-        raise RuntimeError(f"Token file {token_path} is empty.")
+        raise RuntimeError("Telegram token file is empty")
     return token
 
 
-if "--check-config" in sys.argv:
-    # Recovery smoke test: no polling, handlers, terminal commands or messages.
+def metadata_files(station: str) -> list[Path]:
+    station_root = BASE_DIR / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_STATIONS" / station
+    live_root = station_root / "STAGE_1" / "EVENT_DATA" / "STEP_1"
+    files = sorted(live_root.glob("TASK_*/METADATA/*.csv"))
+    # Older, consolidated products remain useful where no live task CSV exists.
+    if not files:
+        product_root = station_root / "STAGE_1_PRODUCTS" / "EVENT_DATA" / "METADATA"
+        files = sorted(product_root.glob("TASK_*/task_*.csv"))
+    return [path for path in files if path.is_file()]
+
+
+def numeric_columns(path: Path) -> list[str]:
+    frame = pd.read_csv(path, nrows=100)
+    excluded = {"filename_base", "execution_timestamp", "execution_date", "param_hash"}
+    columns: list[str] = []
+    for name in frame.columns:
+        if name in excluded:
+            continue
+        converted = pd.to_numeric(frame[name], errors="coerce")
+        if converted.notna().any():
+            columns.append(str(name))
+    return columns
+
+
+def column_options(columns: list[str]) -> list[dict[str, object]]:
+    """Group strip fields into 4x4 and plane fields into 4x1 selections."""
+    strip_pattern = re.compile(r"^P([1-4])_s([1-4])_(.+)$")
+    plane_pattern = re.compile(r"^P([1-4])_(.+)$")
+    entries: list[tuple[tuple[str, str], object]] = []
+    strip_groups: dict[str, dict[tuple[int, int], str]] = {}
+    plane_groups: dict[str, dict[int, str]] = {}
+    positions: dict[tuple[str, str], int] = {}
+
+    for column in columns:
+        match = strip_pattern.match(column)
+        if match is not None:
+            plane, strip, suffix = int(match.group(1)), int(match.group(2)), match.group(3)
+            key = ("strip", suffix)
+            if suffix not in strip_groups:
+                strip_groups[suffix] = {}
+                positions[key] = len(entries)
+                entries.append((key, None))
+            strip_groups[suffix][(plane, strip)] = column
+            continue
+
+        match = plane_pattern.match(column)
+        if match is not None:
+            plane, suffix = int(match.group(1)), match.group(2)
+            key = ("plane", suffix)
+            if suffix not in plane_groups:
+                plane_groups[suffix] = {}
+                positions[key] = len(entries)
+                entries.append((key, None))
+            plane_groups[suffix][plane] = column
+            continue
+
+        if match is None:
+            entries.append((column, {"label": column, "column": column, "members": {}}))
+
+    for suffix, members in strip_groups.items():
+        if len(members) == 1:
+            column = next(iter(members.values()))
+            entries[positions[("strip", suffix)]] = (
+                ("strip", suffix), {"label": column, "column": column, "members": {}}
+            )
+        else:
+            entries[positions[("strip", suffix)]] = (
+                ("strip", suffix),
+                {
+                    "label": f"P*_s*_{suffix} (4x4; {len(members)}/16 present)",
+                    "column": suffix,
+                    "members": members,
+                },
+            )
+    for suffix, members in plane_groups.items():
+        entries[positions[("plane", suffix)]] = (
+            ("plane", suffix),
+            {
+                "label": f"P*_{suffix} (4x1; {len(members)}/4 present)",
+                "column": suffix,
+                "plane_members": members,
+            },
+        )
+    return [option for _, option in entries if option is not None]
+
+
+def filename_datetime(value: object) -> datetime | None:
+    token = str(value).strip()
     try:
-        checked_bot = telebot.TeleBot(load_token(TOKEN_PATH))
-        if not TERMINAL_PASSWORD_PATH.read_text(encoding="utf-8").strip():
-            raise ValueError("Empty terminal password")
+        if not token.startswith("mi") or len(token) < 15:
+            return None
+        year, day, hour, minute, second = (
+            int(token[4:6]), int(token[6:9]), int(token[9:11]), int(token[11:13]), int(token[13:15])
+        )
+        if day < 1 or day > 366:
+            return None
+        return datetime(2000 + year, 1, 1) + timedelta(
+            days=day - 1, hours=hour, minutes=minute, seconds=second
+        )
+    except (TypeError, ValueError):
+        return None
+
+
+def date_values(frame: pd.DataFrame, basis: str) -> pd.Series:
+    if basis == "execution":
+        for column in ("execution_timestamp", "execution_date"):
+            if column in frame.columns:
+                dates = pd.to_datetime(frame[column], format="%Y-%m-%d_%H.%M.%S", errors="coerce")
+                if not dates.notna().any():
+                    dates = pd.to_datetime(frame[column], format="mixed", errors="coerce")
+                if dates.notna().any():
+                    return dates
+        raise ValueError("This CSV has no usable execution_timestamp or execution_date column.")
+    if "filename_base" not in frame.columns:
+        raise ValueError("This CSV has no filename_base column for acquisition dates.")
+    return pd.to_datetime(frame["filename_base"].map(filename_datetime), errors="coerce")
+
+
+def clip_to_quantiles(
+    values: pd.Series, valid: pd.Series, quantile_percent: float
+) -> tuple[pd.Series, pd.Series]:
+    """Return values clipped at per-series quantiles and the clipped-point mask."""
+    quantile = quantile_percent / 100.0
+    selected = values[valid]
+    lower = float(selected.quantile(quantile))
+    upper = float(selected.quantile(1.0 - quantile))
+    clipped_mask = valid & ((values < lower) | (values > upper))
+    return values.clip(lower=lower, upper=upper), clipped_mask
+
+
+def plot_metadata(path: Path, selection: dict[str, object], basis: str, days: float) -> Path:
+    frame = pd.read_csv(path)
+    dates = date_values(frame, basis)
+    now = pd.Timestamp.now()
+    cutoff = now - timedelta(days=days)
+    valid_dates = dates.notna() & (dates >= cutoff) & (dates <= now)
+    members = selection.get("members", {})
+    label = str(selection["label"])
+    quantile_percent = PLOT_CONFIG["clip_quantile_percent"]
+    x_label = "Execution date" if basis == "execution" else "Acquisition date"
+
+    plane_members = selection.get("plane_members", {})
+    if members or plane_members:
+        is_plane_plot = bool(plane_members)
+        ncols = 1 if is_plane_plot else 4
+        nrows = 4
+        fig, axes = plt.subplots(nrows, ncols, figsize=(10 if is_plane_plot else 15, 10),
+                                 sharex=True, sharey=True, constrained_layout=True, squeeze=False)
+        plotted = False
+        if is_plane_plot:
+            cells = [(plane, None, plane_members.get(plane)) for plane in range(1, 5)]
+        else:
+            cells = [(plane, strip, members.get((plane, strip)))
+                     for plane in range(1, 5) for strip in range(1, 5)]
+        for plane, strip, column in cells:
+            ax = axes[plane - 1, 0 if is_plane_plot else strip - 1]
+            title = f"Plane {plane}" if is_plane_plot else f"Plane {plane}, strip {strip}"
+            ax.set_title(title, fontsize=9)
+            if column is None or column not in frame.columns:
+                ax.text(0.5, 0.5, "Column missing", ha="center", va="center", transform=ax.transAxes)
+            else:
+                values = pd.to_numeric(frame[column], errors="coerce")
+                valid = valid_dates & values.notna()
+                if valid.any():
+                    clipped_values, clipped_mask = clip_to_quantiles(values, valid, quantile_percent)
+                    normal_mask = valid & ~clipped_mask
+                    ax.scatter(dates[normal_mask], clipped_values[normal_mask], s=12, alpha=0.8)
+                    if clipped_mask.any():
+                        ax.scatter(dates[clipped_mask], clipped_values[clipped_mask],
+                                   s=18, color="red", alpha=0.9)
+                    plotted = True
+                else:
+                    ax.text(0.5, 0.5, "No data in window", ha="center", va="center", transform=ax.transAxes)
+            ax.grid(True, alpha=0.25)
+            ax.set_ylabel(label, fontsize=8)
+        if not plotted:
+            plt.close(fig)
+            raise ValueError(f"No numeric values for `{label}` in the last {days:g} days.")
+        fig.supxlabel(x_label)
+        fig.suptitle(
+            f"{path.parent.parent.name} · {path.name}\n{label} · last {days:g} days\n"
+            f"Red points clipped at {quantile_percent:g}% / {100 - quantile_percent:g}% quantiles"
+        )
+        for ax in axes[-1, :]:
+            ax.tick_params(axis="x", labelrotation=25, labelsize=8)
+    else:
+        column = str(selection["column"])
+        if column not in frame.columns:
+            raise ValueError("The selected column is no longer present in this CSV.")
+        values = pd.to_numeric(frame[column], errors="coerce")
+        valid = valid_dates & values.notna()
+        if not valid.any():
+            raise ValueError(f"No numeric values for `{label}` in the last {days:g} days.")
+        clipped_values, clipped_mask = clip_to_quantiles(values, valid, quantile_percent)
+        normal_mask = valid & ~clipped_mask
+        fig, ax = plt.subplots(figsize=(10, 5.5), constrained_layout=True)
+        ax.scatter(dates[normal_mask], clipped_values[normal_mask], s=20, alpha=0.8)
+        if clipped_mask.any():
+            ax.scatter(dates[clipped_mask], clipped_values[clipped_mask], s=28, color="red", alpha=0.9)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(column)
+        ax.set_title(
+            f"{path.parent.parent.name} · {path.name}\n{label} · last {days:g} days\n"
+            f"Red points clipped at {quantile_percent:g}% / {100 - quantile_percent:g}% quantiles"
+        )
+        ax.grid(True, alpha=0.25)
+        fig.autofmt_xdate()
+    fd, output_name = tempfile.mkstemp(prefix="mingo_metadata_", suffix=".png")
+    os.close(fd)
+    output = Path(output_name)
+    try:
+        fig.savefig(output, dpi=140)
+    finally:
+        plt.close(fig)
+    return output
+
+
+def page_text(items: list[str], page: int, heading: str) -> str:
+    start = page * PAGE_SIZE
+    subset = items[start : start + PAGE_SIZE]
+    body = "\n".join(f"{start + idx}. {item}" for idx, item in enumerate(subset))
+    suffix = "\nReply next for more." if start + PAGE_SIZE < len(items) else ""
+    return f"{heading}\n{body}\n\nReply with a number (choices start at 0), or cancel.{suffix}"
+
+
+def send_page(chat_id: int, state: dict[str, object], kind: str) -> None:
+    items = state[f"{kind}_items"]
+    page = int(state.get(f"{kind}_page", 0))
+    if state.get("mode") == "gui":
+        start = page * PAGE_SIZE
+        markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+        for index, item in enumerate(items[start : start + PAGE_SIZE], start=start):
+            label = str(item)
+            if len(label) > 64:
+                label = label[:61] + "..."
+            markup.add(telebot.types.InlineKeyboardButton(
+                label, callback_data=f"pm|select|{kind}|{index}"
+            ))
+        if start + PAGE_SIZE < len(items):
+            markup.add(telebot.types.InlineKeyboardButton(
+                "Next page →", callback_data=f"pm|next|{kind}"
+            ))
+        markup.add(telebot.types.InlineKeyboardButton("Cancel", callback_data="pm|cancel"))
+        bot.send_message(chat_id, str(state[f"{kind}_heading"]), reply_markup=markup)
+    else:
+        bot.send_message(chat_id, page_text(items, page, str(state[f"{kind}_heading"])))
+
+
+def clear_request(chat_id: int) -> None:
+    REQUESTS.pop(chat_id, None)
+
+
+try:
+    TOKEN = load_token()
+except Exception:
+    if "--check-config" in sys.argv:
+        print("Telegram configuration check failed; inspect the token file privately.")
+        raise SystemExit(1)
+    raise
+
+bot = telebot.TeleBot(TOKEN)
+
+if "--check-config" in sys.argv:
+    try:
         if "--online" in sys.argv:
             telebot.apihelper.CONNECT_TIMEOUT = 10
             telebot.apihelper.READ_TIMEOUT = 10
-            checked_bot.get_me()
+            bot.get_me()
     except Exception:
-        # API exception strings can contain credential-bearing URLs.
-        print("Telegram configuration/authentication check failed; inspect credential files privately.")
-        sys.exit(1)
+        print("Telegram configuration/authentication check failed; inspect credentials privately.")
+        raise SystemExit(1)
     print("Telegram configuration check passed; polling was not started.")
-    sys.exit(0)
-
-bot = telebot.TeleBot(load_token(TOKEN_PATH))
-HELP_TEXT = load_help_text(WELCOME_MESSAGE_PATH)
-TERMINAL_ACTIVE_CHATS: set[int] = set()
-TERMINAL_CHAT_CWDS: dict[int, Path] = {}
-TASK_PDF_PENDING_CHATS: dict[int, dict[str, object]] = {}
-TASK_PDF_STATION_IDS: tuple[int, ...] = (0, 1, 2, 3, 4)
-TASK_PDF_TASK_IDS: tuple[int, ...] = (1, 2, 3, 4, 5)
-
-
-def load_terminal_password(password_path: Path) -> str | None:
-    if not password_path.exists():
-        logging.warning("Terminal mode disabled: password file not found at %s", password_path)
-        return None
-
-    password = password_path.read_text(encoding="utf-8").strip()
-    if not password:
-        logging.warning("Terminal mode disabled: password file %s is empty", password_path)
-        return None
-    return password
-
-
-def send_pdf(chat_id: int, pdf_path: Path, description: str) -> None:
-    if not pdf_path.exists():
-        bot.send_message(chat_id, f"File not found: {pdf_path}")
-        return
-
-    creation = datetime.fromtimestamp(pdf_path.stat().st_mtime)
-    age_seconds = max((datetime.now() - creation).total_seconds(), 0.0)
-    age_days = age_seconds / 86400.0
-    stale_note = ""
-    if age_days >= 1.0:
-        stale_note = f"\nWARNING: file is {age_days:.1f} days old; check cron plot logs."
-    caption = f"{description}\nCreated: {creation:%Y-%m-%d %H:%M}{stale_note}"
-
-    try:
-        with pdf_path.open("rb") as handle:
-            bot.send_document(chat_id, handle, caption=caption)
-    except Exception as exc:  # pragma: no cover - defensive for runtime failures
-        logging.exception("Failed to send %s", pdf_path)
-        bot.send_message(chat_id, f"Unable to send file due to error: {exc}")
-
-
-def send_image(chat_id: int, image_path: Path, description: str) -> None:
-    if not image_path.is_file():
-        bot.send_message(chat_id, f"Image not found: {image_path}")
-        return
-
-    created = datetime.fromtimestamp(image_path.stat().st_mtime)
-    caption = f"{description}\nGenerated: {created:%Y-%m-%d %H:%M}"
-    try:
-        with image_path.open("rb") as handle:
-            bot.send_photo(chat_id, handle, caption=caption)
-    except Exception as exc:  # pragma: no cover - defensive for runtime failures
-        logging.exception("Failed to send %s", image_path)
-        bot.send_message(chat_id, f"Unable to send image due to error: {exc}")
-
-
-def refresh_mingo01_recent_plots() -> tuple[bool, str]:
-    """Rebuild rolling MINGO01 reports from the current lake and log products."""
-    with MINGO01_RECENT_BUILD_LOCK:
-        try:
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    str(MINGO01_RECENT_BUILDER),
-                    "--days",
-                    "7",
-                    "--output-dir",
-                    str(MINGO01_RECENT_OUTPUT),
-                ],
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=900,
-                cwd=BASE_DIR,
-            )
-        except subprocess.CalledProcessError as exc:
-            detail = (exc.stderr or exc.stdout or str(exc)).strip()
-            logging.error("Failed to refresh MINGO01 recent plots: %s", detail)
-            return False, detail[-1200:]
-        except Exception as exc:
-            logging.exception("Failed to refresh MINGO01 recent plots")
-            return False, str(exc)
-    logging.info("Refreshed MINGO01 recent plots: %s", result.stdout.strip())
-    return True, result.stdout.strip()
-
-
-def register_static_pdf_command(commands: tuple[str, ...], path: Path, description: str) -> None:
-    @bot.message_handler(commands=list(commands))
-    def handler(message, pdf_path=path, caption=description):  # type: ignore[misc]
-        if maybe_handle_terminal_message(message):
-            return
-        clear_task_pdf_request(message.chat.id)
-        send_pdf(message.chat.id, pdf_path, caption)
-
-
-def register_static_image_command(commands: tuple[str, ...], path: Path, description: str) -> None:
-    @bot.message_handler(commands=list(commands))
-    def handler(message, image_path=path, caption=description):  # type: ignore[misc]
-        if maybe_handle_terminal_message(message):
-            return
-        clear_task_pdf_request(message.chat.id)
-        recent_paths = {payload["path"] for payload in RECENT_IMAGE_TARGETS.values()}
-        if image_path in recent_paths:
-            refreshed, detail = refresh_mingo01_recent_plots()
-            if not refreshed:
-                bot.send_message(message.chat.id, f"Could not refresh MINGO01 plots: {detail}")
-                return
-        send_image(message.chat.id, image_path, caption)
-
-
-def clear_task_pdf_request(chat_id: int) -> None:
-    TASK_PDF_PENDING_CHATS.pop(chat_id, None)
-
-
-def normalize_station_selection(raw_value: str) -> str | None:
-    text = (raw_value or "").strip().upper()
-    if not text:
-        return None
-    if text.startswith("MINGO"):
-        text = text[5:]
-    if not text.isdigit():
-        return None
-    station_id = int(text)
-    if station_id not in TASK_PDF_STATION_IDS:
-        return None
-    return f"MINGO{station_id:02d}"
-
-
-def normalize_task_selection(raw_value: str) -> int | None:
-    text = (raw_value or "").strip().upper()
-    if not text:
-        return None
-    if text.startswith("TASK_"):
-        text = text[5:]
-    elif text.startswith("TASK"):
-        text = text[4:]
-    if not text.isdigit():
-        return None
-    task_id = int(text)
-    if task_id not in TASK_PDF_TASK_IDS:
-        return None
-    return task_id
-
-
-def task_pdf_directory(station_label: str, task_id: int) -> Path:
-    return (
-        BASE_DIR
-        / "MINGO_ANALYSIS"
-        / "MINGO_ANALYSIS_STATIONS"
-        / station_label
-        / "STAGE_1"
-        / "EVENT_DATA"
-        / "STEP_1"
-        / f"TASK_{task_id}"
-        / "PLOTS"
-        / "PDF_DIRECTORY"
-    )
-
-
-def latest_pdf_in_directory(pdf_dir: Path) -> Path | None:
-    if not pdf_dir.exists() or not pdf_dir.is_dir():
-        return None
-
-    pdf_candidates = sorted(
-        (
-            candidate
-            for candidate in pdf_dir.iterdir()
-            if candidate.is_file() and candidate.suffix.lower() == ".pdf"
-        ),
-        key=lambda candidate: (candidate.stat().st_mtime, candidate.name),
-        reverse=True,
-    )
-    return pdf_candidates[0] if pdf_candidates else None
-
-
-ALL_PDF_COMMANDS: set[str] = set()
-for command, payload in PDF_TARGETS.items():
-    aliases = PDF_COMMAND_ALIASES.get(command, ())
-    register_static_pdf_command((command, *aliases), payload["path"], payload["description"])
-    ALL_PDF_COMMANDS.update((command, *aliases))
-
-ALL_IMAGE_COMMANDS: set[str] = set()
-for command, payload in RECENT_IMAGE_TARGETS.items():
-    aliases = payload["aliases"]
-    register_static_image_command((command, *aliases), payload["path"], payload["description"])
-    ALL_IMAGE_COMMANDS.update((command, *aliases))
+    raise SystemExit(0)
 
 
 @bot.message_handler(commands=["start", "help"])
-def send_welcome(message):
-    if maybe_handle_terminal_message(message):
-        return
-    clear_task_pdf_request(message.chat.id)
-    bot.send_message(message.chat.id, HELP_TEXT)
-
-
-@bot.message_handler(commands=["mingo01_recent"])
-def send_mingo01_recent(message):  # type: ignore[misc]
-    if maybe_handle_terminal_message(message):
-        return
-    clear_task_pdf_request(message.chat.id)
-    chat_id = message.chat.id
-    refreshed, detail = refresh_mingo01_recent_plots()
-    if not refreshed:
-        bot.send_message(chat_id, f"Could not refresh MINGO01 plots: {detail}")
-        return
-    bot.send_message(chat_id, "MINGO01 rolling 7-day results, rebuilt from current products: calibration, rates and environment.")
-    for key in (
-        "mingo01_charge_offsets",
-        "mingo01_tdif_offsets",
-        "mingo01_tsum_offsets",
-        "mingo01_slewing",
-        "mingo01_recent_rates",
-        "mingo01_recent_environment",
-    ):
-        payload = RECENT_IMAGE_TARGETS[key]
-        send_image(chat_id, payload["path"], payload["description"])
-
-
-@bot.message_handler(commands=["task_pdfs", *BOT_COMMAND_ALIASES.get("task_pdfs", ())])
-def handle_task_pdfs(message):  # type: ignore[misc]
-    if maybe_handle_terminal_message(message):
-        return
-
-    chat_id = message.chat.id
-    clear_task_pdf_request(chat_id)
-    TASK_PDF_PENDING_CHATS[chat_id] = {"step": "station"}
+def welcome(message):
     bot.send_message(
-        chat_id,
-        "Task PDFs\n"
-        "Send the station as `0-4` or `MINGO00-MINGO04`.\n"
-        "Send `cancel` to abort.",
+        message.chat.id,
+        "Metadata plots are generated only when requested.\n\n"
+        "/plot_metadata_gui - choose options with buttons.\n"
+        "/plot_metadata_cli - choose options by replying with numbers.\n"
+        "/round_in_the_chamber - send the newest file from GUN_CHAMBER.\n"
+        "Use `cancel` at any prompt to stop.",
         parse_mode="Markdown",
     )
 
 
-@bot.message_handler(func=lambda message: message.chat.id in TASK_PDF_PENDING_CHATS, content_types=["text"])
-def handle_task_pdf_prompt(message):  # type: ignore[misc]
-    if maybe_handle_terminal_message(message):
+@bot.message_handler(commands=["round_in_the_chamber"])
+def send_latest_chamber_file(message):
+    """Send the newest regular file staged in the bot-local GUN_CHAMBER folder."""
+    if not GUN_CHAMBER_DIR.is_dir():
+        bot.send_message(message.chat.id, "The GUN_CHAMBER report folder is not available yet.")
         return
 
+    candidates = [
+        path for path in GUN_CHAMBER_DIR.iterdir()
+        if path.is_file() and not path.name.startswith(".")
+    ]
+    if not candidates:
+        bot.send_message(message.chat.id, "There is no report in GUN_CHAMBER yet.")
+        return
+
+    latest = max(candidates, key=lambda path: path.stat().st_mtime_ns)
+    if latest.stat().st_size > 49 * 1024 * 1024:
+        bot.send_message(message.chat.id, f"The newest report is too large to send: {latest.name}")
+        return
+
+    try:
+        with latest.open("rb") as report:
+            bot.send_document(message.chat.id, report, caption=f"Latest GUN_CHAMBER file: {latest.name}")
+    except Exception:
+        logging.exception("Could not send GUN_CHAMBER file %s", latest.name)
+        bot.send_message(message.chat.id, "Could not send the newest GUN_CHAMBER file.")
+
+
+def begin_plot(message, mode: str = "cli"):
     chat_id = message.chat.id
-    text = (message.text or "").strip()
-    if not text:
-        bot.send_message(chat_id, "Send a station/task value or `cancel`.")
-        return
+    stations = [f"MINGO{idx:02d}" for idx in range(5)]
+    REQUESTS[chat_id] = {
+        "step": "station", "station_items": stations, "station_page": 0,
+        "station_heading": "Choose a station:", "mode": mode,
+    }
+    send_page(chat_id, REQUESTS[chat_id], "station")
 
-    if text.lower() in {"cancel", "/cancel"}:
-        clear_task_pdf_request(chat_id)
-        bot.send_message(chat_id, "Task PDF request cancelled.")
-        return
 
-    state = TASK_PDF_PENDING_CHATS.get(chat_id, {})
-    step = state.get("step")
+@bot.message_handler(commands=["plot_metadata", "plot_metadata_cli"])
+def begin_plot_cli(message):
+    begin_plot(message, "cli")
 
+
+@bot.message_handler(commands=["plot_metadata_gui"])
+def begin_plot_gui(message):
+    begin_plot(message, "gui")
+
+
+def ask_days(chat_id: int) -> None:
+    REQUESTS[chat_id]["step"] = "days"
+    bot.send_message(
+        chat_id,
+        f"How many days back? Enter a number greater than 0 and at most {MAX_DAYS:g}; decimals are allowed.",
+    )
+
+
+def choose_basis(chat_id: int, state: dict[str, object], basis: str) -> None:
+    state["basis"] = basis
+    ask_days(chat_id)
+
+
+def select_option(chat_id: int, state: dict[str, object], step: str, index: int) -> None:
+    selected = state[f"{step}_items"][index]
     if step == "station":
-        station_label = normalize_station_selection(text)
-        if station_label is None:
-            bot.send_message(
-                chat_id,
-                "Invalid station. Send `0-4` or `MINGO00-MINGO04`.",
-                parse_mode="Markdown",
-            )
+        state["station"] = selected
+        files = metadata_files(str(selected))
+        if not files:
+            clear_request(chat_id)
+            bot.send_message(chat_id, f"No metadata CSV files found for {selected}.")
             return
-
-        TASK_PDF_PENDING_CHATS[chat_id] = {
-            "step": "task",
-            "station": station_label,
-        }
-        bot.send_message(
-            chat_id,
-            f"Station selected: `{station_label}`\n"
-            "Now send the task as `1-5` or `TASK_1-TASK_5`.",
-            parse_mode="Markdown",
-        )
+        tasks = sorted({path.parent.parent.name for path in files})
+        state.update({"step": "task", "task_items": tasks, "task_page": 0,
+                      "task_heading": f"{selected}: choose a task:"})
+        send_page(chat_id, state, "task")
         return
 
     if step == "task":
-        station_label = str(state.get("station", "")).strip()
-        task_id = normalize_task_selection(text)
-        if not station_label:
-            clear_task_pdf_request(chat_id)
-            bot.send_message(chat_id, "Task PDF request state was lost. Use /task_pdfs again.")
+        task = str(selected)
+        files = [path for path in metadata_files(str(state["station"]))
+                 if path.parent.parent.name == task]
+        if not files:
+            clear_request(chat_id)
+            bot.send_message(chat_id, f"No metadata CSV files found for {state['station']} {task}.")
             return
-        if task_id is None:
-            bot.send_message(
-                chat_id,
-                "Invalid task. Send `1-5` or `TASK_1-TASK_5`.",
-                parse_mode="Markdown",
-            )
-            return
-
-        clear_task_pdf_request(chat_id)
-        pdf_dir = task_pdf_directory(station_label, task_id)
-        latest_pdf = latest_pdf_in_directory(pdf_dir)
-        if latest_pdf is None:
-            bot.send_message(
-                chat_id,
-                f"No PDFs found for `{station_label}` `TASK_{task_id}` in:\n`{pdf_dir}`",
-                parse_mode="Markdown",
-            )
-            return
-
-        send_pdf(
-            chat_id,
-            latest_pdf,
-            f"Latest PDF for {station_label} TASK_{task_id}\nFile: {latest_pdf.name}",
-        )
+        state.update({"task": task, "step": "file", "file_paths": files,
+                      "file_items": [path.name for path in files], "file_page": 0,
+                      "file_heading": f"{state['station']} {task}: choose a metadata CSV:"})
+        send_page(chat_id, state, "file")
         return
 
-    clear_task_pdf_request(chat_id)
-    bot.send_message(chat_id, "Task PDF request state was invalid. Use /task_pdfs again.")
+    if step == "file":
+        selected_path = state["file_paths"][index]
+        try:
+            columns = numeric_columns(selected_path)
+        except Exception as exc:
+            clear_request(chat_id)
+            bot.send_message(chat_id, f"Could not read metadata CSV: {exc}")
+            return
+        if not columns:
+            clear_request(chat_id)
+            bot.send_message(chat_id, "This CSV has no numeric columns to plot.")
+            return
+        options = column_options(columns)
+        state.update({"path": selected_path, "step": "column",
+                      "column_items": [option["label"] for option in options],
+                      "column_options": options, "column_page": 0,
+                      "column_heading": "Choose a numeric column:"})
+        send_page(chat_id, state, "column")
+        return
 
-
-def truncate_message(text: str) -> str:
-    if len(text) <= MAX_MESSAGE_CHARS:
-        return text
-    return text[: MAX_MESSAGE_CHARS - 3] + "..."
-
-
-def run_cleaner(force: bool = False) -> str:
-    if not CLEANER_SCRIPT.exists():
-        raise RuntimeError(f"Cleaner script not found: {CLEANER_SCRIPT}")
-
-    command = [str(CLEANER_SCRIPT), "--compact"]
-    if force:
-        command.append("--force")
-
-    logging.info("Calling %s", " ".join(command))
-
-    try:
-        result = subprocess.run(
-            command,
-            cwd=str(CLEANER_SCRIPT.parent),
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=600,
+    state["column_option"] = state["column_options"][index]
+    state["step"] = "basis"
+    if state.get("mode") == "gui":
+        markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+        markup.add(
+            telebot.types.InlineKeyboardButton("Execution / processing date", callback_data="pm|basis|execution"),
+            telebot.types.InlineKeyboardButton("Acquisition / data date", callback_data="pm|basis|acquisition"),
+            telebot.types.InlineKeyboardButton("Cancel", callback_data="pm|cancel"),
         )
-    except Exception as exc:  # pragma: no cover - defensive for runtime failures
-        raise RuntimeError(f"Failed to execute clean_dataflow.sh: {exc}") from exc
-
-    output = "".join(
-        part
-        for part in (
-            result.stdout or "",
-            "\n" if result.stdout and result.stderr else "",
-            result.stderr or "",
-        )
-    ).strip() or "<no output>"
-
-    mode = "--force --compact" if force else "--compact (disk usage check)"
-    message = (
-        f"clean_dataflow.sh {mode} finished with exit code {result.returncode}.\n"
-        f"{output}"
-    )
-    return truncate_message(message)
-
-
-def get_chat_cwd(chat_id: int) -> Path:
-    cwd = TERMINAL_CHAT_CWDS.get(chat_id, BASE_DIR)
-    if not cwd.exists() or not cwd.is_dir():
-        cwd = BASE_DIR
-        TERMINAL_CHAT_CWDS[chat_id] = cwd
-    return cwd
-
-
-def maybe_handle_cd_command(chat_id: int, command_text: str) -> str | None:
-    try:
-        tokens = shlex.split(command_text)
-    except ValueError as exc:
-        return truncate_message(f"$ {command_text}\nInvalid command syntax: {exc}")
-
-    if not tokens or tokens[0] != "cd":
-        return None
-
-    if len(tokens) > 2:
-        return truncate_message(f"$ {command_text}\nUsage: cd <path>")
-
-    current_cwd = get_chat_cwd(chat_id)
-    target_raw = tokens[1] if len(tokens) == 2 else "~"
-    target_expanded = os.path.expandvars(os.path.expanduser(target_raw))
-    target = Path(target_expanded)
-    if not target.is_absolute():
-        target = (current_cwd / target).resolve()
+        bot.send_message(chat_id, "Choose date basis:", reply_markup=markup)
     else:
-        target = target.resolve()
-
-    if not target.exists():
-        return truncate_message(
-            f"$ {command_text}\nExit code: 1\n/bin/bash: line 1: cd: {target}: No such file or directory"
-        )
-
-    if not target.is_dir():
-        return truncate_message(
-            f"$ {command_text}\nExit code: 1\n/bin/bash: line 1: cd: {target}: Not a directory"
-        )
-
-    TERMINAL_CHAT_CWDS[chat_id] = target
-    return truncate_message(f"$ {command_text}\nExit code: 0\nCurrent directory: {target}")
+        bot.send_message(chat_id, "Choose date basis:\n1. Execution / processing date\n2. Acquisition / data date\nReply `1` or `2`.")
 
 
-def run_terminal_command(command_text: str, cwd: Path) -> str:
-    try:
-        result = subprocess.run(
-            command_text,
-            cwd=str(cwd),
-            shell=True,
-            executable="/bin/bash",
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=TERMINAL_COMMAND_TIMEOUT_SEC,
-        )
-    except subprocess.TimeoutExpired as exc:
-        partial = "".join(
-            part
-            for part in (
-                exc.stdout or "",
-                "\n" if exc.stdout and exc.stderr else "",
-                exc.stderr or "",
-            )
-        ).strip()
-        body = partial or "<no output>"
-        return truncate_message(
-            f"$ {command_text}\nTimed out after {TERMINAL_COMMAND_TIMEOUT_SEC}s.\n{body}"
-        )
-    except Exception as exc:  # pragma: no cover - defensive for runtime failures
-        return truncate_message(f"$ {command_text}\nExecution failed: {exc}")
-
-    output = "".join(
-        part
-        for part in (
-            result.stdout or "",
-            "\n" if result.stdout and result.stderr else "",
-            result.stderr or "",
-        )
-    ).strip() or "<no output>"
-    return truncate_message(
-        f"$ {command_text}\nExit code: {result.returncode}\n{output}"
-    )
+@bot.callback_query_handler(func=lambda call: bool(call.data and call.data.startswith("pm|")))
+def plot_callback(call):
+    chat_id = call.message.chat.id if call.message else call.from_user.id
+    state = REQUESTS.get(chat_id)
+    parts = (call.data or "").split("|")
+    bot.answer_callback_query(call.id)
+    if len(parts) >= 2 and parts[1] == "cancel":
+        clear_request(chat_id)
+        bot.send_message(chat_id, "Metadata plot request cancelled.")
+        return
+    if state is None or state.get("mode") != "gui":
+        bot.send_message(chat_id, "Plot request expired. Start again with /plot_metadata_gui.")
+        return
+    if len(parts) == 3 and parts[1] == "next":
+        kind = parts[2]
+        if kind != state.get("step") or kind not in {"station", "task", "file", "column"}:
+            return
+        if (int(state[f"{kind}_page"]) + 1) * PAGE_SIZE < len(state[f"{kind}_items"]):
+            state[f"{kind}_page"] = int(state[f"{kind}_page"]) + 1
+            send_page(chat_id, state, kind)
+        return
+    if len(parts) == 3 and parts[1] == "basis" and state.get("step") == "basis":
+        if parts[2] in {"execution", "acquisition"}:
+            choose_basis(chat_id, state, parts[2])
+        return
+    if len(parts) == 4 and parts[1] == "select":
+        kind = parts[2]
+        if kind != state.get("step") or kind not in {"station", "task", "file", "column"}:
+            return
+        try:
+            index = int(parts[3])
+        except ValueError:
+            return
+        if index < 0 or index >= len(state[f"{kind}_items"]):
+            return
+        select_option(chat_id, state, kind, index)
 
 
-def trigger_restart() -> None:
-    if not RESTART_SCRIPT.exists():
-        raise RuntimeError(f"Restart script not found: {RESTART_SCRIPT}")
-    subprocess.Popen(
-        ["/bin/bash", str(RESTART_SCRIPT)],
-        cwd=str(RESTART_SCRIPT.parent),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-
-
-def maybe_handle_terminal_message(message) -> bool:
+@bot.message_handler(func=lambda message: message.chat.id in REQUESTS, content_types=["text"])
+def plot_prompt(message):
     chat_id = message.chat.id
-    if chat_id not in TERMINAL_ACTIVE_CHATS:
-        return False
-
     text = (message.text or "").strip()
-    if not text:
-        bot.send_message(chat_id, "Terminal mode is active. Send a command or use /exit.")
-        return True
-
-    if text == "/exit":
-        TERMINAL_ACTIVE_CHATS.discard(chat_id)
-        TERMINAL_CHAT_CWDS.pop(chat_id, None)
-        bot.send_message(chat_id, "Terminal mode disabled.")
-        return True
-
-    cd_response = maybe_handle_cd_command(chat_id, text)
-    if cd_response is not None:
-        bot.send_message(chat_id, cd_response)
-        return True
-
-    bot.send_message(chat_id, run_terminal_command(text, get_chat_cwd(chat_id)))
-    return True
-
-
-def _handle_cleaner_command(message, force: bool) -> None:
-    if force and message.chat.id not in TERMINAL_ACTIVE_CHATS:
-        bot.send_message(message.chat.id, "Authenticate with /terminal <password> before forcing cleanup.")
+    state = REQUESTS.get(chat_id)
+    if state is None:
         return
-    clear_task_pdf_request(message.chat.id)
-    try:
-        response = run_cleaner(force)
-    except Exception as exc:  # pragma: no cover
-        logging.exception("clean_dataflow.sh command failed")
-        bot.send_message(message.chat.id, f"Unable to run clean_dataflow.sh: {exc}")
+    if text.lower() in {"cancel", "/cancel"}:
+        clear_request(chat_id)
+        bot.send_message(chat_id, "Metadata plot request cancelled.")
         return
 
-    bot.send_message(message.chat.id, response)
-
-
-@bot.message_handler(commands=["clean_dataflow_status", *BOT_COMMAND_ALIASES.get("clean_dataflow_status", ())])
-def handle_clean_dataflow_status(message):  # type: ignore[misc]
-    if maybe_handle_terminal_message(message):
-        return
-    _handle_cleaner_command(message, force=False)
-
-
-@bot.message_handler(commands=["clean_dataflow_force", *BOT_COMMAND_ALIASES.get("clean_dataflow_force", ())])
-def handle_clean_dataflow_force(message):  # type: ignore[misc]
-    if maybe_handle_terminal_message(message):
-        return
-    _handle_cleaner_command(message, force=True)
-
-
-@bot.message_handler(commands=["terminal", *BOT_COMMAND_ALIASES.get("terminal", ())])
-def handle_terminal(message):  # type: ignore[misc]
-    chat_id = message.chat.id
-    clear_task_pdf_request(chat_id)
-    terminal_password = load_terminal_password(TERMINAL_PASSWORD_PATH)
-    if terminal_password is None:
-        bot.send_message(chat_id, "Terminal mode is disabled because no password is configured.")
+    step = state["step"]
+    if text.lower() in {"next", "/next"} and step in {"station", "task", "file", "column"}:
+        if state.get("mode") == "gui":
+            bot.send_message(chat_id, "Choose an option using the buttons, or cancel.")
+            return
+        item_key = f"{step}_items"
+        page_key = f"{step}_page"
+        if (int(state[page_key]) + 1) * PAGE_SIZE < len(state[item_key]):
+            state[page_key] = int(state[page_key]) + 1
+            send_page(chat_id, state, str(step))
+        else:
+            bot.send_message(chat_id, "There are no more choices on this page.")
         return
 
-    parts = (message.text or "").split(maxsplit=1)
-    if len(parts) < 2 or not parts[1].strip():
-        bot.send_message(chat_id, "Usage: /term <password> (or /terminal <password>)")
+    if step in {"station", "task", "file", "column"}:
+        if state.get("mode") == "gui":
+            bot.send_message(chat_id, "Choose an option using the buttons, or cancel.")
+            return
+        items = state[f"{step}_items"]
+        current_page = int(state[f"{step}_page"])
+        start = current_page * PAGE_SIZE
+        page_end = min(start + PAGE_SIZE, len(items))
+        try:
+            choice = int(text)
+            index = choice
+            if choice < start or choice >= page_end:
+                raise ValueError
+        except ValueError:
+            bot.send_message(chat_id, f"Reply with a listed number, `next`, or `cancel`.", parse_mode="Markdown")
+            return
+        select_option(chat_id, state, str(step), index)
         return
 
-    provided = parts[1].strip()
-    if provided != terminal_password:
-        bot.send_message(chat_id, "Wrong password.")
+    if step == "basis":
+        if text not in {"1", "2"}:
+            bot.send_message(chat_id, "Reply `1` for execution date or `2` for acquisition date.")
+            return
+        choose_basis(chat_id, state, "execution" if text == "1" else "acquisition")
         return
 
-    TERMINAL_ACTIVE_CHATS.add(chat_id)
-    TERMINAL_CHAT_CWDS[chat_id] = BASE_DIR
-    bot.send_message(
-        chat_id,
-        f"Terminal mode enabled. Current directory: {BASE_DIR}\n"
-        "Any text will run as a shell command. Use /exit to leave.",
-    )
-
-
-@bot.message_handler(commands=["exit"])
-def handle_exit(message):  # type: ignore[misc]
-    chat_id = message.chat.id
-    clear_task_pdf_request(chat_id)
-    if chat_id in TERMINAL_ACTIVE_CHATS:
-        TERMINAL_ACTIVE_CHATS.discard(chat_id)
-        TERMINAL_CHAT_CWDS.pop(chat_id, None)
-        bot.send_message(chat_id, "Terminal mode disabled.")
+    if step == "days":
+        try:
+            days = float(text)
+            if not math.isfinite(days) or not 0 < days <= MAX_DAYS:
+                raise ValueError
+            selection = state["column_option"]
+            plot_path = plot_metadata(Path(state["path"]), selection, str(state["basis"]), days)
+            try:
+                with plot_path.open("rb") as photo:
+                    bot.send_photo(chat_id, photo, caption=f"{Path(state['path']).name}\n{selection['label']} · {days:g} days")
+            finally:
+                plot_path.unlink(missing_ok=True)
+            clear_request(chat_id)
+        except ValueError as exc:
+            bot.send_message(chat_id, f"{exc}\nEnter a number greater than 0 and at most {MAX_DAYS:g}; decimals are allowed.")
+        except Exception:
+            logging.exception("Metadata plot request failed")
+            clear_request(chat_id)
+            bot.send_message(chat_id, "Could not create this metadata plot. Check that the selected file has valid dates and values.")
         return
-    bot.send_message(chat_id, "Terminal mode is not active.")
+
+    clear_request(chat_id)
+    bot.send_message(chat_id, "Plot request expired. Start again with /plot_metadata_gui or /plot_metadata_cli.")
 
 
-@bot.message_handler(commands=["restart_bot", *BOT_COMMAND_ALIASES.get("restart_bot", ())])
-def handle_restart_bot(message):  # type: ignore[misc]
-    if maybe_handle_terminal_message(message):
-        return
-    chat_id = message.chat.id
-    clear_task_pdf_request(chat_id)
-    bot.send_message(chat_id, "Restart command received. Attempting to restart bot...")
-    try:
-        trigger_restart()
-    except Exception as exc:  # pragma: no cover
-        logging.exception("Failed to trigger restart")
-        bot.send_message(chat_id, f"Unable to restart bot: {exc}")
-        return
-    # The restart script will terminate this process shortly after this handler returns.
+def files_for_station(station: str) -> list[Path]:
+    return metadata_files(station)
 
 
 @bot.message_handler(func=lambda message: True, content_types=["text"])
-def handle_unknown_text(message):
-    """Fallback handler: show the start/help message for any unrecognized text."""
-    if maybe_handle_terminal_message(message):
-        return
-
-    if message.text.strip() in ("", None):
-        bot.send_message(message.chat.id, HELP_TEXT)
-        return
-
-    known_commands = {f"/{cmd}" for cmd in ALL_PDF_COMMANDS}
-    known_commands.update(f"/{cmd}" for cmd in ALL_IMAGE_COMMANDS)
-    known_commands.update(
-        {
-            "/start",
-            "/help",
-            "/task_pdfs",
-            "/taskpdf",
-            "/mingo01_recent",
-            "/clean_dataflow_status",
-            "/clean_status",
-            "/clean_dataflow_force",
-            "/clean_force",
-            "/terminal",
-            "/term",
-            "/exit",
-            "/restart_bot",
-            "/restart",
-        }
-    )
-
-    if message.text.split()[0] in known_commands:
-        # Known command but likely malformed (e.g., missing args)
-        bot.send_message(message.chat.id, HELP_TEXT)
-        return
-
+def unknown(message):
     bot.send_message(
         message.chat.id,
-        "I only respond to the documented commands. Here is what I can do:\n\n"
-        f"{HELP_TEXT}",
+        "Available commands: /plot_metadata_gui, /plot_metadata_cli, and /round_in_the_chamber. Use /help for instructions.",
     )
 
-bot.infinity_polling()
 
-# def main() -> None:
-#     logging.info("Starting mingo_analysis_bot as @mingo_analysis_bot")
-#     bot.infinity_polling(timeout=60, long_polling_timeout=20)
-
-
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    logging.info("Starting metadata plotting Telegram bot")
+    bot.infinity_polling()
