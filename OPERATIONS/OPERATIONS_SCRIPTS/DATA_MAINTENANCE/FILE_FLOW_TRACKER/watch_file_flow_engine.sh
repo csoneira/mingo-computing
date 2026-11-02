@@ -514,103 +514,69 @@ action_counts = Counter(row.get("recommended_action", "").strip() or "(none)" fo
 station_counts = Counter(row.get("station", "").strip() or "(unknown)" for row in rows)
 
 print(f"{BOLD}{CYAN}FILE FLOW TRACKER — {display_scope}{RESET}")
-print(f"{DIM}Updated {now.strftime('%Y-%m-%d %H:%M')} UTC  |  Snapshot {display_time(observed)} UTC{RESET}")
-print(f"Sources {len(csv_paths)} | stations {len(stations)} | files {total}")
-print(f"Selected {selected} | consistent {consistent} | reprocess {reprocess}")
-print(f"Active {active} | anomalies {anomalous}")
+print(f"{DIM}Current:  {now.strftime('%Y-%m-%d %H:%M:%S')} UTC\nSnapshot: {display_time(observed)} UTC{RESET}")
+print(
+    f"CSV files: {BOLD}{len(csv_paths)}{RESET}   "
+    f"Stations: {BOLD}{len(stations)}{RESET}   "
+    f"Files: {BOLD}{total}{RESET}   "
+    f"In range: {BLUE}{selected}{RESET}   "
+    f"Consistent: {GREEN}{consistent}{RESET}   "
+    f"Reprocess: {YELLOW}{reprocess}{RESET}   "
+    f"Active: {CYAN}{active}{RESET}   "
+    f"Anomalies: {RED}{anomalous}{RESET}"
+)
 if len(stations) > 1:
-    print("Stations: " + "  ".join(f"{name} {count}" for name, count in station_counts.most_common()))
-
-
-def print_count_groups(label, counts, limit):
-    entries = [f"{name} {count}" for name, count in counts.most_common(limit)]
-    prefix = f"{label}: "
-    line = prefix
-    for entry in entries:
-        addition = ("" if line == prefix else " | ") + entry
-        if len(line) + len(addition) > terminal_width and line != prefix:
-            print(line)
-            line = "  " + entry
-        else:
-            line += addition
-    if line:
-        print(line)
-
-
-print_count_groups("Lifecycle", lifecycle_counts, 5)
-print_count_groups("Actions", action_counts, 4)
+    print(f"{BOLD}Stations: {RESET}" + "  ".join(f"{name}={count}" for name, count in station_counts.most_common()))
+print(f"{BOLD}Lifecycle:{RESET} " + "  ".join(f"{name}={count}" for name, count in lifecycle_counts.most_common(5)))
+print(f"{BOLD}Actions:  {RESET} " + "  ".join(f"{name}={count}" for name, count in action_counts.most_common(4)))
 print()
 
-station_width = 7
-file_width = 15
-time_width = 11
-selected_width = 1
-task_width = 6
-lifecycle_width = 10
-separator_width = 7
-detail_width = max(
-    8,
-    terminal_width
-    - station_width
-    - file_width
-    - (2 * time_width)
-    - selected_width
-    - task_width
-    - lifecycle_width
-    - separator_width,
-)
 print(
-    f"{BOLD}{'STATION':<{station_width}} {'FILE':<{file_width}} "
-    f"{'UPDATED':<{time_width}} {'DATA TIME':<{time_width}} R "
-    f"{'TASKS':<{task_width}} {'STATE':<{lifecycle_width}} DETAIL{RESET}"
+    f"{BOLD}{'STATION':<8} {'FILE':<20} {'LAST MODIFIED':<19} {'EVENT TIME':<19} "
+    f"{'R':<1} {'LIFECYCLE':<25} {'HIGH':>4} {'TASK FLOW':<23} {'ACTION / ANOMALY'}{RESET}"
 )
-print("─" * terminal_width)
+print("─" * 158)
 for row in rows[:max_rows]:
     selected_mark = f"{BLUE}●{RESET}" if true_value(row.get("in_selected_range", "")) else f"{DIM}·{RESET}"
-    flow = "".join(task_symbol(row.get(f"task_{task}_state")) for task in range(6))
+    flow = " ".join(f"{task}:{task_symbol(row.get(f'task_{task}_state'))}" for task in range(6))
     lifecycle = row.get("lifecycle_state", "")
-    anomaly = row.get("anomaly_codes", "").strip()
-    task_active = any(
-        any(
-            marker in str(row.get(f"task_{task}_state", "")).lower()
-            for marker in ("running", "processing", "active", "in_progress")
-        )
-        for task in range(6)
-    )
-    if anomaly:
-        lifecycle_label, lifecycle_color = "REVIEW", RED
-    elif true_value(row.get("active_reprocessing", "")) or task_active:
-        lifecycle_label, lifecycle_color = "ACTIVE", CYAN
+    lifecycle_text = f"{shorten(lifecycle, 25):<25}"
+    if "manual_review" in lifecycle.lower():
+        lifecycle_display = f"{RED}{lifecycle_text}{RESET}"
+    elif true_value(row.get("active_reprocessing", "")):
+        lifecycle_display = f"{CYAN}{lifecycle_text}{RESET}"
     elif true_value(row.get("needs_reprocessing", "")):
-        lifecycle_label, lifecycle_color = "REPROCESS", YELLOW
-    elif true_value(row.get("archive_valid", "")):
-        lifecycle_label, lifecycle_color = "ARCHIVED", GREEN
+        lifecycle_display = f"{YELLOW}{lifecycle_text}{RESET}"
     else:
-        lifecycle_label, lifecycle_color = lifecycle, ""
-    lifecycle_text = f"{shorten(lifecycle_label, lifecycle_width):<{lifecycle_width}}"
-    lifecycle_display = f"{lifecycle_color}{lifecycle_text}{RESET}" if lifecycle_color else lifecycle_text
+        lifecycle_display = lifecycle_text
 
     action = row.get("recommended_action", "").strip()
+    anomaly = row.get("anomaly_codes", "").strip()
     detail = f"{action}; {anomaly}" if action and anomaly else (anomaly or action)
     if anomaly:
-        detail = f"{RED}{shorten(detail, detail_width)}{RESET}"
+        detail = f"{RED}{shorten(detail, 35)}{RESET}"
     else:
-        detail = shorten(detail, detail_width)
+        detail = shorten(detail, 35)
 
     print(
-        f"{shorten(row.get('station', '?'), station_width):<{station_width}} "
-        f"{shorten(row.get('filename_base', ''), file_width):<{file_width}} "
-        f"{display_short_time(row.get('newest_artifact_mtime_utc', '')):<{time_width}} "
-        f"{display_short_time(row.get('event_time_utc', '')):<{time_width}} "
+        f"{shorten(row.get('station', '?'), 8):<8} "
+        f"{shorten(row.get('filename_base', ''), 20):<20} "
+        f"{shorten(display_time(row.get('newest_artifact_mtime_utc', '')), 19):<19} "
+        f"{shorten(display_time(row.get('event_time_utc', '')), 19):<19} "
         f"{selected_mark} "
         f"{lifecycle_display} "
-        f"{flow:<{task_width}} "
+        f"{shorten(row.get('highest_task_reached', ''), 4):>4} "
+        f"{flow:<68} "
         f"{detail}"
     )
 
 print()
-print(f"{DIM}Newest updates first. Task symbols are ordered 0-5.{RESET}")
-print(f"{DIM}✓ done  ▶ active  ○ pending  ! review  · not reached  ● selected range{RESET}")
+print(f"{DIM}Sorted by LAST MODIFIED, newest first.{RESET}")
+print(
+    f"{DIM}Legend: {GREEN}✓ complete{RESET}{DIM}, {CYAN}▶ active{RESET}{DIM}, "
+    f"{YELLOW}○ pending/outdated{RESET}{DIM}, {RED}! error/review{RESET}{DIM}, "
+    f"· not reached, {BLUE}● selected range{RESET}"
+)
 
 # ---------------------------------------------------------------------------
 # Recent state-change timeline
