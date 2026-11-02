@@ -42,13 +42,13 @@ DATAFLOW_ROOT = get_repo_root()
 STATIONS_BASE = DATAFLOW_ROOT / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_STATIONS"
 SIMULATION_PARAMS_CSV = DATAFLOW_ROOT / "MINGO_DIGITAL_TWIN/SIMULATION_OUTPUTS/SIMULATED_DATA/step_final_simulation_params.csv"
 EFF_COLS = [
-    "eff1_robust_xyphi",
-    "eff2_robust_xyphi",
-    "eff3_robust_xyphi",
-    "eff4_robust_xyphi",
+    "P1_eff_robust_xyphi",
+    "P2_eff_robust_xyphi",
+    "P3_eff_robust_xyphi",
+    "P4_eff_robust_xyphi",
 ]
 SIM_EFF_COLS = ["eff_p1", "eff_p2", "eff_p3", "eff_p4"]
-Z_COLS = ["z_P1", "z_P2", "z_P3", "z_P4"]
+Z_COLS = ["P1_z", "P2_z", "P3_z", "P4_z"]
 SIM_Z_COLS = ["z_plane_1", "z_plane_2", "z_plane_3", "z_plane_4"]
 FILENAME_TIMESTAMP_PATTERN = re.compile(r"mi0\d(\d{11})$", re.IGNORECASE)
 

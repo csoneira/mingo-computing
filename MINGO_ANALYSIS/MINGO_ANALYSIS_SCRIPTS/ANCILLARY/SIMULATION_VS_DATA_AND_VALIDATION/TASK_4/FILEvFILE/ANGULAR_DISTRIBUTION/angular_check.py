@@ -29,12 +29,12 @@ PLOT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 EXECUTION_STAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 EFF_COLS = [
-    "eff1_robust_xyphi",
-    "eff2_robust_xyphi",
-    "eff3_robust_xyphi",
-    "eff4_robust_xyphi",
+    "P1_eff_robust_xyphi",
+    "P2_eff_robust_xyphi",
+    "P3_eff_robust_xyphi",
+    "P4_eff_robust_xyphi",
 ]
-Z_COLS = ["z_P1", "z_P2", "z_P3", "z_P4"]
+Z_COLS = ["P1_z", "P2_z", "P3_z", "P4_z"]
 
 FIT_TT_COL = "fit_tt"
 THETA_COL = "theta"

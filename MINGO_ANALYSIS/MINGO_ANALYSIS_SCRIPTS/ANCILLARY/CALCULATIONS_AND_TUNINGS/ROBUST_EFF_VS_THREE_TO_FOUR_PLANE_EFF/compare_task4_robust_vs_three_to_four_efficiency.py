@@ -47,7 +47,7 @@ DEFAULT_COMPARE_CONFIG_PATH = (
 OUTPUT_DIR = Path(__file__).resolve().parent / "OUTPUTS" / "TASK_4_ROBUST_VS_THREE_TO_FOUR"
 
 _FILE_TS_RE = re.compile(r"(\d{11})$")
-_ROBUST_EFF_COLUMNS = {1: "eff1", 2: "eff2", 3: "eff3", 4: "eff4"}
+_ROBUST_EFF_COLUMNS = {1: "P1_eff", 2: "P2_eff", 3: "P3_eff", 4: "P4_eff"}
 _THREE_PLANE_NUMERATOR_COLUMNS = {
     1: "fit_tt_234_rate_hz",
     2: "fit_tt_134_rate_hz",
@@ -216,7 +216,7 @@ def _load_station_comparison_dataframe(
 
     robust_columns = ["filename_base", "execution_timestamp", *_ROBUST_EFF_COLUMNS.values()]
     trigger_columns = ["filename_base", "execution_timestamp", _FOUR_PLANE_COLUMN, *_THREE_PLANE_NUMERATOR_COLUMNS.values()]
-    specific_columns = ["filename_base", "execution_timestamp", "z_P1", "z_P2", "z_P3", "z_P4"]
+    specific_columns = ["filename_base", "execution_timestamp", "P1_z", "P2_z", "P3_z", "P4_z"]
 
     robust_df = pd.read_csv(robust_path, usecols=robust_columns, low_memory=False)
     trigger_df = pd.read_csv(trigger_path, usecols=trigger_columns, low_memory=False)
@@ -233,7 +233,7 @@ def _load_station_comparison_dataframe(
         suffixes=("_robust", "_trigger"),
     )
     merged = merged.merge(
-        specific_df[["filename_base", "z_P1", "z_P2", "z_P3", "z_P4"]],
+        specific_df[["filename_base", "P1_z", "P2_z", "P3_z", "P4_z"]],
         on="filename_base",
         how="inner",
     )
@@ -242,10 +242,10 @@ def _load_station_comparison_dataframe(
 
     z_filter = _station_z_filter(compare_config_path, station_id)
     if z_filter is not None:
-        for idx, column_name in enumerate(("z_P1", "z_P2", "z_P3", "z_P4")):
+        for idx, column_name in enumerate(("P1_z", "P2_z", "P3_z", "P4_z")):
             merged[column_name] = pd.to_numeric(merged[column_name], errors="coerce")
         mask = np.ones(len(merged), dtype=bool)
-        for idx, column_name in enumerate(("z_P1", "z_P2", "z_P3", "z_P4")):
+        for idx, column_name in enumerate(("P1_z", "P2_z", "P3_z", "P4_z")):
             mask &= merged[column_name].round().astype("Int64") == int(z_filter[idx])
         merged = merged.loc[mask].copy()
         if merged.empty:
@@ -351,10 +351,10 @@ def _plot_station_comparison(dataframe: pd.DataFrame, station_id: int, output_di
 
     station_name = _station_name(station_id)
     z_label = "unknown z"
-    if {"z_P1", "z_P2", "z_P3", "z_P4"} <= set(dataframe.columns):
+    if {"P1_z", "P2_z", "P3_z", "P4_z"} <= set(dataframe.columns):
         z_values = [
             int(round(float(pd.to_numeric(dataframe.iloc[0][column_name], errors="coerce"))))
-            for column_name in ("z_P1", "z_P2", "z_P3", "z_P4")
+            for column_name in ("P1_z", "P2_z", "P3_z", "P4_z")
         ]
         z_label = "/".join(str(value) for value in z_values)
     fig.suptitle(

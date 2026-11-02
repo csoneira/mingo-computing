@@ -31,15 +31,15 @@ BASE = REPO_ROOT / "MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS"
 DEFAULT_SIMULATED_DATA_ROOT = REPO_ROOT / "MINGO_DIGITAL_TWIN/SIMULATION_OUTPUTS/SIMULATED_DATA"
 
 EFF_COLS = [
-    "eff1_robust_xyphi",
-    "eff2_robust_xyphi",
-    "eff3_robust_xyphi",
-    "eff4_robust_xyphi",
+    "P1_eff_robust_xyphi",
+    "P2_eff_robust_xyphi",
+    "P3_eff_robust_xyphi",
+    "P4_eff_robust_xyphi",
 ]
 SIM_EFF_COLS = [f"sim_eff_p{idx}" for idx in range(1, 5)]
 SIM_Z_COLS = ["z_plane_1", "z_plane_2", "z_plane_3", "z_plane_4"]
 SIM_OPTIONAL_FILTER_COLS = ["cos_n", "flux_cm2_min"]
-Z_COLS = ["z_P1", "z_P2", "z_P3", "z_P4"]
+Z_COLS = ["P1_z", "P2_z", "P3_z", "P4_z"]
 EMPIRICAL_TRIGGER_FORMULAS = {
     "P1": ("fit_tt_234_rate_hz", "fit_tt_1234_rate_hz"),
     "P2": ("fit_tt_134_rate_hz", "fit_tt_1234_rate_hz"),

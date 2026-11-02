@@ -1,0 +1,9 @@
+save_png: true
+save_pdf: true
+-plot:
+- gate_charge_spectra_at_most_1_strip_per_plane
+- gate_charge_spectra_at_most_2_adjacent_strips_per_plane
+- gate_charge_spectra_at_most_3_adjacent_strips_per_plane
+- gate_charge_spectra_at_most_4_adjacent_strips_per_plane
+- gate_charge_spectra_any_plane_has_nonadjacent_strips
+-not_plot: []

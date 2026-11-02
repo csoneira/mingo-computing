@@ -69,10 +69,10 @@ REQUIRED_COLUMNS = [
     "param_hash",
     "theta_max",
     "r_max",
-    "eff1_robust_xyphi",
-    "eff2_robust_xyphi",
-    "eff3_robust_xyphi",
-    "eff4_robust_xyphi",
+    "P1_eff_robust_xyphi",
+    "P2_eff_robust_xyphi",
+    "P3_eff_robust_xyphi",
+    "P4_eff_robust_xyphi",
     "fiducial_1234_percent_of_total",
     "eff_p1",
     "eff_p2",
@@ -80,10 +80,10 @@ REQUIRED_COLUMNS = [
     "eff_p4",
 ]
 PLANE_SPECS = {
-    1: ("eff1_robust_xyphi", "eff_p1"),
-    2: ("eff2_robust_xyphi", "eff_p2"),
-    3: ("eff3_robust_xyphi", "eff_p3"),
-    4: ("eff4_robust_xyphi", "eff_p4"),
+    1: ("P1_eff_robust_xyphi", "eff_p1"),
+    2: ("P2_eff_robust_xyphi", "eff_p2"),
+    3: ("P3_eff_robust_xyphi", "eff_p3"),
+    4: ("P4_eff_robust_xyphi", "eff_p4"),
 }
 ROW_METRICS = [
     ("fiducial_1234_percent_of_total", "Fiducial 1234 used [%]"),

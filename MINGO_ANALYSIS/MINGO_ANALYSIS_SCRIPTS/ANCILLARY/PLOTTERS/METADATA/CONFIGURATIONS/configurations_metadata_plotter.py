@@ -26,12 +26,12 @@ from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import pdf_save_ras
 log = logging.getLogger("configurations_metadata_plotter")
 
 STATIONS = [1, 2, 3, 4]
-PLANE_COLUMNS = ["z_P1", "z_P2", "z_P3", "z_P4"]
+PLANE_COLUMNS = ["P1_z", "P2_z", "P3_z", "P4_z"]
 PLANE_COLORS = {
-    "z_P1": "#d62728",
-    "z_P2": "#ff7f0e",
-    "z_P3": "#2ca02c",
-    "z_P4": "#1f77b4",
+    "P1_z": "#d62728",
+    "P2_z": "#ff7f0e",
+    "P3_z": "#2ca02c",
+    "P4_z": "#1f77b4",
 }
 FILE_TS_RE = re.compile(r"(\d{11})$")
 ONLINE_RUN_ROOT = REPO_ROOT / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "CONFIG_FILES" / "STAGE_0" / "ONLINE_RUN_DICTIONARY"
@@ -132,10 +132,10 @@ def _normalize_dictionary_z_positions(dataframe: pd.DataFrame) -> pd.DataFrame:
         return work
 
     baseline = work["P1"].astype(float)
-    work["z_P1"] = work["P1"].astype(float) - baseline
-    work["z_P2"] = work["P2"].astype(float) - baseline
-    work["z_P3"] = work["P3"].astype(float) - baseline
-    work["z_P4"] = work["P4"].astype(float) - baseline
+    work["P1_z"] = work["P1"].astype(float) - baseline
+    work["P2_z"] = work["P2"].astype(float) - baseline
+    work["P3_z"] = work["P3"].astype(float) - baseline
+    work["P4_z"] = work["P4"].astype(float) - baseline
     return work
 
 

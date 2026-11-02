@@ -1,4 +1,4 @@
-stations: [1, 2, 3, 4]
+stations: [1, 2]
 
 date_range:
   start: null

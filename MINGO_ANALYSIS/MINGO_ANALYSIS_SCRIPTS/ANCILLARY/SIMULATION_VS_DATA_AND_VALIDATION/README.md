@@ -10,11 +10,11 @@ efficiencies, --> filter on range
 
 in the /home/mingo/DATAFLOW_v3/MINGO_DIGITAL_TWIN/SIMULATION_OUTPUTS/SIMULATED_DATA/step_final_simulation_params.csv.
 
-Then you are going to go to the /home/mingo/DATAFLOW_v3/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS/MINGO00/STAGE_1/EVENT_DATA/STEP_1/TASK_4/METADATA/task_4_metadata_robust_efficiency.csv and take eff[1-4]_robust_xyphi columns, in MINGO00 and take those columns.
+Then you are going to go to the /home/mingo/DATAFLOW_v3/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS/MINGO00/STAGE_1/EVENT_DATA/STEP_1/TASK_4/METADATA/task_4_metadata_robust_efficiency.csv and take P1_eff_robust_xyphi, P2_eff_robust_xyphi, P3_eff_robust_xyphi, P4_eff_robust_xyphi columns, in MINGO00 and take those columns.
 
-Then you go to the same file for the station of study /home/mingo/DATAFLOW_v3/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS/MINGO0*/STAGE_1/EVENT_DATA/STEP_1/TASK_4/METADATA/task_4_metadata_robust_efficiency.csv and take eff[1-4]_robust_xyphi columns.
+Then you go to the same file for the station of study /home/mingo/DATAFLOW_v3/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS/MINGO0*/STAGE_1/EVENT_DATA/STEP_1/TASK_4/METADATA/task_4_metadata_robust_efficiency.csv and take P1_eff_robust_xyphi, P2_eff_robust_xyphi, P3_eff_robust_xyphi, P4_eff_robust_xyphi columns.
 
-Now we have two options. 1. If the script is in a METADATA_COMPARISON directory, then we have to establish a match for all the rows in the real data list. To do so, you calculate the euclidean distance between eff[1-4]_robust_xyphi for MINGO00 and the station of study and take only the ones that less than a boundary value defined in the config file.
+Now we have two options. 1. If the script is in a METADATA_COMPARISON directory, then we have to establish a match for all the rows in the real data list. To do so, you calculate the euclidean distance between P1_eff_robust_xyphi, P2_eff_robust_xyphi, P3_eff_robust_xyphi, P4_eff_robust_xyphi for MINGO00 and the station of study and take only the ones that less than a boundary value defined in the config file.
 
 Now the match correspondence between simulated and real data is established.
 

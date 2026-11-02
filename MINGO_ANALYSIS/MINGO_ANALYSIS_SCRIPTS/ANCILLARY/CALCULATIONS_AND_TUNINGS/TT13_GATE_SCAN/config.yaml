@@ -1,0 +1,10 @@
+# Exploratory analysis only: these gates never modify production event selection.
+charge_bins: 160
+charge_limits: [-20, 300]
+spatial_chi2_thresholds: [0.5, 1, 2, 5, 10, 20, 50, 100]
+timtrack_chi2_thresholds: [0.5, 1, 2, 5, 10, 20, 50, 100]
+reference_charge_minimums: [0, 5, 10, 20, 40, 80]
+reference_charge_maximum: 300
+# Five separate spectrum populations; threshold scans additionally save all values above.
+spectrum_spatial_chi2_max: 5
+spectrum_timtrack_chi2_max: 10

@@ -9,7 +9,7 @@ special:
     ncols: 1
     sharey: true
     columns:
-      - streamer_P1
-      - streamer_P2
-      - streamer_P3
-      - streamer_P4
+      - P1_streamer
+      - P2_streamer
+      - P3_streamer
+      - P4_streamer
