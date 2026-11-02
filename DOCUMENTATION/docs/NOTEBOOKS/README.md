@@ -1,7 +1,7 @@
 ---
 title: Research Notebooks
 description: Date-stamped development and research notes.
-last_updated: 2026-04-28
+last_updated: 2026-10-23
 status: active
 ---
 
@@ -21,5 +21,6 @@ This folder contains chronological project notes, not canonical operational spec
 ## Files
 - Template: [`YYYY_MM_DD_notebook.md`](YYYY_MM_DD_notebook.md)
 - 2026 April logs: `2026/04_APRIL/`
+- 2026 October logs: [`2026/10_OCTOBER/`](2026/10_OCTOBER/2026_10_23_notebook.md)
 - 2026 March logs: `2026/03_MARCH/`
 - 2026 February logs: `2026/02_FEBRUARY/`

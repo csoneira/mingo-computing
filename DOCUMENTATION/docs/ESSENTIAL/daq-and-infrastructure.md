@@ -9,7 +9,7 @@ Typical signal path:
 3. Acquisition services write raw DAQ files (`.hld`) on station storage.
 4. Unpacking/analysis services produce derived outputs used by downstream software.
 
-![DAQ and readout electronics internals](../assets/photos/minitrasgo/IMG_1536.JPG)
+![DAQ and readout electronics internals](../assets/photos/minitrasgo/DAQ_box_open.JPG)
 
 *DAQ/readout electronics internals used in the station chain.*
 
@@ -46,6 +46,6 @@ Hardware stability depends on:
 - Correct cable offsets and calibration constants
 - Healthy network/storage on station host
 
-![Readout cabling detail](../assets/photos/minitrasgo/75B71188-B34F-4212-A3CC-91F57C8E1824.JPG)
+![Readout cabling detail](../assets/photos/minitrasgo/mingo01_FEE_artistic.JPG)
 
 *Representative front-end cabling and connector detail.*
