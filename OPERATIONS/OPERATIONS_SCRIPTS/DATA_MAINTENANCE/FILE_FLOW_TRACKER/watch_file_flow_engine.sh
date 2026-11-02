@@ -593,16 +593,6 @@ valid_events = [
 if not valid_events:
     print(f"{DIM}No file state changes have been observed in this window yet.{RESET}")
 else:
-    all_times = sorted({event["observed_at_utc"] for event in valid_events}, key=parse_time)
-    timeline_left_width = 30
-    timeline_slot_width = 6
-    visible_columns = max(3, (terminal_width - timeline_left_width) // timeline_slot_width)
-    timeline_columns = min(timeline_columns, visible_columns)
-    if len(all_times) > timeline_columns:
-        all_times = all_times[-timeline_columns:]
-    time_set = set(all_times)
-    valid_events = [event for event in valid_events if event["observed_at_utc"] in time_set]
-
     by_file = defaultdict(list)
     for event in valid_events:
         by_file[(event.get("station", "?"), event["filename_base"])].append(event)
@@ -615,62 +605,65 @@ else:
         reverse=True,
     )[:timeline_files]
 
-    slot_width = timeline_slot_width
-    left_width = timeline_left_width
-    centers = [index * slot_width + slot_width // 2 for index in range(len(all_times))]
-    time_index = {value: index for index, value in enumerate(all_times)}
+    label_width = 30
+    available_width = max(30, terminal_width - label_width)
+    graph_width = min(available_width, max(30, timeline_columns * 5))
+    window_seconds = max(1.0, timeline_minutes * 60.0)
+    timeline_start = now - timedelta(minutes=timeline_minutes)
 
-    header = " " * left_width + "".join(
-        parse_datetime(value).strftime("%H:%M").center(slot_width)
-        for value in all_times
-    )
-    print(header.rstrip())
+    def time_position(value):
+        event_time = parse_datetime(value)
+        if event_time is None:
+            return None
+        fraction = (event_time - timeline_start).total_seconds() / window_seconds
+        fraction = min(1.0, max(0.0, fraction))
+        return int(round(fraction * (graph_width - 1)))
 
-    advances = Counter(
-        event["observed_at_utc"]
-        for event in valid_events
-        if event.get("advanced")
-    )
-    advance_line = "ADVANCES".ljust(left_width) + "".join(
-        str(advances.get(value, 0)).center(slot_width)
-        for value in all_times
-    )
-    print(f"{DIM}{advance_line.rstrip()}{RESET}")
+    tick_count = min(6, max(3, timeline_columns // 2))
+    ruler = [" "] * graph_width
+    for tick in range(tick_count):
+        fraction = tick / (tick_count - 1)
+        position = int(round(fraction * (graph_width - 1)))
+        minutes_ago = timeline_minutes * (1.0 - fraction)
+        label = "now" if tick == tick_count - 1 else f"-{minutes_ago:g}m"
+        start = min(max(0, position - len(label) // 2), graph_width - len(label))
+        for offset, char in enumerate(label):
+            ruler[start + offset] = char
+    print(f"{'':<{label_width}}{''.join(ruler).rstrip()}")
 
     for station, filename in selected_files:
         events = by_file[(station, filename)]
-        canvas = [" "] * (len(all_times) * slot_width)
+        canvas = [" "] * graph_width
         event_positions = []
         for event in events:
-            idx = time_index[event["observed_at_utc"]]
             token = event.get("token", "?")[:3]
-            center = centers[idx]
-            start = max(0, center - len(token) // 2)
+            center = time_position(event["observed_at_utc"])
+            if center is None:
+                continue
+            start = min(max(0, center - len(token) // 2), graph_width - len(token))
+            end = start + len(token) - 1
+            if event_positions and start <= event_positions[-1][1]:
+                start = min(graph_width - len(token), event_positions[-1][1] + 1)
+                end = start + len(token) - 1
             for offset, char in enumerate(token):
                 pos = start + offset
-                if pos < len(canvas):
-                    canvas[pos] = char
-            event_positions.append((idx, start, start + len(token) - 1, event))
+                canvas[pos] = char
+            event_positions.append((start, end))
 
-        # A line means that the two state changes belong to the same logical
-        # file. The node labels show the task reached at each change.
-        for (_, _, right_a, _), (_, left_b, _, _) in zip(event_positions, event_positions[1:]):
+        # Keep each file's state-change nodes connected with plain hyphens.
+        for (_, right_a), (left_b, _) in zip(event_positions, event_positions[1:]):
             for pos in range(right_a + 1, left_b):
                 if canvas[pos] == " ":
                     canvas[pos] = "-"
 
         label = f"{shorten(station, 8):<8} {shorten(filename, 20):<20}"
-        print(f"{label:<{left_width}}{''.join(canvas).rstrip()}")
+        print(f"{label:<{label_width}}{''.join(canvas).rstrip()}")
 
     hidden = len(by_file) - len(selected_files)
     if hidden > 0:
         print(f"{DIM}… {hidden} additional files with state changes hidden; set TIMELINE_FILES to show more.{RESET}")
 
-    print(
-        f"{DIM}Nodes: S0=Stage 0, T0-T5=highest task, A0-A5=active task.{RESET}"
-    )
-    print(f"{DIM}P=valid Parquet, !=error/review.{RESET}")
-    print(f"{DIM}Hyphens connect successive observations of the same file.{RESET}")
+    print(f"{DIM}S0=Stage 0  T0-T5=highest task  A0-A5=active task  P=valid Parquet  !=review{RESET}")
     if test_mode:
         print(f"{DIM}TEST MODE uses synthetic CSV data only; production runtime files are untouched.{RESET}")
 PY
