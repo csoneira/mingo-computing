@@ -22,12 +22,13 @@ Entries below describe presentations recorded in conference programmes, not addi
 
 | Year | Contribution | Conference | Presenter | Source |
 | --- | --- | --- | --- | --- |
+| 2026 | Multigap RPC detector development at LIP for timing-oriented muon detection: from cosmic-ray monitoring to simplified muography systems | 2nd CPAN Network Workshop on Instrumentation and Detectors, CIEMAT, Madrid, 3 February | C. Soneira-Landín | [Official workshop record (contribution ID 25)](https://indico.global/event/16219/sessions/21881/); [slides (PDF)](https://indico.global/event/16219/contributions/144177/attachments/66686/129072/CNID_2026_Soneira.pdf); [book of abstracts](https://indico.global/event/16219/book-of-abstracts.pdf) |
 | 2026 | The miniTrasgo International Research Network | 29th European Cosmic Ray Symposium (ECRS), Santiago de Compostela, 30 June | J. A. Garzón | [Official contribution list (ID 80)](https://indico.cern.ch/event/1536846/contributions/); [session programme](https://indico.cern.ch/event/1536846/sessions/667225/) |
 | 2025 | miniTRASGO: A Compact Muon Detector for Global Cosmic Ray Monitoring and Space Weather Studies | EuNPC2025, Caen, 25 September | C. Soneira-Landín | [Contribution](https://indico.in2p3.fr/event/30430/contributions/156880/); [slides (PDF)](https://indico.in2p3.fr/event/30430/contributions/156880/attachments/96396/148022/Presentation_ID330_Soneira.pdf) |
 | 2025 | RPC readout optimization: miniTRASGO as a path to a single-plane multiplexed timing system | XVII CPAN Days, Valencia, 19 November | C. Soneira-Landín | [Contribution](https://indico.ific.uv.es/event/8035/contributions/29013/); [slides (PDF)](https://indico.ific.uv.es/event/8035/contributions/29013/attachments/14476/21050/Soneira_CPAN_2025_11_19.pptx.pdf) |
 | 2025 | miniTRASGO: A Compact RPC Tracker for Global Cosmic Ray and Space Weather Monitoring | NMDB Meeting 2025, Athens, 21 March | A. Blanco | [Contribution and presentation material](https://conferences.uoa.gr/event/97/contributions/1128/) |
 | 2024 | The first miniTRASGO Cosmic Ray telescope | XVII Conference on Resistive Plate Chambers and Related Detectors (RPC2024), Santiago de Compostela, 13 September | C. Soneira-Landín | [Contribution](https://indico.cern.ch/event/1354736/contributions/6057007/); [slides (PDF)](https://indico.global/event/6191/contributions/51206/attachments/25745/44426/miniTRASGO%20-%20RPC2024.pdf) |
-| 2024 | The miniTrasgo International Research Network | RPC2024, Santiago de Compostela, 10 September | J. A. Garzón | [Conference contribution](https://indico.cern.ch/event/1354736/contributions/6057027/) |
+| 2024 | The miniTrasgo International Research Network | RPC2024, Santiago de Compostela, 10 September | J. A. Garzón | [Official conference contribution](https://indico.global/event/6191/contributions/51226/); [slides (PDF)](https://indico.global/event/6191/contributions/51226/attachments/25747/44429/jag24_09_Trasgos_RPC2024_s.pdf) |
 | 2023 | The first miniTrasgo Cosmic Ray detector | L International Meeting on Fundamental Physics and XV CPAN Days, Santander, 2 October | C. Soneira-Landín | [Contribution](https://indico.cern.ch/event/1283224/contributions/5585030/); [slides (PDF)](https://indico.cern.ch/event/1283224/contributions/5585030/attachments/2724959/4735462/C_Soneira_miniTRASGO_CPAN_2023%20.pdf) |
 
 ### Posters
@@ -43,6 +44,8 @@ Entries below describe presentations recorded in conference programmes, not addi
 | 2025 | Deployment of a MiniTrasgo Detector at UDEM | ICRC2025, Geneva | H. Martínez Huerta | [Official conference abstract](https://indico.cern.ch/event/1258933/contributions/6482027/) (poster PDF not available on record) |
 
 The ECRS 2026 records above are classified using the official conference contribution list. A conference abstract does not necessarily provide a downloadable poster or slides. Where it names contributors without identifying a single presenter, the table avoids assigning sole presentation credit.
+
+The 2026 CPAN instrumentation-workshop contribution concerns related RPC readout and muography R&D, using miniTRASGO as an operational reference. It is included as a related presentation, not represented as a separate miniTRASGO measurement paper.
 
 ## Published meeting abstracts
 
@@ -79,7 +82,7 @@ These are project resources, not scholarly publications.
 
 - DOI links identify published articles; Indico contribution links identify scheduled or listed conference presentations. These are distinct types of record.
 - A publicly listed poster filename does not always expose a reusable direct-download URL. Where no stable URL was verified, this page links to the official conference record or timetable instead.
-- The **RPC2024 miniTRASGO International Research Network** abstract describes the contribution as a poster, although it appears in a timed conference session. Its classification as an oral presentation should therefore be treated as provisional until the conference format is established unambiguously.
+- The **RPC2024 miniTRASGO International Research Network** abstract describes the contribution as a poster, although it appears in a 20-minute conference session. Its current placement under oral presentations follows the scheduled programme, but the original contribution type is not specified; the linked slides and programme allow readers to assess the record.
 
 ## Further references
 
