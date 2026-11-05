@@ -27,7 +27,7 @@ from typing import Iterable
 import pandas as pd
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
-REPO_ROOT = ROOT_DIR.parent
+REPO_ROOT = ROOT_DIR.parents[1]
 sys.path.append(str(ROOT_DIR))
 sys.path.append(str(ROOT_DIR / "MASTER_STEPS"))
 sys.path.append(str(REPO_ROOT))

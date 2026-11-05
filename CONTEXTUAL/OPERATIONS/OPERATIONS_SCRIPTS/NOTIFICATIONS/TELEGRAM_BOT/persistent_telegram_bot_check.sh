@@ -39,7 +39,10 @@ PYTHON_BIN="${PYTHON_BIN:-${DATAFLOW_ROOT}/.venv/bin/python3}"
 BOT_SCRIPT="${BOT_SCRIPT:-${DATAFLOW_ROOT}/CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/NOTIFICATIONS/TELEGRAM_BOT/mingo_analysis_bot.py}"
 LOG_DIR="${LOG_DIR:-${DATAFLOW_ROOT}/CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/CRON_LOGS}"
 LOG_FILE="${LOG_FILE:-${LOG_DIR}/bot_analysis.log}"
-PROCESS_PATTERN="${PYTHON_BIN} ${BOT_SCRIPT}"
+# Match the bot script path regardless of whether an older checkout path is
+# still in the running command line. The bracket expression avoids matching
+# this pgrep command itself.
+PROCESS_PATTERN="[/]mingo_analysis_bot\.py([[:space:]]|$)"
 
 timestamp() {
   date --iso-8601=seconds
@@ -70,7 +73,7 @@ if ! "$PYTHON_BIN" "$BOT_SCRIPT" --check-config >/dev/null 2>&1; then
   exit 1
 fi
 
-if /usr/bin/pgrep -fx "$PROCESS_PATTERN" >/dev/null 2>&1; then
+if /usr/bin/pgrep -f "$PROCESS_PATTERN" >/dev/null 2>&1; then
   # Healthy watchdog checks remain silent so cron creates no routine log.
   exit 0
 fi

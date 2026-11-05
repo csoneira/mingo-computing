@@ -32,20 +32,24 @@ import yaml
 
 CURRENT_PATH = Path(__file__).resolve()
 REPO_ROOT = next(
-    (parent.parent.parent for parent in CURRENT_PATH.parents if parent.name == "MINGO_ANALYSIS_SCRIPTS"),
+    (
+        parent
+        for parent in CURRENT_PATH.parents
+        if (parent / "CONTEXTUAL/CONFIG/CONTENTS/environment/dataflow.sh").is_file()
+    ),
     CURRENT_PATH.parents[-1],
 )
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.debug_plots import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.debug_plots import (
     plot_debug_histogram_binning_comparison,
     plot_debug_histograms,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.file_selection import select_latest_candidate
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_repo_root
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import runtime_plot_directory_name
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.step1_shared import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.file_selection import select_latest_candidate
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_repo_root
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import runtime_plot_directory_name
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.step1_shared import (
     add_topology_task1_channel,
     add_topology_task1_channel_qt,
     add_topology_task1_column,
@@ -55,7 +59,7 @@ from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.step1_shared import (
     prune_redundant_count_metadata,
     save_metadata,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.status_csv import initialize_status_row, update_status_progress
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.status_csv import initialize_status_row, update_status_progress
 
 
 TASK_NAME = "TASK_1_SELFTRIGGER"

@@ -1,5 +1,5 @@
 # Fiducial scan parameter space for:
-# PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALCULATIONS/task4_fiducial_scan_table.py
+# PIPELINE/MINGO_COMPARISONS/MINGO_SIMULATION_VS_SIMULATION/FIDUCIAL_AREA/task4_fiducial_scan_table.py
 #
 # theta is scanned as:
 #   0 <= theta <= theta_max

@@ -44,13 +44,13 @@ import yaml
 
 
 CURRENT_PATH = Path(__file__).resolve()
-REPO_ROOT = None
-for parent in CURRENT_PATH.parents:
-    if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parent.parent
-        break
+REPO_ROOT = next(
+    (parent for parent in CURRENT_PATH.parents
+     if (parent / "CONTEXTUAL/CONFIG/CONTENTS/environment/dataflow.sh").is_file()),
+    None,
+)
 if REPO_ROOT is None:
-    REPO_ROOT = CURRENT_PATH.parents[-1]
+    raise RuntimeError(f"Could not locate repository root from {CURRENT_PATH}")
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 

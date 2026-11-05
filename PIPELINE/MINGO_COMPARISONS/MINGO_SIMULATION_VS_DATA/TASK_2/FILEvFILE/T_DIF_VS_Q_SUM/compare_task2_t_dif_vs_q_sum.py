@@ -10,7 +10,7 @@ ROOT_DIR = Path(__file__).resolve().parents[6]
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.ANCILLARY.SIMULATION_VS_DATA_AND_VALIDATION.common.task2_strip_scatter_tdif_vs_qsum import (
+from PIPELINE.MINGO_COMPARISONS.MINGO_SIMULATION_VS_DATA.common.task2_strip_scatter_tdif_vs_qsum import (
     parse_scatter_args,
     run_tdif_vs_qsum_comparison,
 )

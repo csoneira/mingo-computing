@@ -3,9 +3,9 @@
 Independent report generator; does not change task gates or parquets.
 
 ```bash
-.venv/bin/python PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALCULATIONS_AND_TUNINGS/TT13_GATE_SCAN/scan.py \
-  --real-manifest PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1_PRODUCTS_TESTS/2026-10-29/tt13_closure/matched_source_records.json \
-  --output PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1_PRODUCTS_TESTS/2026-10-30/tt13_charge_gate_scan
+.venv/bin/python PIPELINE/MINGO_COMPARISONS/MINGO_SIMULATION_VS_DATA/TT13_STUDIES/TT13_GATE_SCAN/scan.py \
+  --real-manifest PIPELINE/MINGO_COMPARISONS/MINGO_DATA_VS_DATA/DATED_STUDIES/2026-10-29/tt13_closure/matched_source_records.json \
+  --output PIPELINE/MINGO_COMPARISONS/MINGO_SIMULATION_VS_DATA/TT13_STUDIES/DATED_STUDIES/2026-10-30/tt13_charge_gate_scan
 ```
 
 Use after MINGO00 has reached Task 5. Rerun to add completed simulation files.

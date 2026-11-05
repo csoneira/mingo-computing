@@ -30,7 +30,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
-REPO_ROOT = ROOT_DIR.parent
+REPO_ROOT = ROOT_DIR.parents[1]
 sys.path.append(str(ROOT_DIR))
 sys.path.append(str(ROOT_DIR / "MASTER_STEPS"))
 sys.path.append(str(REPO_ROOT))
@@ -55,7 +55,7 @@ from STEP_SHARED.sim_utils import (
     save_with_metadata,
     write_chunked_output,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.tot_charge_calibration import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.tot_charge_calibration import (
     TotChargeCalibration,
     default_tot_charge_calibration_path,
 )

@@ -1,6 +1,6 @@
 # 2026-11-02
 
-- `task5_topology_gates_mingo02_20261102/`: MINGO02 Task-5 gate charge/closure studies and same-geometry MINGO00 comparison.
-- The corrected result is `MINGO02_fiducial_plane_efficiency_vs_MINGO00_2026-11-02.pdf`, with full gate/file-level values in `fiducial_efficiency_real_vs_simulation.csv` and method/results in `RESULTS.md`.
-- `RESULTS.md` identifies preliminary outputs that were superseded, including the earlier P1–P3 angle calculation that used the wrong z separation.
-- Frozen Parquet copies are retained only in the existing `backup/` and `plot_inputs/` subfolders of this study bundle; they are ignored by Git. Do not add more copies when the lake source suffices.
+- [Mixed Task-5 gate study](../../../../../MINGO_COMPARISONS/MINGO_SIMULATION_VS_DATA/TT13_STUDIES/DATED_STUDIES/2026-11-02/task5_topology_gates_mingo02_20261102/): MINGO02 gate studies compared with MINGO00 simulation. Real-only scripts and outputs are in [MINGO_DATA_VS_DATA](../../../../../MINGO_COMPARISONS/MINGO_DATA_VS_DATA/DATED_STUDIES/2026-11-02/task5_topology_gates_mingo02_20261102/).
+- The corrected result is [`MINGO02_fiducial_plane_efficiency_vs_MINGO00_2026-11-02.pdf`](../../../../../MINGO_COMPARISONS/MINGO_SIMULATION_VS_DATA/TT13_STUDIES/DATED_STUDIES/2026-11-02/task5_topology_gates_mingo02_20261102/MINGO02_fiducial_plane_efficiency_vs_MINGO00_2026-11-02.pdf), with full gate/file-level values in the comparison bundle and methods/results in its [`RESULTS.md`](../../../../../MINGO_COMPARISONS/MINGO_SIMULATION_VS_DATA/TT13_STUDIES/DATED_STUDIES/2026-11-02/task5_topology_gates_mingo02_20261102/RESULTS.md).
+- The mixed-study `RESULTS.md` identifies preliminary outputs that were superseded, including the earlier P1–P3 angle calculation that used the wrong z separation.
+- Frozen Parquet copies remain only in the mixed study bundle’s existing `backup/` and `plot_inputs/` subfolders; they are ignored by Git. Do not add more copies when the lake source suffices.

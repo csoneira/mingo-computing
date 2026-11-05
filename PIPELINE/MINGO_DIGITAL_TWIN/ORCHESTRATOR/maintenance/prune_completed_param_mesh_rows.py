@@ -28,7 +28,7 @@ ROOT_DIR = next(
 if ROOT_DIR is None:
     raise RuntimeError(f"Could not locate repository root from {__file__}")
 sys.path.append(str(ROOT_DIR))
-sys.path.append(str(ROOT_DIR / "MASTER_STEPS"))
+sys.path.append(str(ROOT_DIR / "PIPELINE" / "MINGO_DIGITAL_TWIN" / "MASTER_STEPS"))
 
 from STEP_SHARED.sim_utils import param_mesh_lock, write_csv_atomic
 

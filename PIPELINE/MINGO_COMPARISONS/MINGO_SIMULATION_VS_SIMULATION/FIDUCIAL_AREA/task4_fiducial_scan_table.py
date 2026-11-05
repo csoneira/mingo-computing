@@ -39,27 +39,27 @@ from tqdm import tqdm
 import yaml
 
 CURRENT_PATH = Path(__file__).resolve()
-REPO_ROOT = None
-for parent in CURRENT_PATH.parents:
-    if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parent.parent
-        break
+REPO_ROOT = next(
+    (parent for parent in CURRENT_PATH.parents
+     if (parent / "CONTEXTUAL/CONFIG/CONTENTS/environment/dataflow.sh").is_file()),
+    None,
+)
 if REPO_ROOT is None:
-    REPO_ROOT = CURRENT_PATH.parents[-1]
+    raise RuntimeError(f"Could not locate repository root from {CURRENT_PATH}")
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_master_config_root  # noqa: E402
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.reprocessing_utils import (  # noqa: E402
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_master_config_root  # noqa: E402
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.reprocessing_utils import (  # noqa: E402
     canonical_processing_basename,
     infer_station_number_from_processing_name,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.simulated_data_utils import (  # noqa: E402
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.simulated_data_utils import (  # noqa: E402
     extract_param_hash_from_parquet,
     load_simulated_efficiencies,
     resolve_simulated_z_positions,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.step1_shared import (  # noqa: E402
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.step1_shared import (  # noqa: E402
     apply_step1_master_overrides,
     apply_step1_task_parameter_overrides,
     build_events_per_second_metadata,

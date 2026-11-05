@@ -26,10 +26,11 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-REPO_ROOT = ROOT_DIR.parent
-sys.path.append(str(ROOT_DIR))
-sys.path.append(str(ROOT_DIR / "MASTER_STEPS"))
+DIGITAL_TWIN_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = DIGITAL_TWIN_ROOT.parents[1]
+MASTER_STEPS_ROOT = DIGITAL_TWIN_ROOT / "MASTER_STEPS"
+sys.path.append(str(DIGITAL_TWIN_ROOT))
+sys.path.append(str(MASTER_STEPS_ROOT))
 sys.path.append(str(REPO_ROOT))
 
 from STEP_SHARED.sim_utils import (
@@ -42,7 +43,7 @@ from STEP_SHARED.sim_utils import (
     write_csv_atomic,
     write_text_atomic,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import (
     SelectionConfig,
     effective_date_ranges_for_station,
     load_master_selection,

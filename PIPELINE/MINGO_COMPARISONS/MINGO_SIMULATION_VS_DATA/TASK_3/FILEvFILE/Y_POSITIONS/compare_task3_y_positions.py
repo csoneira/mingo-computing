@@ -2,7 +2,7 @@
 """Compare Task-3 Y-position distributions for one matched simulation/data file pair.
 
 This is the first FILEvFILE Task-3 script for the
-SIMULATION_VS_DATA_AND_VALIDATION project. It uses the common pairing logic
+MINGO_SIMULATION_VS_DATA comparison project. It uses the common pairing logic
 from ``common/file_pairing.py``:
 
 1. filter simulation rows by the configured simulation-parameter ranges;
@@ -36,14 +36,14 @@ ROOT_DIR = Path(__file__).resolve().parents[6]
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.ANCILLARY.SIMULATION_VS_DATA_AND_VALIDATION.common.file_pairing import (  # noqa: E402
+from PIPELINE.MINGO_COMPARISONS.MINGO_SIMULATION_VS_DATA.common.file_pairing import (  # noqa: E402
     FilePairSelection,
     build_filevfile_pair,
     load_json_config,
     resolve_timestamped_pair_output_dir,
     write_pair_summary,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.ANCILLARY.SIMULATION_VS_DATA_AND_VALIDATION.common.value_filters import (  # noqa: E402
+from PIPELINE.MINGO_COMPARISONS.MINGO_SIMULATION_VS_DATA.common.value_filters import (  # noqa: E402
     apply_config_value_filters,
     format_resolved_value_filters,
 )

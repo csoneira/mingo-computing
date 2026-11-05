@@ -33,7 +33,7 @@ if REPO_ROOT is None:
     raise RuntimeError(f"Could not locate repository root from {__file__}")
 sys.path.insert(0, str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_repo_root
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_repo_root
 
 DEFAULT_SIM_SOURCE_DIR = get_repo_root() / "PIPELINE/MINGO_DIGITAL_TWIN/SIMULATION_OUTPUTS/SIMULATED_DATA/FILES"
 REGISTRY_FIELDS = ["basename", "execution_timestamp"]
@@ -307,7 +307,7 @@ def main() -> None:
     )
     if master_dir is None:
         raise RuntimeError(f"Unable to resolve MASTER directory from {current_path}")
-    repo_root = master_dir.parent.parent
+    repo_root = get_repo_root()
     source_dir = Path(args.source_dir).expanduser().resolve()
     source_dir.mkdir(parents=True, exist_ok=True)
     if not source_dir.is_dir():

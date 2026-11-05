@@ -33,7 +33,8 @@ import pandas as pd
 import yaml
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
-ROOT_RUNTIME_DIR = ROOT_DIR.parent / "CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME"
+REPO_ROOT = ROOT_DIR.parents[1]
+ROOT_RUNTIME_DIR = REPO_ROOT / "CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME"
 STRUCTURED_LOG_PATH = ROOT_RUNTIME_DIR / "CRON_LOGS" / "SIMULATION" / "STRUCTURED" / "step_final.jsonl"
 STRUCTURED_LOG_ENABLED = os.environ.get("SIM_STRUCTURED_LOGS_ENABLED", "1").strip() != "0"
 BACKPRESSURE_CONFIG_DEFAULT = (
@@ -53,6 +54,7 @@ SIM_IMPORT_HISTORY_DEFAULT = (
 )
 sys.path.append(str(ROOT_DIR))
 sys.path.append(str(ROOT_DIR / "MASTER_STEPS"))
+sys.path.append(str(REPO_ROOT))
 
 from STEP_SHARED.sim_utils import (
     ensure_dir,

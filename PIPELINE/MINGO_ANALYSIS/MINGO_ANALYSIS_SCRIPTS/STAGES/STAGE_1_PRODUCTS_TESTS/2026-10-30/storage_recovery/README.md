@@ -24,12 +24,11 @@
 - Verified new file mi0005199000000, generated after restart, through Tasks 0–5.
   Output: MINGO00/STAGE_1_PRODUCTS/EVENT_DATA/PARQUET_LAKE/
   postprocessed_mi0005199000000.parquet, 50,000 rows, 420 columns.
-- New independent analysis: ANCILLARY/CALCULATIONS_AND_TUNINGS/TT13_GATE_SCAN.
+- New independent analysis: PIPELINE/MINGO_COMPARISONS/MINGO_SIMULATION_VS_DATA/TT13_STUDIES/TT13_GATE_SCAN.
   Configurable charge spectra for each plane, exact TT, gate and condition;
   reference-charge and chi-square threshold scans; per-TT acceptance; known
   simulation input efficiencies. No automatic cut optimization or parquet mutation.
-- Results: `../tt13_real_sim_gate_scan/` and the earlier real-only
-  `../tt13_charge_gate_scan/` study folders.
+- Results: `PIPELINE/MINGO_COMPARISONS/MINGO_SIMULATION_VS_DATA/TT13_STUDIES/DATED_STUDIES/2026-10-30/tt13_real_sim_gate_scan/` and `.../tt13_charge_gate_scan/`.
   First simulation baseline observed/predicted ratio 0.899 +/- 0.062; spatial
   chi2<5: 0.849 +/- 0.058; TimTrack chi2<10: 0.751 +/- 0.052. These are counting-only
   errors for conditional probabilities. The first baseline alone is compatible

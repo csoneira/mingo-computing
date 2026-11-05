@@ -15,6 +15,8 @@ if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
   fi
 fi
 unset _repo_probe
+# Task scripts run by absolute path; include the repository root so package imports resolve after layout changes.
+export PYTHONPATH="${DATAFLOW_ROOT}${PYTHONPATH:+:${PYTHONPATH}}"
 # =============================================================================
 # DATAFLOW_v3 Script Header v1
 # Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/STEP_1/guide_raw_to_corrected.sh

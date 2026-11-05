@@ -10,10 +10,10 @@ while time.monotonic()-start<1200:
   required=['event_det_chi2_pos','event_tim_th_chi','p1_qsum','p1_s1_qsum_cal','param_hash']
   if not all(c in schema.names for c in required):raise ValueError('Required final columns absent')
   print('New MINGO00 Task-5 parquet ready:',p,'rows=',pq.ParquetFile(p).metadata.num_rows,flush=True)
-  archive=root/'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1_PRODUCTS_TESTS/2026-10-30'
-  manifest=root/'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1_PRODUCTS_TESTS/2026-10-29/tt13_closure/matched_source_records.json'
+  archive=root/'PIPELINE/MINGO_COMPARISONS/MINGO_SIMULATION_VS_DATA/TT13_STUDIES/DATED_STUDIES/2026-10-30'
+  manifest=root/'PIPELINE/MINGO_COMPARISONS/MINGO_DATA_VS_DATA/DATED_STUDIES/2026-10-29/tt13_closure/matched_source_records.json'
   output=archive/'tt13_real_sim_gate_scan'
-  cmd=[str(root/'.venv/bin/python'),'-u',str(root/'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALCULATIONS_AND_TUNINGS/TT13_GATE_SCAN/scan.py'),'--stations','0,1','--real-manifest',str(manifest),'--output',str(output)]
+  cmd=[str(root/'.venv/bin/python'),'-u',str(root/'PIPELINE/MINGO_COMPARISONS/MINGO_SIMULATION_VS_DATA/TT13_STUDIES/TT13_GATE_SCAN/scan.py'),'--stations','0,1','--real-manifest',str(manifest),'--output',str(output)]
   sys.exit(subprocess.run(cmd,cwd=root).returncode)
  except (OSError,ValueError):pass
  if time.monotonic()-last>=60:print('Waiting for Task-5 output; elapsed seconds',int(time.monotonic()-start),flush=True);last=time.monotonic()

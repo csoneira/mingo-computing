@@ -22,18 +22,26 @@ import time
 import numpy as np
 import pandas as pd
 import yaml
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 CURRENT_PATH = Path(__file__).resolve()
 SCRIPTS_ROOT = next(parent for parent in CURRENT_PATH.parents if parent.name == "MINGO_ANALYSIS_SCRIPTS")
-REPO_ROOT = SCRIPTS_ROOT.parent.parent
+REPO_ROOT = next(
+    parent
+    for parent in SCRIPTS_ROOT.parents
+    if (parent / "CONTEXTUAL/CONFIG/CONTENTS/environment/dataflow.sh").is_file()
+)
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.debug_plots import plot_debug_histograms
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.file_selection import select_latest_candidate
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_repo_root
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import runtime_plot_directory_name
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.step1_shared import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.debug_plots import plot_debug_histograms
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.file_selection import select_latest_candidate
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_repo_root
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import runtime_plot_directory_name
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.step1_shared import (
     add_normalized_count_metadata,
     apply_step1_master_overrides,
     build_events_per_second_metadata,
@@ -41,7 +49,7 @@ from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.step1_shared import (
     prune_redundant_count_metadata,
     save_metadata,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.status_csv import initialize_status_row, update_status_progress
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.status_csv import initialize_status_row, update_status_progress
 
 
 TASK_NAME = "TASK_2_SELFTRIGGER"

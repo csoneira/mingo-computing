@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 ROOT=Path('/home/mingo/mingo-computing/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS/MINGO01/STAGE_1_PRODUCTS/EVENT_DATA/PARQUET_LAKE')
 OUT=Path(__file__).resolve().parent
-manifest=Path(__file__).resolve().parents[1]/'tt13_closure'/'matched_source_records.json'
+manifest=Path(__file__).resolve().parents[6]/'MINGO_DATA_VS_DATA'/'DATED_STUDIES'/'2026-10-29'/'tt13_closure'/'matched_source_records.json'
 records=[r for r in json.loads(manifest.read_text()) if r['stage']=='Coincidence raw']
 GATES={'baseline':'Task-5 available events','spatial_chi2_lt5':'Spatial χ² < 5 (exploratory; TT13 saturated fit)','timtrack_chi2_lt10':'TimTrack χ² < 10 (exploratory; TT-dependent dof)','middle_P1_P3':'P1 and P3: exactly one middle strip','middle_all_active':'Every active plane: exactly one middle strip (selection-dependent)'}
 TT=[1234,134,123,13];summary=collections.defaultdict(lambda:np.zeros(4,dtype=np.int64));times=[];audit=[];quality=[]
