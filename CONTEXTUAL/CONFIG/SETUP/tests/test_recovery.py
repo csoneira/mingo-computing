@@ -54,17 +54,20 @@ class RecoverySafetyTests(unittest.TestCase):
             if line.strip() and not line.startswith('#') and not re.match(r'^\w+=', line)
         ]
         self.assertEqual(len(commands), len(scheduled_lines))
-        # The simulation cycle is intentionally enabled and must be wrapped by
-        # the same managed execution gate as the rest of the production jobs.
+        # Jobs commented with STOPPED are deliberately excluded from the
+        # rendered schedule. Any enabled production command uses the same gate.
         simulation_commands = [c for c in commands if 'run_main_simulation_cycle.sh' in c]
-        self.assertEqual(len(simulation_commands), 1)
-        self.assertIn('/CONTEXTUAL/CONFIG/SETUP/run-job.sh -- ', simulation_commands[0])
-        for station in (1, 2):
-            self.assertTrue(
-                any(f'guide_raw_to_corrected.sh -s {station}' in c for c in commands)
+        self.assertLessEqual(len(simulation_commands), 1)
+        for command in simulation_commands:
+            self.assertIn('/CONTEXTUAL/CONFIG/SETUP/run-job.sh -- ', command)
+        for station in (1, 2, 3, 4):
+            command = any(f'guide_raw_to_corrected.sh -s {station}' in c for c in commands)
+            configured = any(
+                line.strip() and not line.lstrip().startswith('#')
+                and f'guide_raw_to_corrected.sh -s {station}' in line
+                for line in source.splitlines()
             )
-        self.assertFalse(any('guide_raw_to_corrected.sh -s 3' in c for c in commands))
-        self.assertFalse(any('guide_raw_to_corrected.sh -s 4' in c for c in commands))
+            self.assertEqual(command, configured)
         for command in commands:
             self.assertIn('/CONTEXTUAL/CONFIG/SETUP/run-job.sh -- ', command)
             self.assertNotIn('/usr/bin/python3', command)
@@ -88,6 +91,30 @@ class RecoverySafetyTests(unittest.TestCase):
     def test_no_runtime_path_escapes_checkout(self):
         with patch.object(recovery, 'manifest', return_value=['../../unsafe']):
             with self.assertRaises(ValueError): recovery.runtime_dirs()
+
+    def test_configured_external_runtime_symlink_is_allowed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / 'repo'
+            external = Path(temp) / 'external-station-data'
+            external_backup = Path(temp) / 'external-log-backup'
+            external.mkdir(parents=True)
+            external_backup.mkdir()
+            station_link = root / 'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS'
+            station_link.parent.mkdir(parents=True)
+            station_link.symlink_to(external, target_is_directory=True)
+            backup_link = root / 'CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/REMOTE_LOG_BACKUP'
+            backup_link.parent.mkdir(parents=True)
+            backup_link.symlink_to(external_backup, target_is_directory=True)
+            with patch.object(recovery, 'ROOT', root), \
+                    patch.object(recovery, 'STATE', root / 'CONTEXTUAL/OPERATIONS/SETUP'), \
+                    patch.object(recovery, 'manifest', return_value=[
+                        'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS/MINGO01/STAGE_1',
+                        'CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/REMOTE_LOG_BACKUP/cron',
+                    ]), \
+                    patch.object(recovery, 'cron_paths', return_value=(set(), [])):
+                paths = recovery.runtime_dirs()
+            self.assertIn(station_link / 'MINGO01/STAGE_1', paths)
+            self.assertIn(backup_link / 'cron', paths)
 
     def test_machine_config_symlink_is_not_overwritten(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(recovery, 'HOME', Path(temp)):

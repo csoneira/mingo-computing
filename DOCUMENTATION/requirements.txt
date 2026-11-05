@@ -1,1 +1,1 @@
-../CONFIG/CONTENTS/packages/docs-requirements.txt
+../CONTEXTUAL/CONFIG/CONTENTS/packages/docs-requirements.txt

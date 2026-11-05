@@ -42,7 +42,7 @@ def is_repository_root(root):
         root / 'CONTEXTUAL/CONFIG/CONTENTS/environment/dataflow.sh',
         root / 'CONTEXTUAL/CONFIG/SETUP/recovery.py',
         root / 'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS',
-        root / 'PIPELINE/MINGO_DIGITAL_TWIN',
+        root / "PIPELINE" / "MINGO_DIGITAL_TWIN",
         root / 'CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME',
     )
     return root.is_dir() and all(path.exists() for path in required)
@@ -153,8 +153,21 @@ def runtime_dirs():
         if path.suffix in ('.log', '.lock') and path.is_relative_to(ROOT):
             result.add(path.parent)
     result.add(STATE)
+    # These two repository paths are intentionally mount points for large
+    # operational datasets. Their actual destinations are host configuration,
+    # so permit descendants only when the repository entry itself is a symlink.
+    external_runtime_links = (
+        ROOT / 'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS',
+        ROOT / 'PIPELINE/MINGO_DIGITAL_TWIN/SIMULATION_OUTPUTS/INTERSTEPS',
+        ROOT / 'CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/REMOTE_LOG_BACKUP',
+    )
     for p in result:
-        if not p.resolve().is_relative_to(ROOT):
+        resolved = p.resolve()
+        allowed_external = any(
+            link.is_symlink() and p.is_relative_to(link) and link.resolve().is_dir()
+            for link in external_runtime_links
+        )
+        if not resolved.is_relative_to(ROOT) and not allowed_external:
             raise ValueError(f'Runtime directory escapes repository: {p}')
     return result
 
@@ -200,7 +213,7 @@ def python_smoke(report):
         report.check(r.returncode == 0, f'Cron environment import {name}')
     r = run([PYTHON, '-m', 'pip', 'check'], env=cron_env())
     report.check(r.returncode == 0, 'pip dependency consistency')
-    r = run([PYTHON, '-c', 'import sys; assert sys.prefix != sys.base_prefix; import yaml; from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_repo_root; assert str(get_repo_root()) == sys.argv[1]', ROOT], env=cron_env())
+    r = run([PYTHON, '-c', 'import sys; assert sys.prefix != sys.base_prefix; import yaml; from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_repo_root; assert str(get_repo_root()) == sys.argv[1]', ROOT], env=cron_env())
     report.check(r.returncode == 0, 'Python path configuration resolves this checkout')
     r = run([ROOT / '.venv/bin/yq', '-r', '.logbook.gid_by_station."1"'], input='logbook:\n  gid_by_station:\n    "1": "123"\n', env=cron_env())
     report.check(r.returncode == 0 and r.stdout.strip() == '123', 'Pinned kislyuk/yq supports production jq-style query')
