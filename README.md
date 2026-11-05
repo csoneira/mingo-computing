@@ -1,15 +1,37 @@
-# MINGO Computing
+# mingo-computing
 
-For a new analysis PC, clone this repository and run setup from the checkout:
+legacy
+DOCUMENTATION
 
-```bash
-git clone https://github.com/csoneira/mingo-computing.git
-cd mingo-computing
-bash CONFIG/SETUP/setup.sh --apply
-```
+------------
+CONTEXTUAL
+- CONFIG
+- OPERATIONS
 
-The setup installs a fixed analysis-PC cron schedule and prints what is ready,
-missing, or failed. Run `bash CONFIG/SETUP/setup.sh --check` for a later
-point-in-time configuration check. Processing health, cron-log errors, and
-status CSVs belong to the existing `OPERATIONS` scripts. See the
-[setup guide](CONFIG/SETUP/README.md) and [recovery audit](CONFIG/SETUP/AUDIT.md).
+PIPELINE
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                              Uncertainty, systematics and other studies
+                                                                                                               ^
+                                                                                                               |
+                                                                                                               |
+                                "sidecar" ---------------------------------------------------->  MINGO_SIMULATION_VS_SIMULATION ---------> correction LUTs
+                                    ^                                                                          ^                                 |
+                               		|                                                                          |                                 |
+------------------------         	|                                                                          |                                 |
+-- MINGO_DIGITAL_TWIN -- --> Simulated events --> mingo-like data format ---                           Analyzed simulated events                 |
+------------------------                                                    \                         /               |                          |
+                                                                             -------------------------                v                          |
+                                                                             ---- MINGO_ANALYSIS -----      MINGO_SIMULATION_VS_DATA             |
+                                                                             -------------------------                ^                          |
+                                                                            /                         \               |                          v
+"Real measurement" ----------> hld events ----> mingo-like data format -----                           Analyzed real events -----------> MINGO_CORRECTIONS
+         ^                                                                                                     |                                 |
+         |                                                                                                     |                                 v
+         |                                                                                                     |                        Real corrected data
+         |                                                                                                     v
+         |                                                                                             MINGO_DATA_VS_DATA
+---------|-------------------------------------------------------------------------------------------------------------------------------------------------
+         |
+    mingo station
+    (makes use of
+  FOR_MINGO_SYSTEMS)

@@ -44,10 +44,10 @@ NOISE_CONTROL_PLANE_COMBINATION_REPORT_CANDIDATES = (
         [
             next(
                 parent for parent in SCRIPT_PATH.parents
-                if (parent / "CONFIG" / "config_paths.yaml").is_file()
-            ) / "MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/PLOTTERS/METADATA/NOISE_CONTROL/PLOTS/noise_control_plane_combination_rate_report.pdf"
+                if (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file()
+            ) / "PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/PLOTTERS/METADATA/NOISE_CONTROL/PLOTS/noise_control_plane_combination_rate_report.pdf"
         ]
-        if any((parent / "CONFIG" / "config_paths.yaml").is_file() for parent in SCRIPT_PATH.parents)
+        if any((parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file() for parent in SCRIPT_PATH.parents)
         else []
     ),
     *(Path(os.environ["MINGO_NOISE_CONTROL_REPORT"]) for _ in [0] if os.environ.get("MINGO_NOISE_CONTROL_REPORT")),

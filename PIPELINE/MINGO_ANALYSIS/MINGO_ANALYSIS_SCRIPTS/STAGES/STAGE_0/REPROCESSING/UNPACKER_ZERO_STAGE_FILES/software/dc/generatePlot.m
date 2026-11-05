@@ -1,0 +1,177 @@
+% =============================================================================
+% DATAFLOW_v3 Script Header v1
+% Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/software/dc/generatePlot.m
+% Purpose: generatePlot function implementation.
+% Owner: DATAFLOW_v3 contributors
+% Sign-off: csoneira <csoneira@ucm.es>
+% Last Updated: 2026-03-02
+% Runtime: octave/matlab
+% Usage: Run from MATLAB/Octave entrypoint with expected args/context.
+% Inputs: Variables, config files, environment, and/or upstream files.
+% Outputs: Variables, files, plots, or logs.
+% Notes: Keep behavior configuration-driven and reproducible.
+% =============================================================================
+
+function generatePlot(inputVars)
+
+
+%2023-03-19 generatePlots2 created
+
+inPath      = inputVars{1};
+outPath     = inputVars{2};
+lookUpTable = inputVars{3};
+timeElapsed = inputVars{4};
+device      = inputVars{5};
+interpreter = inputVars{6};
+OS          = inputVars{7};
+
+
+%%%Check the number of pages needed elminating the zeros (not to be displayed)
+numberOfPages = length(find(unique(myCellStr2num(lookUpTable(2,:))) > 0));
+numberOfVars  = size(lookUpTable,2);
+
+if(strcmp(interpreter,'octave'))
+      graphics_toolkit ("gnuplot")
+      setenv GNUTERM dumb
+end
+
+figH = [];
+for i = 1:numberOfPages
+     figH = [figH figure];
+end
+
+for i= 1:numberOfVars
+    
+    pageNumber   =      myCellStr2num(lookUpTable(2,i));if (pageNumber == 0);continue;end;%skip entries with zero page
+    pageFormat   =                    lookUpTable{ 3,i};
+    axisNumber   =      myCellStr2num(lookUpTable( 4,i));
+    varName      =                    lookUpTable{ 5,i};
+    plotType     =      myCellStr2num(lookUpTable( 7,i));
+    downScaling  =      myCellStr2num(lookUpTable( 8,i));
+    operation2Do =               eval(lookUpTable{ 9,i});
+    attributes   =               eval(lookUpTable{17,i});
+
+    checkPlotAttributes;
+
+
+    if exist([inPath varName '.mat'],'file');
+        
+        load([inPath varName '.mat']);
+        figure(figH(pageNumber));
+        if plotType == 1 %%%%%%%%%%%%%%%%%%%%%%%%%%% Var vs time
+            %% Set number of Axis in the page
+            eval(['axisH = subplot(' pageFormat ',' num2str(axisNumber) ');']);hold on;           
+            
+            %% Perform operation on the data
+            var1  = [timeStamp];var2 = variable;
+            if operation2Do{1} == 0
+                %DO NOTHING
+            elseif operation2Do{1} == 1
+                 eval(operation2Do{2}); 
+            end
+            
+            %% Do the Plot
+            aPlot = plot(var1(1:downScaling:end),var2(1:downScaling:end),'color',colorType,'LineStyle',LineStyleType,'Marker',MarkerType,'MarkerSize',MarkerSIZE);
+            set(axisH,'FontSize',fontSize);
+            try;set(axisH,'xtick',linspace(var1(1),var1(end),4));catch;end
+                      
+            setLegend;
+
+            %% Title, axislabels .... 
+            box on;
+            title(axisTitle,'FontSize',fontSize);xlabel(xaxisLabel,'FontSize',fontSize);ylabel(yaxisLabel,'FontSize',fontSize);
+
+            mySetAxis('y',yZoom,var2);
+            xaxis(timeElapsed(1),timeElapsed(2));
+            try;datetick('x',dateFormat,'keepticks');catch;end
+
+            if(strcmp(gridActive,'ON') | strcmp(gridActive,'On') | strcmp(gridActive,'on'))
+                grid on
+            end
+
+        elseif plotType == 2 %%%%%%%%%%%%%%%%%%%%%%% 
+            %% Set number of Axis in the page
+            eval(['subplot(' pageFormat ',' num2str(axisNumber) ')']);hold on
+            keyboard
+        elseif plotType == 3 %%%%%%%%%%%%%%%%%%%%%%% Histogram2D
+            %% Set number of Axis in the page
+            if(~strcmp(pageFormat,'1,1'))
+                eval(['subplot(' pageFormat ',' num2str(axisNumber) ')']);hold on;
+            end
+
+            %% Do the Plot
+            xyMAP_zRange = mySetRange('z',xyMAP_zRange,variable1);
+
+            indx = isnan(variable1);variable1(indx) = 0;%Octave display wrongly Nans
+
+            if isa(xyMAP_zRange,'char')
+                imagesc(variable1);
+            else
+                imagesc(variable1,[xyMAP_zRange(1) xyMAP_zRange(2)]);
+            end
+            
+
+            %% Title, axislabels .... 
+            colorbar
+            title([axisTitle ' ' datestr(dateRegularFormat,'dd-mm-YYYY') ' with ' num2str((nansum(nansum(variable1)))) ' events'],'FontSize',fontSize);
+            box on;
+            xlabel(xaxisLabel,'FontSize',fontSize);ylabel(yaxisLabel,'FontSize',fontSize);
+            mySetAxis('x',xZoom,[]);
+        elseif plotType == 4 %%%%%%%%%%%%%%%%%%%%%%% 
+            %% Set number of Axis in the page
+            eval(['subplot(' pageFormat ',' num2str(axisNumber) ')']);hold on;  
+            keyboard
+        elseif plotType == 5 %%%%%%%%%%%%%%%%%%%%%%% 
+            %% Set number of Axis in the page
+            eval(['subplot(' pageFormat ',' num2str(axisNumber) ')']);hold on;  
+            keyboard
+        elseif plotType == 6 %%%%%%%%%%%%%%%%%%%%%%% Stairs
+            %% Set number of Axis in the page
+            eval(['subplot(' pageFormat ',' num2str(axisNumber) ')']);hold on;  
+
+            %% Do the Plot
+            aPlot = stairs(variableN,variableX,'color',colorType);xLim = get(gca,'Xlim');yLim = get(gca,'Ylim');
+            %set(axisH,'FontSize',fontSize);
+            
+            setLegend;
+                                    
+            %% Title, axislabels .... 
+            if (yLogActivated) logy;xaxis(xLim(1),xLim(2));yaxis(yLim(1),yLim(2));end
+            box on;
+            title(axisTitle,'FontSize',fontSize);xlabel(xaxisLabel,'FontSize',fontSize);ylabel(yaxisLabel,'FontSize',fontSize);
+            mySetAxis('x',xZoom,[]);
+            mySetAxis('y',yZoom,[]);
+
+
+        else
+        end
+    end
+end
+
+
+
+for i = 1:numberOfPages
+    figure(figH(i));
+    figHH = figH(i);
+    setFig4Pdf;
+
+    if(strcmp(interpreter,'matlab'))
+        saveas(figH(i),[outPath date '-' device '_' sprintf('%02d',i)],'pdf');
+        saveas(figH(i),[outPath device '_' sprintf('%02d',i)],'pdf');
+    elseif(strcmp(interpreter,'octave'))
+        try
+            print(figH(i),[outPath date '-' device '_' sprintf('%02d',i) '.pdf']);
+            print(figH(i),[outPath device '_' sprintf('%02d',i) '.pdf']);
+        catch
+            disp('Error on octaveprint');
+        end
+    else
+    end
+    
+    close(figH(i));
+end
+
+
+
+
+return

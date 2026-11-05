@@ -27,13 +27,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r CONFIG/CONTENTS/packages/python-lock.txt
+          pip install -r CONTEXTUAL/CONFIG/CONTENTS/packages/python-lock.txt
 
       - name: Run reproducible simulation unit tests
         run: |
-          python -m pytest -q MINGO_DIGITAL_TWIN/MASTER_STEPS/tests
+          python -m pytest -q PIPELINE/MINGO_DIGITAL_TWIN/MASTER_STEPS/tests
 
       - name: Validate recovery manifests without activating services
         run: |
-          python -m unittest discover -s CONFIG/SETUP/tests -v
-          bash CONFIG/SETUP/setup.sh --dry-run
+          python -m unittest discover -s CONTEXTUAL/CONFIG/SETUP/tests -v
+          bash CONTEXTUAL/CONFIG/SETUP/setup.sh --dry-run

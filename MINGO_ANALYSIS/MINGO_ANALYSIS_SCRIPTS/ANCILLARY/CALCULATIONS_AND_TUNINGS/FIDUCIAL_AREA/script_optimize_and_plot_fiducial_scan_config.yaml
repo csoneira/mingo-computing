@@ -1,9 +1,0 @@
-# Plot configuration for:
-# MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALCULATIONS/script_optimize_and_plot_fiducial_scan.py
-#
-# Controls which error quantity is shown in the theta-vs-radius contour figure.
-# Allowed values:
-#   - absolute_error
-#   - signed_error
-
-theta_r_error_contour_mode: absolute_error

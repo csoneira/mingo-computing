@@ -1,0 +1,30 @@
+# Fiducial scan parameter space for:
+# PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALCULATIONS/task4_fiducial_scan_table.py
+#
+# theta is scanned as:
+#   0 <= theta <= theta_max
+# with theta_max in degrees.
+#
+# The x/y fiducial region is scanned as a circle:
+#   sqrt(x^2 + y^2) <= radius_max
+# with radius_max in mm.
+#
+# Use:
+#   first: first tested value
+#   last:  last tested value
+#   steps: number of tested points, inclusive of first and last
+
+theta_max_scan:
+  first: 10.0
+  last: 40.0
+  steps: 15
+
+radius_max_scan:
+  first: 10.0
+  last: 150.0
+  steps: 15
+
+track_efficiency_large_plot:
+  enabled: true
+  theta_max_deg: 30.0
+  radius_max_mm: 100.0

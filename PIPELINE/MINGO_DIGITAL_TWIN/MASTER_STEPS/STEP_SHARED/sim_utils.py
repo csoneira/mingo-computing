@@ -1,0 +1,161 @@
+"""
+DATAFLOW_v3 Script Header v1
+Script: PIPELINE/MINGO_DIGITAL_TWIN/MASTER_STEPS/STEP_SHARED/sim_utils.py
+Purpose: Backward-compatible facade for STEP_SHARED simulation utilities.
+Owner: DATAFLOW_v3 contributors
+Sign-off: csoneira <csoneira@ucm.es>
+Last Updated: 2026-03-02
+Runtime: python3
+Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/MASTER_STEPS/STEP_SHARED/sim_utils.py [options]
+Inputs: CLI args, config files, environment variables, and/or upstream files.
+Outputs: Files, logs, plots, or stdout/stderr side effects.
+Notes: Keep behavior configuration-driven and reproducible.
+"""
+
+from __future__ import annotations
+
+from .sim_utils_config import (
+    list_station_config_files,
+    load_global_home_path,
+    load_step_configs,
+    read_station_config,
+)
+from .sim_utils_geometry import (
+    GEOMETRY_SCHEMA_VERSION,
+    GEOMETRY_TOLERANCE_MM,
+    DEFAULT_ACTIVE_AREA_BOUNDS,
+    LEGACY_Y_WIDTHS,
+    PlaneReadoutGeometry,
+    RectBounds,
+    StripBounds,
+    build_legacy_readout_geometry,
+    build_plane_readout_geometry,
+    build_readout_geometry,
+    readout_geometry_to_dict,
+    rect_bounds_to_dict,
+    resolve_active_area_bounds,
+    validate_rect_bounds,
+    DEFAULT_BOUNDS,
+    Y_WIDTHS,
+    DetectorBounds,
+    build_geometry_map,
+    build_global_geometry_registry,
+    get_strip_geometry,
+    iter_geometries,
+    map_station_to_geometry,
+    num_strips_for_plane,
+)
+from .sim_utils_io import (
+    ensure_dir,
+    find_latest_data_path,
+    find_sim_run_dir,
+    iter_input_frames,
+    load_with_metadata,
+    now_iso,
+    param_mesh_lock,
+    param_mesh_lock_path,
+    reset_dir,
+    save_with_metadata,
+    write_chunked_output,
+    write_csv_atomic,
+    write_text_atomic,
+)
+from .sim_utils_metadata import (
+    build_sim_run_name,
+    compute_step_param_id,
+    extract_param_row_id,
+    extract_param_set,
+    extract_step_id_chain,
+    extract_step_param_ids,
+    find_param_set_id,
+)
+from .sim_utils_mesh import (
+    _mesh_ids_changed,
+    check_param_mesh_upstream,
+    mark_param_set_done,
+    normalize_param_mesh_ids,
+    resolve_param_mesh,
+    select_next_step_id,
+    select_param_row,
+)
+from .sim_utils_registry import (
+    _json_fingerprint,
+    _upstream_fingerprint,
+    find_sim_run,
+    latest_sim_run,
+    load_parameter_mesh,
+    load_sim_run_registry,
+    random_sim_run,
+    register_sim_run,
+    resolve_sim_run,
+    resolve_sim_run_name,
+    save_sim_run_registry,
+)
+
+__all__ = [
+    "GEOMETRY_SCHEMA_VERSION",
+    "GEOMETRY_TOLERANCE_MM",
+    "DEFAULT_ACTIVE_AREA_BOUNDS",
+    "LEGACY_Y_WIDTHS",
+    "RectBounds",
+    "StripBounds",
+    "PlaneReadoutGeometry",
+    "build_plane_readout_geometry",
+    "build_readout_geometry",
+    "build_legacy_readout_geometry",
+    "readout_geometry_to_dict",
+    "rect_bounds_to_dict",
+    "resolve_active_area_bounds",
+    "validate_rect_bounds",
+    "DetectorBounds",
+    "DEFAULT_BOUNDS",
+    "Y_WIDTHS",
+    "load_global_home_path",
+    "load_step_configs",
+    "list_station_config_files",
+    "read_station_config",
+    "build_geometry_map",
+    "build_global_geometry_registry",
+    "map_station_to_geometry",
+    "resolve_sim_run_name",
+    "load_parameter_mesh",
+    "find_param_set_id",
+    "iter_geometries",
+    "get_strip_geometry",
+    "num_strips_for_plane",
+    "ensure_dir",
+    "now_iso",
+    "param_mesh_lock_path",
+    "param_mesh_lock",
+    "write_csv_atomic",
+    "write_text_atomic",
+    "load_with_metadata",
+    "iter_input_frames",
+    "resolve_param_mesh",
+    "check_param_mesh_upstream",
+    "normalize_param_mesh_ids",
+    "select_param_row",
+    "compute_step_param_id",
+    "build_sim_run_name",
+    "select_next_step_id",
+    "register_sim_run",
+    "mark_param_set_done",
+    "extract_param_set",
+    "extract_param_row_id",
+    "extract_step_param_ids",
+    "extract_step_id_chain",
+    "find_latest_data_path",
+    "find_sim_run_dir",
+    "write_chunked_output",
+    "save_with_metadata",
+    "_json_fingerprint",
+    "_upstream_fingerprint",
+    "load_sim_run_registry",
+    "save_sim_run_registry",
+    "resolve_sim_run",
+    "find_sim_run",
+    "latest_sim_run",
+    "random_sim_run",
+    "reset_dir",
+    "_mesh_ids_changed",
+]
