@@ -22,7 +22,7 @@ Entries below describe presentations recorded in conference programmes, not addi
 
 | Year | Contribution | Conference | Presenter | Source |
 | --- | --- | --- | --- | --- |
-| 2026 | The miniTrasgo International Research Network | 29th European Cosmic Ray Symposium (ECRS), Santiago de Compostela, 30 June | J. A. Garzón | [Programme](https://indico.cern.ch/event/1536846/contributions/) |
+| 2026 | The miniTrasgo International Research Network | 29th European Cosmic Ray Symposium (ECRS), Santiago de Compostela, 30 June | J. A. Garzón | [Official contribution list (ID 80)](https://indico.cern.ch/event/1536846/contributions/); [session programme](https://indico.cern.ch/event/1536846/sessions/667225/) |
 | 2025 | miniTRASGO: A Compact Muon Detector for Global Cosmic Ray Monitoring and Space Weather Studies | EuNPC2025, Caen, 25 September | C. Soneira-Landín | [Contribution](https://indico.in2p3.fr/event/30430/contributions/156880/); [slides (PDF)](https://indico.in2p3.fr/event/30430/contributions/156880/attachments/96396/148022/Presentation_ID330_Soneira.pdf) |
 | 2025 | RPC readout optimization: miniTRASGO as a path to a single-plane multiplexed timing system | XVII CPAN Days, Valencia, 19 November | C. Soneira-Landín | [Contribution](https://indico.ific.uv.es/event/8035/contributions/29013/); [slides (PDF)](https://indico.ific.uv.es/event/8035/contributions/29013/attachments/14476/21050/Soneira_CPAN_2025_11_19.pptx.pdf) |
 | 2025 | miniTRASGO: A Compact RPC Tracker for Global Cosmic Ray and Space Weather Monitoring | NMDB Meeting 2025, Athens, 21 March | A. Blanco | [Contribution and presentation material](https://conferences.uoa.gr/event/97/contributions/1128/) |
@@ -34,15 +34,19 @@ Entries below describe presentations recorded in conference programmes, not addi
 
 | Year | Contribution | Conference | Presenter | Source |
 | --- | --- | --- | --- | --- |
-| 2026 | From station data to corrected flux: an integrated analysis and simulation framework for miniTRASGO | TIDPAN2026, Valencia, 19 June | C. Soneira-Landín | [Conference programme](https://indico.global/event/16473/timetable/?view=standard_numbered) |
-| 2026 | The miniTrasgo Cosmic Ray detector | ECRS 2026, Santiago de Compostela | C. Soneira-Landín | [Conference programme](https://indico.cern.ch/event/1536846/contributions/) |
-| 2026 | Particle Identification with the miniTrasgo Detector | ECRS 2026, Santiago de Compostela | J. Vargas / J. A. Garzón (listed contributors) | [Conference programme](https://indico.cern.ch/event/1536846/contributions/) |
-| 2026 | TRUFA: TRasgo’s Unified Framework for data Analysis | ECRS 2026, Santiago de Compostela | L. M. Crujeiras | [Conference programme](https://indico.cern.ch/event/1536846/contributions/) |
+| 2026 | From station data to corrected flux: an integrated analysis and simulation framework for miniTRASGO | TIDPAN2026, Valencia, 19 June | C. Soneira-Landín | [Official contribution list](https://indico.global/event/16473/contributions/); [timetable and attached poster (TIDPAN26_poster_csoneira.pdf)](https://indico.global/event/16473/timetable/?view=standard_numbered) |
+| 2026 | The miniTrasgo Cosmic Ray detector | ECRS 2026, Santiago de Compostela | C. Soneira-Landín | [Official contribution list (ID 82)](https://indico.cern.ch/event/1536846/contributions/) |
+| 2026 | Particle Identification with the miniTrasgo Detector | ECRS 2026, Santiago de Compostela | J. Vargas and J. A. Garzón (listed contributors) | [Official contribution list (ID 57)](https://indico.cern.ch/event/1536846/contributions/) |
+| 2026 | TRUFA: TRasgo’s Unified Framework for data Analysis | ECRS 2026, Santiago de Compostela | L. M. Crujeiras | [Official contribution list (ID 79)](https://indico.cern.ch/event/1536846/contributions/) |
 | 2025 | miniTRASGO: A Compact RPC Telescope for Global Cosmic Ray Monitoring | 39th International Cosmic Ray Conference (ICRC2025), Geneva | C. Soneira-Landín | [Poster and abstract](https://indico.cern.ch/event/1258933/contributions/6478594/) |
 | 2025 | The miniTRASGO International Research Network | ICRC2025, Geneva | J. A. Garzón | [Poster and abstract](https://indico.cern.ch/event/1258933/contributions/6478328/) |
-| 2025 | Deployment of a MiniTrasgo Detector at UDEM | ICRC2025, Geneva | H. Martínez Huerta | [Conference contribution and abstract](https://indico.cern.ch/event/1258933/contributions/6482027/) (poster PDF not available on record) |
+| 2025 | Deployment of a MiniTrasgo Detector at UDEM | ICRC2025, Geneva | H. Martínez Huerta | [Official conference abstract](https://indico.cern.ch/event/1258933/contributions/6482027/) (poster PDF not available on record) |
 
 The ECRS 2026 records above are classified using the official conference contribution list. A conference abstract does not necessarily provide a downloadable poster or slides. Where it names contributors without identifying a single presenter, the table avoids assigning sole presentation credit.
+
+## Published meeting abstracts
+
+- **A. Blanco and C. Soneira-Landín** (2026). “miniTRASGO: A Compact RPC Tracker for Global Cosmic Ray and Space Weather Monitoring.” Abstract of the NMDB@Athens 2025 presentation, published in *NMDB@Athens 2025: Cosmic Ray Studies With Neutron Detectors*, Kiel University Publishing, *Cosmic Ray Studies With Neutron Detectors*, vol. 3, p. 169. [Published abstract collection, DOI: 10.38072/2748-3150/v3](https://doi.org/10.38072/2748-3150/v3); [original presentation record and poster PDF](https://conferences.uoa.gr/event/97/contributions/1128/). This is a **published meeting abstract**, not a separate full-length peer-reviewed journal paper or a PoS proceedings paper.
 
 ## Related TRASGO publications
 
@@ -70,6 +74,12 @@ These are project resources, not scholarly publications.
 
 - **Logicmelt** (2025). *STRATOS DS: Stratospheric temperature prediction using artificial intelligence*. [Project description](https://logicmelt.com/en/use-cases_eng/stratos-ds-prediction-of-the-stratosphere-temperature/).
 - **NAC-Intercom** (2025). *STRATOS: Ground Station for Continuous Monitoring of the Stratosphere Temperature through Cosmic Ray Directional Flow*. [Project description](https://www.nac-inter.com/en/content/30-project-stratos).
+
+## Source and classification notes
+
+- DOI links identify published articles; Indico contribution links identify scheduled or listed conference presentations. These are distinct types of record.
+- A publicly listed poster filename does not always expose a reusable direct-download URL. Where no stable URL was verified, this page links to the official conference record or timetable instead.
+- The **RPC2024 miniTRASGO International Research Network** abstract describes the contribution as a poster, although it appears in a timed conference session. Its classification as an oral presentation should therefore be treated as provisional until the conference format is established unambiguously.
 
 ## Further references
 
