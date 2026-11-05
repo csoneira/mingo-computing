@@ -5,7 +5,7 @@ Selected publications, conference contributions and technical references concern
 ## Journal articles
 
 1. **C. Soneira-Landín, A. Blanco, L. M. Fraile, J. A. Garzón, G. Kornakov, L. Lopes, V. M. Nouvilas and J. M. Udías** (2025). “miniTRASGO: A compact RPC tracker for cosmic ray studies.” *Nuclear Instruments and Methods in Physics Research Section A* **1077**, 170511. [DOI: 10.1016/j.nima.2025.170511](https://doi.org/10.1016/j.nima.2025.170511).
-2. **C. Soneira-Landín, A. Blanco, L. M. Fraile, J. A. Garzón, G. Kornakov, L. Lopes, J. Michel, V. M. Nouvilas and J. M. Udías** (2025). “miniTRASGO: design and initial results of a compact Resistive Plate Chamber telescope for worldwide cosmic ray monitoring.” *Advances in Space Research* **76**(9), 5688–5699. [DOI: 10.1016/j.asr.2025.07.096](https://doi.org/10.1016/j.asr.2025.07.096).
+2. **C. Soneira-Landín, A. Blanco, L. M. Fraile, J. A. Garzón, G. Kornakov, L. Lopes, J. Michel, V. M. Nouvilas and J. M. Udías** (2025). “miniTRASGO: design and initial results of a compact Resistive Plate Chamber telescope for worldwide cosmic ray monitoring.” *Advances in Space Research* **76**(9), 5688–5699. [DOI: 10.1016/j.asr.2025.07.096](https://doi.org/10.1016/j.asr.2025.07.096). [UCM institutional repository record](https://hdl.handle.net/20.500.14352/125929).
 
 ## Conference proceedings
 
