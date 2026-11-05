@@ -113,7 +113,12 @@ printf '\033[2J\033[H'
 last_frame=""
 last_mode=""
 while :; do
-    frame="$(render_mode)"
+    if frame="$(render_mode 2>&1)"; then
+        :
+    else
+        render_status=$?
+        frame="FILE FLOW DISPLAY ERROR (exit ${render_status})"$'\n'"${frame:-No output was returned by the tracker.}"
+    fi
     frame+=$'\n\033[2mPress T to switch table/timeline; Q to quit. Current: '"$MODE"$'.\033[0m'
     if [[ "$frame" != "$last_frame" ]]; then
         if [[ "$MODE" != "$last_mode" ]]; then

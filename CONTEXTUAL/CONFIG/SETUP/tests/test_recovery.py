@@ -156,6 +156,18 @@ class RecoverySafetyTests(unittest.TestCase):
             self.assertEqual(r.returncode, 0)
             self.assertFalse(marker.exists())
 
+    def test_closed_gate_allows_read_only_file_flow_refresh(self):
+        if (recovery.STATE / 'production-enabled').exists():
+            self.skipTest('production gate is live; test only applies while paused')
+        script = recovery.ROOT / 'CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/DATA_MAINTENANCE/FILE_FLOW_TRACKER/file_flow_realtime.py'
+        result = subprocess.run(
+            ['bash', str(recovery.ROOT / 'CONTEXTUAL/CONFIG/SETUP/run-job.sh'), '--',
+             str(recovery.PYTHON), str(script), '--help'],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('Build lightweight per-minute file-flow snapshots', result.stdout)
+
     def test_station_delete_filter_preserves_remote_only_secrets(self):
         with tempfile.TemporaryDirectory() as temp:
             source = Path(temp) / 'source'; dest = Path(temp) / 'dest'
