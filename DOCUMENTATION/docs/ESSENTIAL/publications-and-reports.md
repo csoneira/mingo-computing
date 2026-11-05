@@ -9,7 +9,8 @@ Selected publications, conference contributions and technical references concern
 
 ## Conference proceedings
 
-1. **C. Soneira-Landín, A. Blanco, L. M. Fraile, J. A. Garzón, G. Kornakov, L. Lopes, V. M. Nouvilas and J. M. Udías** (2025). “miniTRASGO: a compact RPC telescope for global cosmic ray monitoring.” *Proceedings of Science*, **ICRC2025**, 1368 (vol. 501). [DOI: 10.22323/1.501.1368](https://doi.org/10.22323/1.501.1368). Associated [ICRC2025 poster](https://indico.cern.ch/event/1258933/contributions/6478594/).
+1. **H. Martínez-Huerta, O. Aquines-Guitérrez, A. Blanco Castro, I. Cantú Fernández, R. Del Bosque Luna, D. A. García Rosales, J. A. Garzón, A. Santos-Guevara, C. Soneira Landín, R. E. Torres Estrada, J. Vargas and P. Villarreal Villatoro** (2025). “Deployment of a MiniTrasgo Detector at UDEM.” *Proceedings of Science*, **ICRC2025**, 329 (vol. 501). [DOI: 10.22323/1.501.0329](https://doi.org/10.22323/1.501.0329). Associated [ICRC2025 poster](https://indico.cern.ch/event/1258933/contributions/6482027/). The work concerns the detector at the Universidad de Monterrey; the ICRC2025 conference was held in Geneva.
+2. **C. Soneira-Landín, A. Blanco, L. M. Fraile, J. A. Garzón, G. Kornakov, L. Lopes, V. M. Nouvilas and J. M. Udías** (2025). “miniTRASGO: a compact RPC telescope for global cosmic ray monitoring.” *Proceedings of Science*, **ICRC2025**, 1368 (vol. 501). [DOI: 10.22323/1.501.1368](https://doi.org/10.22323/1.501.1368). Associated [ICRC2025 poster](https://indico.cern.ch/event/1258933/contributions/6478594/).
 
 ## Conference contributions
 
