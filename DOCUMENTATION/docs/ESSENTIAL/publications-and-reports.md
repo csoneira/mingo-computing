@@ -35,6 +35,8 @@ Entries below describe presentations recorded in conference programmes, not addi
 
 | Year | Contribution | Conference | Presenter | Source |
 | --- | --- | --- | --- | --- |
+| 2024 | The new miniTrasgo detector at the Univ. Complutense of Madrid | European Space Weather Week (ESWW2024), Coimbra, 7–8 November, OPS1-p02 | C. Soneira-Landín | [Official poster programme and abstract](https://esww2024.org/programme/parallel-sessions/ops1-session-plan/) |
+| 2024 | Towards a global network of Trasgo-type detectors | ESWW2024, Coimbra, 7–8 November, OPS1-p04 | C. Soneira-Landín | [Official poster programme and abstract](https://esww2024.org/programme/parallel-sessions/ops1-session-plan/) |
 | 2026 | From station data to corrected flux: an integrated analysis and simulation framework for miniTRASGO | TIDPAN2026, Valencia, 19 June | C. Soneira-Landín | [Official contribution list](https://indico.global/event/16473/contributions/); [timetable and attached poster (TIDPAN26_poster_csoneira.pdf)](https://indico.global/event/16473/timetable/?view=standard_numbered) |
 | 2026 | The miniTrasgo Cosmic Ray detector | ECRS 2026, Santiago de Compostela | C. Soneira-Landín | [Official contribution list (ID 82)](https://indico.cern.ch/event/1536846/contributions/) |
 | 2026 | Particle Identification with the miniTrasgo Detector | ECRS 2026, Santiago de Compostela | J. Vargas and J. A. Garzón (listed contributors) | [Official contribution list (ID 57)](https://indico.cern.ch/event/1536846/contributions/) |
@@ -50,6 +52,10 @@ The 2026 CPAN instrumentation-workshop contribution concerns related RPC readout
 ## Conference abstracts with presentation format unconfirmed
 
 - **C. Soneira-Landín**, on behalf of the CASTRO collaboration (2024). “The first miniTrasgo Cosmic Ray detector.” *Book of Abstracts of the XXXIX Bienal de la Real Sociedad Española de Física*, Donostia–San Sebastián, 15–19 July 2024, p. 306, Nuclear Physics Specialized Group Symposium. [Official RSEF abstract book (PDF, p. 306)](https://rsef.es/wp-content/uploads/2025/07/BIENALDEFISICA_2024.pdf#page=306). The official abstract book establishes the contribution and its author but does not, by itself, confirm whether it was delivered as an oral presentation or a poster; it is consequently not classified as either here. This is an abstract-book entry, not a full proceedings paper.
+
+## Seminars and institutional presentations
+
+- **J. A. Garzón** (20 September 2023). *Trasgos & miniTrasgos*. Presentation at BUAP, Puebla, Mexico. [Original presentation slides (PDF)](https://indico.global/category/579/attachments/31737/58358/jag23_09_Trasgos_Puebla.pdf). The title slide states the venue and date, and the slides describe the early miniTRASGO detectors. This institutional presentation is not classified as a refereed paper or formal conference contribution.
 
 ## Published meeting abstracts
 
