@@ -68,10 +68,6 @@ The 2026 CPAN instrumentation-workshop contribution concerns related RPC readout
 
 - **A. Blanco and C. Soneira-Landín** (2026). “miniTRASGO: A Compact RPC Tracker for Global Cosmic Ray and Space Weather Monitoring.” Abstract of the NMDB@Athens 2025 presentation, published in *NMDB@Athens 2025: Cosmic Ray Studies With Neutron Detectors*, Kiel University Publishing, *Cosmic Ray Studies With Neutron Detectors*, vol. 3, p. 169. [Published abstract collection, DOI: 10.38072/2748-3150/v3](https://doi.org/10.38072/2748-3150/v3); [open-access collected volume (PDF)](https://oulurepo.oulu.fi/bitstream/handle/10024/61772/nbnfioulu-202604152623.pdf?isAllowed=y&sequence=1); [original presentation record](https://conferences.uoa.gr/event/97/contributions/1128/); [poster PDF](https://conferences.uoa.gr/event/97/contributions/1128/attachments/292/1246/Soneira_NMDB2025_Template_eposter.pdf). The published abstract and official Indico programme use the title quoted above, whereas the attached poster is titled *miniTRASGO: Toward a Global Network of Compact RPC Telescopes for Cosmic Ray and Space Weather Monitoring*. This is a **published meeting abstract**, not a separate full-length peer-reviewed journal paper or a PoS proceedings paper.
 
-## Independent literature mentions
-
-- **A. Tezari** (2025). “An overview of the Outreach and Education Session of the 39th ICRC.” *Proceedings of Science*, **ICRC2025**, 1425 (vol. 501). [DOI: 10.22323/1.501.1425](https://doi.org/10.22323/1.501.1425); [full text (CERN document server)](https://cds.cern.ch/record/2956239/files/document.pdf). The overview cites the Puebla **MACARIO** compact TRASGO-type RPC telescope as an example of accessible cosmic-ray detection and references the dedicated MACARIO proceedings article. **This is an independent secondary mention, not an additional miniTRASGO research publication.**
-
 ## Related TRASGO publications
 
 The following concern predecessor detectors and related work rather than miniTRASGO itself.
