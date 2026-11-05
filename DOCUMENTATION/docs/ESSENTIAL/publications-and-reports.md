@@ -35,8 +35,6 @@ Entries below describe presentations recorded in conference programmes, not addi
 
 | Year | Contribution | Conference | Presenter | Source |
 | --- | --- | --- | --- | --- |
-| 2024 | The new miniTrasgo detector at the Univ. Complutense of Madrid | European Space Weather Week (ESWW2024), Coimbra, 7–8 November, OPS1-p02 | C. Soneira-Landín | [Official poster programme and abstract](https://esww2024.org/programme/parallel-sessions/ops1-session-plan/) |
-| 2024 | Towards a global network of Trasgo-type detectors | ESWW2024, Coimbra, 7–8 November, OPS1-p04 | C. Soneira-Landín | [Official poster programme and abstract](https://esww2024.org/programme/parallel-sessions/ops1-session-plan/) |
 | 2026 | From station data to corrected flux: an integrated analysis and simulation framework for miniTRASGO | TIDPAN2026, Valencia, 19 June | C. Soneira-Landín | [Official contribution list](https://indico.global/event/16473/contributions/); [timetable and attached poster (TIDPAN26_poster_csoneira.pdf)](https://indico.global/event/16473/timetable/?view=standard_numbered) |
 | 2026 | The miniTrasgo Cosmic Ray detector | ECRS 2026, Santiago de Compostela | C. Soneira-Landín | [Official contribution list (ID 82)](https://indico.cern.ch/event/1536846/contributions/) |
 | 2026 | Particle Identification with the miniTrasgo Detector | ECRS 2026, Santiago de Compostela | J. Vargas and J. A. Garzón (listed contributors) | [Official contribution list (ID 57)](https://indico.cern.ch/event/1536846/contributions/) |
@@ -44,6 +42,8 @@ Entries below describe presentations recorded in conference programmes, not addi
 | 2025 | miniTRASGO: A Compact RPC Telescope for Global Cosmic Ray Monitoring | 39th International Cosmic Ray Conference (ICRC2025), Geneva | C. Soneira-Landín | [Poster and abstract](https://indico.cern.ch/event/1258933/contributions/6478594/) |
 | 2025 | The miniTRASGO International Research Network | ICRC2025, Geneva | J. A. Garzón | [Poster and abstract](https://indico.cern.ch/event/1258933/contributions/6478328/) |
 | 2025 | Deployment of a MiniTrasgo Detector at UDEM | ICRC2025, Geneva | H. Martínez Huerta | [Official conference abstract](https://indico.cern.ch/event/1258933/contributions/6482027/) (poster PDF not available on record) |
+| 2024 | The new miniTrasgo detector at the Univ. Complutense of Madrid | European Space Weather Week (ESWW2024), Coimbra, 7–8 November, OPS1-p02 | C. Soneira-Landín | [Official poster programme and abstract](https://esww2024.org/programme/parallel-sessions/ops1-session-plan/) |
+| 2024 | Towards a global network of Trasgo-type detectors | ESWW2024, Coimbra, 7–8 November, OPS1-p04 | C. Soneira-Landín | [Official poster programme and abstract](https://esww2024.org/programme/parallel-sessions/ops1-session-plan/) |
 
 The ECRS 2026 records above are classified using the official conference contribution list. A conference abstract does not necessarily provide a downloadable poster or slides. Where it names contributors without identifying a single presenter, the table avoids assigning sole presentation credit.
 
