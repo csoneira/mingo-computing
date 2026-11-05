@@ -23,16 +23,18 @@ Entries below describe presentations recorded in conference programmes, not addi
 | Year | Contribution | Conference | Presenter | Source |
 | --- | --- | --- | --- | --- |
 | 2026 | The miniTrasgo International Research Network | 29th European Cosmic Ray Symposium (ECRS), Santiago de Compostela, 30 June | J. A. Garzón | [Programme](https://indico.cern.ch/event/1536846/contributions/) |
-| 2025 | RPC readout optimization: miniTRASGO as a path to a single-plane multiplexed timing system | XVII CPAN Days, Valencia, 19 November | C. Soneira-Landín | [Contribution and slides](https://indico.ific.uv.es/event/8035/contributions/29013/) |
+| 2025 | miniTRASGO: A Compact Muon Detector for Global Cosmic Ray Monitoring and Space Weather Studies | EuNPC2025, Caen, 25 September | C. Soneira-Landín | [Contribution](https://indico.in2p3.fr/event/30430/contributions/156880/); [slides (PDF)](https://indico.in2p3.fr/event/30430/contributions/156880/attachments/96396/148022/Presentation_ID330_Soneira.pdf) |
+| 2025 | RPC readout optimization: miniTRASGO as a path to a single-plane multiplexed timing system | XVII CPAN Days, Valencia, 19 November | C. Soneira-Landín | [Contribution](https://indico.ific.uv.es/event/8035/contributions/29013/); [slides (PDF)](https://indico.ific.uv.es/event/8035/contributions/29013/attachments/14476/21050/Soneira_CPAN_2025_11_19.pptx.pdf) |
 | 2025 | miniTRASGO: A Compact RPC Tracker for Global Cosmic Ray and Space Weather Monitoring | NMDB Meeting 2025, Athens, 21 March | A. Blanco | [Contribution and presentation material](https://conferences.uoa.gr/event/97/contributions/1128/) |
 | 2024 | The first miniTRASGO Cosmic Ray telescope | XVII Conference on Resistive Plate Chambers and Related Detectors (RPC2024), Santiago de Compostela, 13 September | C. Soneira-Landín | [Conference contribution](https://indico.cern.ch/event/1354736/contributions/6057007/) |
 | 2024 | The miniTrasgo International Research Network | RPC2024, Santiago de Compostela, 10 September | J. A. Garzón | [Conference contribution](https://indico.cern.ch/event/1354736/contributions/6057027/) |
-| 2023 | The first miniTrasgo Cosmic Ray detector | L International Meeting on Fundamental Physics and XV CPAN Days, Santander, 2 October | C. Soneira-Landín | [Contribution and slides](https://indico.cern.ch/event/1283224/contributions/5585030/) |
+| 2023 | The first miniTrasgo Cosmic Ray detector | L International Meeting on Fundamental Physics and XV CPAN Days, Santander, 2 October | C. Soneira-Landín | [Contribution](https://indico.cern.ch/event/1283224/contributions/5585030/); [slides (PDF)](https://indico.cern.ch/event/1283224/contributions/5585030/attachments/2724959/4735462/C_Soneira_miniTRASGO_CPAN_2023%20.pdf) |
 
 ### Posters
 
 | Year | Contribution | Conference | Presenter | Source |
 | --- | --- | --- | --- | --- |
+| 2026 | From station data to corrected flux: an integrated analysis and simulation framework for miniTRASGO | TIDPAN2026, Valencia, 19 June | C. Soneira-Landín | [Conference programme](https://indico.global/event/16473/timetable/?view=standard_numbered) |
 | 2026 | The miniTrasgo Cosmic Ray detector | ECRS 2026, Santiago de Compostela | C. Soneira-Landín | [Conference programme](https://indico.cern.ch/event/1536846/contributions/) |
 | 2026 | Particle Identification with the miniTrasgo Detector | ECRS 2026, Santiago de Compostela | J. Vargas / J. A. Garzón (listed contributors) | [Conference programme](https://indico.cern.ch/event/1536846/contributions/) |
 | 2026 | TRUFA: TRasgo’s Unified Framework for data Analysis | ECRS 2026, Santiago de Compostela | L. M. Crujeiras | [Conference programme](https://indico.cern.ch/event/1536846/contributions/) |
