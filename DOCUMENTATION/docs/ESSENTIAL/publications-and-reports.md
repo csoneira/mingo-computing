@@ -49,12 +49,15 @@ The following concern predecessor detectors and related work rather than miniTRA
 
 Additional TRAGALDABAS, TRISTAN and atmospheric-correction references are retained in the [extended publications page](publications.md).
 
+## LIP internship papers
+
+- **V. M. Nouvilas and C. Soneira** (2023). “The first miniTrasgo Cosmic Ray detector.” *LIP Student Papers*, 13 October 2023. Project supervisor: A. Blanco. [Full paper (PDF)](https://www.lip.pt/files/training/papers/2023/pdf/2023-PAPER-144-13.pdf). This institutional internship paper describes the initial detector, calibration procedures, intrinsic-efficiency measurements, charge spectra and multistrip events; it is not an indexed journal article.
+
 ## Theses and technical reports
 
 - **D. García Castro** (2022). *Cosmic Rays' study with a TRASGO detector*. Doctoral thesis. [Institutional record](http://hdl.handle.net/10347/29288).
 - **Y. Fontenla Barba** (2019). *Studies on the composition and energy of secondary cosmic rays with the Tragaldabas detector*. Doctoral thesis. [Institutional record](http://hdl.handle.net/10347/20655).
 - **M. Ajoor** (2022). *Study of Cosmic Ray data with the TRISTAN and TRAGALDABAS detection systems*. Doctoral thesis. [Institutional record](http://hdl.handle.net/10347/28824).
-- **V. M. Nouvilas and C. Soneira** (2023). *The first miniTrasgo Cosmic Ray detector*. LIP student report, 13 October 2023. [Report (PDF)](https://www.lip.pt/files/training/papers/2023/pdf/2023-PAPER-144-13.pdf).
 - **J. J. Cuenca García**. *Simulation and reconstruction algorithms for a commercial muon tomography system*. Title recorded in the [extended publications page](publications.md); publication details and institutional identifier are not established here.
 
 ## Industry and project reports
