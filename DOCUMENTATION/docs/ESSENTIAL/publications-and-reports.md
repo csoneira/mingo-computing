@@ -47,6 +47,10 @@ The ECRS 2026 records above are classified using the official conference contrib
 
 The 2026 CPAN instrumentation-workshop contribution concerns related RPC readout and muography R&D, using miniTRASGO as an operational reference. It is included as a related presentation, not represented as a separate miniTRASGO measurement paper.
 
+## Conference abstracts with presentation format unconfirmed
+
+- **C. Soneira-Landín**, on behalf of the CASTRO collaboration (2024). “The first miniTrasgo Cosmic Ray detector.” *Book of Abstracts of the XXXIX Bienal de la Real Sociedad Española de Física*, Donostia–San Sebastián, 15–19 July 2024, p. 306, Nuclear Physics Specialized Group Symposium. [Official RSEF abstract book (PDF, p. 306)](https://rsef.es/wp-content/uploads/2025/07/BIENALDEFISICA_2024.pdf#page=306). The official abstract book establishes the contribution and its author but does not, by itself, confirm whether it was delivered as an oral presentation or a poster; it is consequently not classified as either here. This is an abstract-book entry, not a full proceedings paper.
+
 ## Published meeting abstracts
 
 - **A. Blanco and C. Soneira-Landín** (2026). “miniTRASGO: A Compact RPC Tracker for Global Cosmic Ray and Space Weather Monitoring.” Abstract of the NMDB@Athens 2025 presentation, published in *NMDB@Athens 2025: Cosmic Ray Studies With Neutron Detectors*, Kiel University Publishing, *Cosmic Ray Studies With Neutron Detectors*, vol. 3, p. 169. [Published abstract collection, DOI: 10.38072/2748-3150/v3](https://doi.org/10.38072/2748-3150/v3); [original presentation record and poster PDF](https://conferences.uoa.gr/event/97/contributions/1128/). This is a **published meeting abstract**, not a separate full-length peer-reviewed journal paper or a PoS proceedings paper.
