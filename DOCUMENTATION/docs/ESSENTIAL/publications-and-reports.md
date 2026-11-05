@@ -32,6 +32,8 @@ Entries below describe presentations recorded in conference programmes, not addi
 | 2024 | The first miniTRASGO Cosmic Ray telescope | XVII Conference on Resistive Plate Chambers and Related Detectors (RPC2024), Santiago de Compostela, 13 September | C. Soneira-Landín | [Contribution](https://indico.cern.ch/event/1354736/contributions/6057007/); [slides (PDF)](https://indico.global/event/6191/contributions/51206/attachments/25745/44426/miniTRASGO%20-%20RPC2024.pdf) |
 | 2023 | The first miniTrasgo Cosmic Ray detector | L International Meeting on Fundamental Physics and XV CPAN Days, Santander, 2 October | C. Soneira-Landín | [Contribution](https://indico.cern.ch/event/1283224/contributions/5585030/); [slides (PDF)](https://indico.cern.ch/event/1283224/contributions/5585030/attachments/2724959/4735462/C_Soneira_miniTRASGO_CPAN_2023%20.pdf) |
 
+| 2023 | Portable cosmic ray telescopes based on RPCs | LIP Summer Internship Final Workshop, 8 September, 11:48 (remote, 10-minute talk) | V. M. Nouvilas and C. Soneira | [Official workshop programme](https://indico.lip.pt/event/1521/?print=1); [presentation PDF](https://indico.lip.pt/event/1521/contributions/5139/attachments/4105/6429/LIPIP_2023_C-Soneira_VM-Nouvilas.pdf) |
+
 ### Posters
 
 | Year | Contribution | Conference | Presenter | Source |
