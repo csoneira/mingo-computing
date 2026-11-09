@@ -6,7 +6,7 @@ Repository for the MINGO detector software, including production processing, sim
 
 - `CONTEXTUAL/` contains setup, configuration, and operational tools.
 - `PIPELINE/` contains the digital twin, event analysis, and scientific comparisons.
-- `OUT_OF_PIPELINE/PHYSICAL_TESTS/` contains standalone studies that do not participate in the production dataflow.
+- `OUT_OF_PIPELINE/PHYSICAL_TESTS/` contains standalone studies that do not participate in the production dataflow, including energy-from-timing studies and detector-physics investigations.
 - `DOCUMENTATION/`, `FOR_MINGO_SYSTEMS/`, and `legacy/` contain documentation, station software, and preserved historical material.
 
 ## Scientific architecture

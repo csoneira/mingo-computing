@@ -10,7 +10,7 @@ The following source snapshots are retained in this archive. The SHA column is t
 | `ORIGINAL_README.md` | `a831ee8c7dc1713ca90f6af0b3f5aa6f51c84894` | Original repository overview |
 | `Efficiency and acceptance studies/Geometric_acc/geometric_acceptance.py` | `11032f026919866c238a313bed4137cbe109ced5` | Geometrical acceptance |
 | `Efficiency and acceptance studies/eff_simple_toy_model.py` | `3e8e2ebb33700f1a51f14409e33b9f7e454e2f7e` | Detector-efficiency toy model |
-| `Energy from timing study/energy_from_timing_ar18.py` | `28a46e6c52c8871ef03208b17410957b90be79d5` | Energy inference from timing |
+| `OUT_OF_PIPELINE/PHYSICAL_TESTS/ENERGY_FROM_TIMING/HISTORICAL/energy_from_timing_ar18.py` | `28a46e6c52c8871ef03208b17410957b90be79d5` | Energy inference from timing; relocated from the curated archive while preserving the source blob |
 | `MIPs losing energy in scintillators/muon_electron_sim.py` | `f1ff49b2ddcc6078d50c9d0914581c1a5dacb111` | Energy loss in scintillator |
 | `MOLIÉRE/moliere.py` | `f43097b06588ca3812f4bd29a0ac849b11e64809` | Molière scattering |
 | `Magnetic calculations/cutoff_rigidity_calculator.py` | `26c54dbd03e23ea16dcbe25a65c04cb8b27a64bf` | Geomagnetic cutoff rigidity |
