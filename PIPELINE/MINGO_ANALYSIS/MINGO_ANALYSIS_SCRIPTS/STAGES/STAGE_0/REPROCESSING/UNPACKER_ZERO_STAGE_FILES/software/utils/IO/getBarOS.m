@@ -1,6 +1,6 @@
 % =============================================================================
 % DATAFLOW_v3 Script Header v1
-% Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/software/utils/IO/getBarOS.m
+% Script: MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/software/utils/IO/getBarOS.m
 % Purpose: getBarOS function implementation.
 % Owner: DATAFLOW_v3 contributors
 % Sign-off: csoneira <csoneira@ucm.es>

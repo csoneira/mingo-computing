@@ -84,7 +84,7 @@ MASTER_DIR="$SCRIPT_DIR"
 while [[ "${MASTER_DIR}" != "/" && "$(basename "${MASTER_DIR}")" != "MINGO_ANALYSIS_SCRIPTS" ]]; do
   MASTER_DIR="$(dirname "${MASTER_DIR}")"
 done
-STATUS_HELPER="${MASTER_DIR}/common/status_csv.py"
+STATUS_HELPER="${MASTER_DIR}/SUPPORT/SHARED_CODE/status_csv.py"
 STATUS_TIMESTAMP=""
 STATUS_CSV=""
 
@@ -94,7 +94,7 @@ if [[ ! "$station" =~ ^[1-4]$ ]]; then
   exit 1
 fi
 
-NEW_FILES_CONFIG_FILE="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_0/NEW_FILES/config_new_files.yaml"
+NEW_FILES_CONFIG_FILE="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_0/NEW_FILES/config_new_files.yaml"
 
 is_new_files_station_enabled() {
   local station_id="$1"
@@ -140,11 +140,11 @@ if not enabled:
   raise SystemExit(0)
 
 try:
-  from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import load_selection_for_paths, station_is_selected
+  from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import load_selection_for_paths, station_is_selected
 
   selection = load_selection_for_paths(
     [cfg_path],
-    master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "CONFIG_FILES",
+    master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "SUPPORT" / "CONFIG_FILES",
   )
   print("1" if station_is_selected(station_id, selection.stations) else "0")
 except Exception:
@@ -182,16 +182,16 @@ if str(repo_root) not in sys.path:
 epochs = ""
 labels = ""
 try:
-    from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import (
+    from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import (
         load_selection_for_paths,
         serialize_date_ranges_for_shell,
     )
 
     selection = load_selection_for_paths(
         [cfg_path],
-        master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "CONFIG_FILES",
+        master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "SUPPORT" / "CONFIG_FILES",
     )
-    from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import effective_date_ranges_for_station
+    from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import effective_date_ranges_for_station
 
     ranges = effective_date_ranges_for_station(station_raw, selection)
     epochs, labels = serialize_date_ranges_for_shell(ranges)
@@ -327,7 +327,7 @@ SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=15)
 RSYNC_RSH_CMD="ssh -o BatchMode=yes -o ConnectTimeout=15"
 
 station_directory="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS/MINGO0$station"
-config_file_directory="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_0/ONLINE_RUN_DICTIONARY/STATION_$station"
+config_file_directory="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_0/ONLINE_RUN_DICTIONARY/STATION_$station"
 stage0_directory="$station_directory/STAGE_0/NEW_FILES"
 stage0_to_1_directory="$station_directory/STAGE_0_TO_1"
 metadata_directory="$stage0_directory/METADATA"

@@ -46,7 +46,7 @@ REPO_ROOT = detect_repo_root()
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import (  # noqa: E402
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.plot_utils import (  # noqa: E402
     metadata_output_status_suffix,
     pdf_save_rasterized_page,
 )

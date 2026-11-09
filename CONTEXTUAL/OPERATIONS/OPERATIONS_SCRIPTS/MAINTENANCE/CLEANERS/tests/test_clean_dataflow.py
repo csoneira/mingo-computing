@@ -53,7 +53,7 @@ class CleanerTests(unittest.TestCase):
         self.assertFalse(self.plan('completed_data'))
     def test_dry_run_cli_does_not_delete(self):
         import subprocess,json
-        p=self.file(self.task/'PLOTS/loose.png');(self.root/'CONFIG').mkdir()
+        p=self.file(self.task/'PLOTS/loose.png');(self.root/"CONTEXTUAL" / "CONFIG").mkdir(parents=True)
         config=self.root/'rules.json';config.write_text(json.dumps(dict(version=1,disk_threshold_percent=0,check_archive_consistency=False,categories=self.rules)))
         env=dict(os.environ,DATAFLOW_CLEAN_LOCK_FILE=str(self.root/'lock'))
         result=subprocess.run(['python3',str(c.HERE/'clean_dataflow.py'),'--root',str(self.root),'--config',str(config),'--select','plots','--dry-run','--compact'],env=env,capture_output=True,text=True)
@@ -61,7 +61,7 @@ class CleanerTests(unittest.TestCase):
     def test_apply_deletes_only_explicitly_selected_plot_format(self):
         import subprocess,json
         png=self.file(self.task/'PLOTS/a.png');pdf=self.file(self.task/'PLOTS/b.pdf')
-        (self.root/'CONFIG').mkdir()
+        (self.root/"CONTEXTUAL" / "CONFIG").mkdir(parents=True)
         config=self.root/'rules.json';config.write_text(json.dumps(dict(version=1,disk_threshold_percent=0,check_archive_consistency=False,categories=self.rules)))
         env=dict(os.environ,DATAFLOW_CLEAN_LOCK_FILE=str(self.root/'lock'))
         result=subprocess.run(['python3',str(c.HERE/'clean_dataflow.py'),'--root',str(self.root),'--config',str(config),'--select','pdfs','--apply','--compact'],env=env,capture_output=True,text=True)

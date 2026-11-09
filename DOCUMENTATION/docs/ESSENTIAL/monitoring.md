@@ -34,7 +34,7 @@ Modify the number of days included by editing
 
 All of the plots generated for the daily report can also be produced
 interactively by the Python tools in `~/gate/bin/` and
-`MINGO_DIGITAL_TWIN/PLOTTERS/`.
+`PIPELINE/MINGO_DIGITAL_TWIN/PLOTTERS/`.
 
 ### Time/charge correlations
 
@@ -74,9 +74,9 @@ operator on shutdown.  Other log‑based checks include:
 ## Automation and alarms
 
 The station crontab includes tasks to auto‑clear swap, solve stale locks and
-flush old logs (see `CONFIG/add_to_crontab.info`).  There is also a
+flush old logs (see `CONTEXTUAL/CONFIG/CONTENTS/cron/analysis_pc.crontab`).  There is also a
 `persistent_telegram_bot_check.sh` script that ensures the Telegram notification
-bot is running; failures are logged under `OPERATIONS/OPERATIONS_RUNTIME/CRON_LOGS/ANCILLARY/TELEGRAM_BOT`.
+bot is running; failures are logged under `CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/CRON_LOGS/ANCILLARY/TELEGRAM_BOT`.
 
 Operators should review the `error_finder.py` output periodically to catch
 Python tracebacks or abnormal log entries.

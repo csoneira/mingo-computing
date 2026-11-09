@@ -28,8 +28,8 @@ REPO_ROOT = Path(__file__).resolve().parents[5]
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.execution_logger import start_timer
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_master_config_root, get_repo_root
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import start_timer
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_master_config_root, get_repo_root
 
 start_timer(__file__)
 

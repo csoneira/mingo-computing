@@ -37,7 +37,7 @@ DATE_FORMATS = (
 )
 STATION_RE = re.compile(r"^MINGO0(\d)$")
 TASK_RE = re.compile(r"^TASK_(\d+)$")
-GUIDE_RELATIVE_PATH = Path("PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/STEP_1/guide_raw_to_corrected.sh")
+GUIDE_RELATIVE_PATH = Path("PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/guide_raw_to_corrected.sh")
 DEFAULT_TASK_LABELS = {
     0: "acq_to_raw",
     1: "raw_to_clean",

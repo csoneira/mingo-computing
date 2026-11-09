@@ -2,7 +2,7 @@
 # =============================================================================
 # DATAFLOW_v3 Script Header v1
 # Script: CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/ORCHESTRATION/KILL_RUNNING_PROCESSES/kill_pipeline_execution_processes.sh
-# Purpose: Kill running bash/python scripts referenced in CONTEXTUAL/CONFIG/add_to_crontab.info without touching unrelated processes.
+# Purpose: Kill running bash/python scripts referenced in the managed analysis-PC cron template without touching unrelated processes.
 # Owner: DATAFLOW_v3 contributors
 # Sign-off: csoneira <csoneira@ucm.es>
 # Last Updated: 2026-03-02
@@ -13,12 +13,12 @@
 # Notes: Keep behavior configuration-driven and reproducible.
 # =============================================================================
 
-# Kill running bash/python scripts referenced in CONTEXTUAL/CONFIG/add_to_crontab.info without touching unrelated processes.
+# Kill running bash/python scripts referenced in the managed analysis-PC cron template without touching unrelated processes.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
-while [[ "$REPO_ROOT" != "/" && ! -f "$REPO_ROOT/CONTEXTUAL/CONFIG/add_to_crontab.info" ]]; do
+while [[ "$REPO_ROOT" != "/" && ! -f "$REPO_ROOT/CONTEXTUAL/CONFIG/CONTENTS/cron/analysis_pc.crontab" ]]; do
   REPO_ROOT="$(dirname "$REPO_ROOT")"
 done
 

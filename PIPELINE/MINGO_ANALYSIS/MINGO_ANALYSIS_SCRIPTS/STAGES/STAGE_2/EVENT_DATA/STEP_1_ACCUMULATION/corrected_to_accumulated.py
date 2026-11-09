@@ -39,27 +39,27 @@ CURRENT_PATH = Path(__file__).resolve()
 REPO_ROOT = None
 for parent in CURRENT_PATH.parents:
     if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parent.parent
+        REPO_ROOT = parent.parents[2]
         break
 if REPO_ROOT is None:
     REPO_ROOT = CURRENT_PATH.parents[-1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.config_loader import update_config_with_parameters
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.execution_logger import set_station, start_timer
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.file_selection import select_latest_candidate
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.event_output_schema import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.config_loader import update_config_with_parameters
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import set_station, start_timer
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_selection import select_latest_candidate
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.event_output_schema import (
     canonicalize_output_dataframe,
     classify_angular_regions,
     resolve_output_schema,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import (
     get_master_config_root,
     get_repo_root,
     resolve_home_path_from_config,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.plot_utils import (
     pdf_save_rasterized_page,
     runtime_plot_directory_name,
 )
@@ -94,8 +94,7 @@ import numpy as np
 import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from matplotlib.cm import get_cmap
+from matplotlib import colormaps
 from matplotlib.backends.backend_pdf import PdfPages
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -122,16 +121,16 @@ CURRENT_PATH = Path(__file__).resolve()
 REPO_ROOT = None
 for parent in CURRENT_PATH.parents:
     if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parent.parent
+        REPO_ROOT = parent.parents[2]
         break
 if REPO_ROOT is None:
     REPO_ROOT = CURRENT_PATH.parents[-1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.execution_logger import set_station, start_timer
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.file_selection import select_latest_candidate
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import pdf_save_rasterized_page
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import set_station, start_timer
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_selection import select_latest_candidate
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.plot_utils import pdf_save_rasterized_page
 
 start_timer(__file__)
 config_file_path = (
@@ -2220,7 +2219,7 @@ if side_calculations:
         plt.tight_layout()
         plt.show()
         
-        cmap = get_cmap('tab10')
+        cmap = colormaps.get_cmap('tab10')
         colors = {}  # ensure this is a dict
 
         for i, topo in enumerate(measured_topologies):
@@ -2329,7 +2328,7 @@ if side_calculations:
         # ----------------------------------------------------------------------------------------------------
         
         
-        cmap = get_cmap('tab10')
+        cmap = colormaps.get_cmap('tab10')
 
         for i, topo in enumerate(inferred_topologies):
             if topo not in colors:
@@ -4350,7 +4349,7 @@ if side_calculations:
         
         # Load the LUT
         # Induction section calibration LUT.
-        induction_section_lut_file = get_repo_root() / "PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_2/EVENT_DATA/STEP_1_ACCUMULATION/INDUCTION_SECTION/induction_section_lut.csv"
+        induction_section_lut_file = get_repo_root() / "PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_2/EVENT_DATA/STEP_1_ACCUMULATION/INDUCTION_SECTION/induction_section_lut.csv"
         induction_section_lut_df = pd.read_csv(induction_section_lut_file)
 
         # Initialize a list to store the best induction section values for each plane

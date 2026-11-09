@@ -79,7 +79,7 @@ STEP_FINAL_CONFIG="${DT_DIR}/MASTER_STEPS/STEP_FINAL/config_step_final_physics.y
 MAINTENANCE_CLI="${DT_DIR}/ORCHESTRATOR/maintenance/sim_maintenance.py"
 FREQUENCY_CONFIG_FILE_DEFAULT="${DT_DIR}/CONFIG_FILES/ORCHESTRATOR/sim_main_pipeline_frequency.conf"
 
-PARAM_MESH_PATH="${DT_DIR}/SIMULATION_OUTPUTS/INTERSTEPS/STEP_0_TO_1/param_mesh.csv"
+PARAM_MESH_PATH="${INTERSTEPS_DIR}/STEP_0_TO_1/param_mesh.csv"
 SIMULATED_DATA_DIR="${DT_DIR}/SIMULATION_OUTPUTS/SIMULATED_DATA"
 SIMULATED_DATA_FILES_DIR="${SIMULATED_DATA_DIR}/FILES"
 STATIONS_STEP1_DIR="${ROOT_DIR}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS/MINGO00/STAGE_1/EVENT_DATA/STEP_1"
@@ -178,8 +178,21 @@ maybe_handle_intersteps_reset_after_disk_pressure() {
   fi
 
   log_warn "intersteps_reset status=start usage_pct=${usage} intersteps=${INTERSTEPS_DIR} run_step_state=${RUN_STEP_STATE_DIR_DEFAULT}"
-  rm -rf "${INTERSTEPS_DIR}" "${RUN_STEP_STATE_DIR_DEFAULT}"
-  mkdir -p "${INTERSTEPS_DIR}"
+  if [[ -L "${INTERSTEPS_DIR}" ]]; then
+    local intersteps_target
+    intersteps_target="$(readlink -e -- "${INTERSTEPS_DIR}")" || {
+      log_warn "intersteps_reset status=failed reason=external_target_unavailable path=${INTERSTEPS_DIR}"
+      exec {final_fd}>&-
+      exec {processing_fd}>&-
+      exec {enqueue_fd}>&-
+      return 1
+    }
+    find "${intersteps_target}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+  else
+    rm -rf "${INTERSTEPS_DIR}"
+    mkdir -p "${INTERSTEPS_DIR}"
+  fi
+  rm -rf "${RUN_STEP_STATE_DIR_DEFAULT}"
   rm -f "${SIM_INTERSTEPS_RESET_MARKER}"
   SIM_INTERSTEPS_RESET_PENDING=0
   log_warn "intersteps_reset status=done usage_pct=${usage}"
@@ -636,7 +649,7 @@ cleanup_consumed_intermediates() {
     return 1
   fi
 
-  if output="$(/usr/bin/env python3 "${MAINTENANCE_CLI}" cascade-cleanup --intersteps "${DT_DIR}/SIMULATION_OUTPUTS/INTERSTEPS" --mesh "${PARAM_MESH_PATH}" 2>&1)"; then
+  if output="$(/usr/bin/env python3 "${MAINTENANCE_CLI}" cascade-cleanup --intersteps "${INTERSTEPS_DIR}" --mesh "${PARAM_MESH_PATH}" 2>&1)"; then
     log_info "cascade_cleanup status=done ${output}"
     return 0
   fi

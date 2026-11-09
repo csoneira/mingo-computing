@@ -54,7 +54,7 @@ while [[ "${MASTER_DIR}" != "/" && "$(basename "${MASTER_DIR}")" != "MINGO_ANALY
   MASTER_DIR="$(dirname "${MASTER_DIR}")"
 done
 REPO_ROOT="$(dirname "$(dirname "${MASTER_DIR}")")"
-# STATUS_HELPER="${MASTER_DIR}/common/status_csv.py"
+# STATUS_HELPER="${MASTER_DIR}/SUPPORT/SHARED_CODE/status_csv.py"
 # STATUS_TIMESTAMP=""
 
 # finish() {
@@ -226,9 +226,9 @@ stage1_product_metadata_directory="${station_directory}/STAGE_1_PRODUCTS/EVENT_D
 brought_csv="${metadata_directory}/hld_files_brought.csv"
 brought_csv_header="hld_name,bring_timesamp"
 processed_csv="${REPO_ROOT}/CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/DATA_MAINTENANCE/UPDATE_EXECUTION_CSVS/OUTPUT_FILES/MINGO0${station}_processed_basenames.csv"
-config_file_shared="${MASTER_DIR}/CONFIG_FILES/STAGE_0/REPROCESSING/config_reprocessing.yaml"
-config_file_step="${MASTER_DIR}/CONFIG_FILES/STAGE_0/REPROCESSING/STEP_1/config_step_1.yaml"
-reprocessing_policy_script="${MASTER_DIR}/common/reprocessing_policy.py"
+config_file_shared="${MASTER_DIR}/SUPPORT/CONFIG_FILES/STAGE_0/REPROCESSING/config_reprocessing.yaml"
+config_file_step="${MASTER_DIR}/SUPPORT/CONFIG_FILES/STAGE_0/REPROCESSING/STEP_1/config_step_1.yaml"
+reprocessing_policy_script="${MASTER_DIR}/SUPPORT/SHARED_CODE/reprocessing_policy.py"
 
 is_reprocessing_step_enabled() {
   local station_id="$1"
@@ -312,10 +312,10 @@ if str(repo_root) not in sys.path:
     sys.path.append(str(repo_root))
 
 try:
-    from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import load_selection_for_paths, station_is_selected
+    from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import load_selection_for_paths, station_is_selected
     selection = load_selection_for_paths(
         [cfg_path],
-        master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "CONFIG_FILES",
+        master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "SUPPORT" / "CONFIG_FILES",
     )
     if not station_is_selected(station_id, selection.stations):
         print("0")
@@ -519,7 +519,7 @@ load_active_reprocessing_basenames() {
   active_reprocessing_basenames=()
   [[ -s "$active_reprocessing_csv" ]] || return 0
   while IFS="," read -r request_station request_base _task _requested_at stage0_fallback _rest; do
-    [[ "$request_station" == "MINGO${station_code}" ]] || continue
+    [[ "$request_station" == "MINGO0${station}" ]] || continue
     [[ "$stage0_fallback" == "1" ]] || continue
     [[ -n "$request_base" ]] && active_reprocessing_basenames["$request_base"]=1
   done < "$active_reprocessing_csv"

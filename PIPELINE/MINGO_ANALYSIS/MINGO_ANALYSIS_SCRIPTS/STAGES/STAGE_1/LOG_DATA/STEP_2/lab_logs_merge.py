@@ -36,20 +36,20 @@ CURRENT_PATH = Path(__file__).resolve()
 REPO_ROOT = None
 for parent in CURRENT_PATH.parents:
     if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parent.parent
+        REPO_ROOT = parent.parents[2]
         break
 if REPO_ROOT is None:
     REPO_ROOT = CURRENT_PATH.parents[-1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.execution_logger import set_station, start_timer
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import set_station, start_timer
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import (
     get_master_config_root,
     get_repo_root,
     resolve_home_path_from_config,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import (
     date_in_ranges as day_overlaps_date_ranges,
     datetime_in_ranges,
     effective_date_ranges_for_station,
@@ -57,7 +57,7 @@ from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import (
     load_selection_for_paths,
     station_is_selected,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.status_csv import append_status_row, mark_status_complete
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.status_csv import append_status_row, mark_status_complete
 
 CREATE_NEW_CSV = True
 

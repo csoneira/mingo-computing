@@ -35,7 +35,7 @@ REPO_ROOT = None
 for parent in CURRENT_PATH.parents:
     if parent.name == "MINGO_ANALYSIS_SCRIPTS":
         MASTER_ROOT = parent
-        REPO_ROOT = parent.parent.parent
+        REPO_ROOT = parent.parents[2]
         break
 if MASTER_ROOT is None:
     MASTER_ROOT = CURRENT_PATH.parents[-1]
@@ -45,7 +45,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import EventMarkerConfig, load_master_event_markers, parse_station_id
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import EventMarkerConfig, load_master_event_markers, parse_station_id
 
 
 DEFAULT_PLOT_CONFIG = {

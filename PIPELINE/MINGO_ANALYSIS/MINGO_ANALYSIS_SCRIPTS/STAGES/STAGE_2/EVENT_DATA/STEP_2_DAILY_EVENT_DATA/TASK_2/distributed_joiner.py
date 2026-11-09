@@ -32,7 +32,7 @@ REPO_ROOT = None
 for parent in CURRENT_PATH.parents:
     if parent.name == "MINGO_ANALYSIS_SCRIPTS":
         MASTER_ROOT = parent
-        REPO_ROOT = parent.parent.parent
+        REPO_ROOT = parent.parents[2]
         break
 if MASTER_ROOT is None:
     MASTER_ROOT = CURRENT_PATH.parents[-1]
@@ -41,7 +41,7 @@ if REPO_ROOT is None:
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.event_output_schema import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.event_output_schema import (
     canonicalize_output_dataframe,
     resolve_output_schema,
 )
@@ -57,10 +57,10 @@ INTERNAL_COUNT_COLUMN_PREFIX = "__count__"
 INTERNAL_SOURCE_START_COLUMN = "__source_start_time"
 INTERNAL_TRANSPORT_INFERRED_COLUMN = "__transport_inferred"
 STEP2_CONFIG_PATH = (
-    MASTER_ROOT / "CONFIG_FILES" / "STAGE_2" / "EVENT_DATA" / "STEP_1_ACCUMULATION" / "config_step_1_accumulation.yaml"
+    MASTER_ROOT / "SUPPORT" / "CONFIG_FILES" / "STAGE_2" / "EVENT_DATA" / "STEP_1_ACCUMULATION" / "config_step_1_accumulation.yaml"
 )
 STEP3_CONFIG_PATH = (
-    MASTER_ROOT / "CONFIG_FILES" / "STAGE_2" / "EVENT_DATA" / "STEP_2_DAILY_EVENT_DATA" / "config_step_2_daily_event_data.yaml"
+    MASTER_ROOT / "SUPPORT" / "CONFIG_FILES" / "STAGE_2" / "EVENT_DATA" / "STEP_2_DAILY_EVENT_DATA" / "config_step_2_daily_event_data.yaml"
 )
 
 

@@ -495,7 +495,12 @@ def apply_prune_batch(
     pending: dict[Path, dict[str, tuple[int, str]]],
     runtime_root: Path,
 ) -> int:
-    """Remove requested basenames with one locked, recoverable rewrite per CSV."""
+    """Remove requested basenames with a streaming, recoverable rewrite per CSV.
+
+    Metadata CSVs can be hundreds of megabytes. Keep only one row in memory
+    while writing the replacement and the audit journal; the journal is closed
+    before the atomic replacement, preserving the recovery ordering.
+    """
     removed = 0
     stamp = datetime.now(timezone.utc).isoformat()
     for path, requests in sorted(pending.items(), key=lambda item: str(item[0])):
@@ -505,35 +510,85 @@ def apply_prune_batch(
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         with lock_path.open("a+") as csv_lock:
             fcntl.flock(csv_lock, fcntl.LOCK_EX)
-            header, rows = read_csv(path)
-            if not header:
-                continue
-            key = "filename_base" if "filename_base" in header else header[0]
-            kept: list[dict[str, str]] = []
-            path_audit_rows: list[dict[str, object]] = []
-            for row in rows:
-                base = basename_from_text(row.get(key, ""))
-                request = requests.get(base or "")
-                if request is None:
-                    kept.append(row)
-                    continue
-                station, reason = request
-                removed += 1
-                path_audit_rows.append(
-                    {
-                        "removed_at_utc": stamp,
-                        "station": f"MINGO{station:02d}",
-                        "filename_base": base,
-                        "reason": reason,
-                        "csv_path": str(path),
-                        "row_json": json_safe_csv_row(row),
-                    }
-                )
-            if path_audit_rows:
-                # Journal first: interruption may over-report a still-present
-                # row, but can never leave a removed row without recovery data.
-                append_audit(runtime_root, path_audit_rows)
-                atomic_write_csv(path, header, kept)
+            temporary: Path | None = None
+            audit_handle = None
+            path_removed = 0
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                with path.open("r", encoding="utf-8-sig", newline="") as source:
+                    reader = csv.DictReader(source)
+                    header = list(reader.fieldnames or [])
+                    if not header:
+                        continue
+                    key = "filename_base" if "filename_base" in header else header[0]
+                    with tempfile.NamedTemporaryFile(
+                        "w", encoding="utf-8", newline="", dir=path.parent, delete=False
+                    ) as output:
+                        temporary = Path(output.name)
+                        writer = csv.DictWriter(
+                            output, fieldnames=header, extrasaction="ignore"
+                        )
+                        writer.writeheader()
+                        for row in reader:
+                            base = basename_from_text(row.get(key, ""))
+                            request = requests.get(base or "")
+                            if request is None:
+                                writer.writerow(row)
+                                continue
+
+                            if audit_handle is None:
+                                audit_path = runtime_root / "removed_metadata_rows.csv.gz"
+                                audit_path.parent.mkdir(parents=True, exist_ok=True)
+                                write_header = (
+                                    not audit_path.exists() or audit_path.stat().st_size == 0
+                                )
+                                audit_handle = gzip.open(
+                                    audit_path,
+                                    "at",
+                                    encoding="utf-8",
+                                    newline="",
+                                    compresslevel=1,
+                                )
+                                audit_writer = csv.DictWriter(
+                                    audit_handle,
+                                    fieldnames=(
+                                        "removed_at_utc",
+                                        "station",
+                                        "filename_base",
+                                        "reason",
+                                        "csv_path",
+                                        "row_json",
+                                    ),
+                                    extrasaction="ignore",
+                                )
+                                if write_header:
+                                    audit_writer.writeheader()
+                            station, reason = request
+                            audit_writer.writerow(
+                                {
+                                    "removed_at_utc": stamp,
+                                    "station": f"MINGO{station:02d}",
+                                    "filename_base": base,
+                                    "reason": reason,
+                                    "csv_path": str(path),
+                                    "row_json": json_safe_csv_row(row),
+                                }
+                            )
+                            path_removed += 1
+                if audit_handle is not None:
+                    # Complete and close the journal member before replacing
+                    # the source. A crash can over-record, never lose removed rows.
+                    audit_handle.close()
+                    audit_handle = None
+                if path_removed and temporary is not None:
+                    os.replace(temporary, path)
+                    temporary = None
+                    removed += path_removed
+            finally:
+                if audit_handle is not None:
+                    audit_handle.close()
+                if temporary is not None:
+                    temporary.unlink(missing_ok=True)
     return removed
 
 
@@ -701,7 +756,7 @@ def tracking_row(
 
 def load_selection_ranges(stations: Sequence[int]) -> dict[int, Sequence[tuple[datetime | None, datetime | None]]]:
     sys.path.insert(0, str(REPO_ROOT))
-    from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import (
+    from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import (
         effective_date_ranges_for_station,
         load_master_selection,
     )
@@ -729,6 +784,7 @@ def run(
     stations_root: Path = STATIONS_ROOT,
     runtime_root: Path = RUNTIME_ROOT,
     processed_root: Path = PROCESSED_ROOT,
+    pipeline_lock_root: Path = PIPELINE_LOCK_ROOT,
     selection_ranges: dict[int, Sequence[tuple[datetime | None, datetime | None]]] | None = None,
     disk_check_path: Path = Path("/home"),
     processed_lists_only: bool = False,
@@ -759,7 +815,7 @@ def run(
         totals = {"files": 0, "archived": 0, "anomalies": 0, "actions": 0}
 
         for station in stations:
-            station_lock_path = PIPELINE_LOCK_ROOT / f"guide_raw_to_corrected_s{station}.lock"
+            station_lock_path = pipeline_lock_root / f"guide_raw_to_corrected_s{station}.lock"
             station_lock_path.parent.mkdir(parents=True, exist_ok=True)
             station_lock = station_lock_path.open("a+")
             try:

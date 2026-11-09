@@ -1,6 +1,6 @@
 % =============================================================================
 % DATAFLOW_v3 Script Header v1
-% Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/software/utils/IO/csv2Cell.m
+% Script: MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/software/utils/IO/csv2Cell.m
 % Purpose: csv2Cell() - Imports the contents of a character delimited spreadsheet.
 % Owner: DATAFLOW_v3 contributors
 % Sign-off: csoneira <csoneira@ucm.es>

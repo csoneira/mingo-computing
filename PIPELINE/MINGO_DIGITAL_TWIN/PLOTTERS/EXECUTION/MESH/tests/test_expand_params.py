@@ -15,7 +15,7 @@ Notes: Keep behavior configuration-driven and reproducible.
 import unittest
 import pandas as pd
 
-from MINGO_DIGITAL_TWIN.PLOTTERS.EXECUTION.MESH.plot_param_mesh import expand_params
+from PIPELINE.MINGO_DIGITAL_TWIN.PLOTTERS.EXECUTION.MESH.plot_param_mesh import expand_params
 
 
 class TestExpandParams(unittest.TestCase):

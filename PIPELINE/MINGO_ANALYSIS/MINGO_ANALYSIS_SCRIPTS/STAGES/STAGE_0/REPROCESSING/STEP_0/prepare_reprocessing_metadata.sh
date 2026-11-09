@@ -131,8 +131,8 @@ while [[ "${MASTER_DIR}" != "/" && "$(basename "${MASTER_DIR}")" != "MINGO_ANALY
 done
 REPO_ROOT="$(dirname "$(dirname "${MASTER_DIR}")")"
 
-config_file_shared="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_0/REPROCESSING/config_reprocessing.yaml"
-config_file_step="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_0/REPROCESSING/STEP_0/config_step_0.yaml"
+config_file_shared="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_0/REPROCESSING/config_reprocessing.yaml"
+config_file_step="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_0/REPROCESSING/STEP_0/config_step_0.yaml"
 
 is_reprocessing_step_enabled() {
   local station_id="$1"
@@ -216,10 +216,10 @@ if str(repo_root) not in sys.path:
   sys.path.append(str(repo_root))
 
 try:
-  from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import load_selection_for_paths, station_is_selected
+  from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import load_selection_for_paths, station_is_selected
   selection = load_selection_for_paths(
     [cfg_path],
-    master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "CONFIG_FILES",
+    master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "SUPPORT" / "CONFIG_FILES",
   )
   if not station_is_selected(station_id, selection.stations):
     print("0")
@@ -405,16 +405,16 @@ if str(repo_root) not in sys.path:
 epochs_serialized = ""
 labels_serialized = ""
 try:
-  from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import (
+  from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import (
     load_selection_for_paths,
     serialize_date_ranges_for_shell,
   )
 
   selection = load_selection_for_paths(
     [cfg_shared_path, cfg_step_path],
-    master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "CONFIG_FILES",
+    master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "SUPPORT" / "CONFIG_FILES",
   )
-  from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import effective_date_ranges_for_station
+  from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import effective_date_ranges_for_station
   ranges = effective_date_ranges_for_station(station_raw, selection)
   epochs_serialized, labels_serialized = serialize_date_ranges_for_shell(ranges)
 except Exception:
@@ -787,7 +787,7 @@ build_qa_retry_manifest() {
   now_ts="$(date '+%Y-%m-%d %H:%M:%S')"
   if ! summary=$(
     PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" \
-    python3 -m MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.reprocessing_qa_retry build-manifest \
+    python3 -m MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.reprocessing_qa_retry build-manifest \
       --config-path "$config_file_shared" \
       --config-path "$config_file_step" \
       --station "$station" \

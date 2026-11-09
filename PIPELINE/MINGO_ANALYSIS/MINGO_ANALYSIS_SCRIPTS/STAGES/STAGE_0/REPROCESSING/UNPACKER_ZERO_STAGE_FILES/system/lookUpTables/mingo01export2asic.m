@@ -1,6 +1,6 @@
 % =============================================================================
 % DATAFLOW_v3 Script Header v1
-% Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/system/lookUpTables/mingo01export2asic.m
+% Script: MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/system/lookUpTables/mingo01export2asic.m
 % Purpose: Mingo01export2asic.
 % Owner: DATAFLOW_v3 contributors
 % Sign-off: csoneira <csoneira@ucm.es>

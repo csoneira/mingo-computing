@@ -315,12 +315,12 @@ def task_symbol(value):
     state = str(value or "").strip().lower()
     if not state or state in {"not_reached", "none", "n/a"}:
         return f"{DIM}·{RESET}"
-    if any(marker in state for marker in ("fail", "error", "invalid", "corrupt", "manual_review", "blocked")):
-        return f"{RED}!{RESET}"
     if any(marker in state for marker in ("running", "processing", "active", "in_progress")):
         return f"{CYAN}▶{RESET}"
     if any(marker in state for marker in ("complete", "completed", "done", "success", "present", "current", "up_to_date", "archived", "valid")):
         return f"{GREEN}✓{RESET}"
+    if any(marker in state for marker in ("fail", "error", "invalid", "corrupt", "manual_review", "blocked")):
+        return f"{RED}!{RESET}"
     if any(marker in state for marker in ("out_of_date", "pending", "queued", "waiting", "reprocess")):
         return f"{YELLOW}○{RESET}"
     if state in {"missing", "absent", "false", "0"}:
@@ -574,7 +574,7 @@ print()
 print(f"{DIM}Sorted by LAST MODIFIED, newest first.{RESET}")
 print(
     f"{DIM}Legend: {GREEN}✓ complete{RESET}{DIM}, {CYAN}▶ active{RESET}{DIM}, "
-    f"{YELLOW}○ pending/outdated{RESET}{DIM}, {RED}! error/review{RESET}{DIM}, "
+    f"{YELLOW}○ pending/outdated{RESET}{DIM}, {RED}! unresolved error/review{RESET}{DIM}, "
     f"· not reached, {BLUE}● selected range{RESET}"
 )
 

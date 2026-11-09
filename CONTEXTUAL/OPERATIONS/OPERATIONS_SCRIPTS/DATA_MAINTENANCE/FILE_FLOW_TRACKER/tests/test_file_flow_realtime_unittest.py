@@ -26,6 +26,52 @@ realtime = load_module("file_flow_realtime", SCRIPT_ROOT / "file_flow_realtime.p
 
 
 class FileFlowRealtimeTests(unittest.TestCase):
+    def test_task5_metadata_warning_is_deferred_for_new_completion(self) -> None:
+        observation = deep.FileObservation(station=0, base="mi0006032000000")
+        observation.archive_valid = True
+        observation.metadata_tasks.add(4)
+        observation.artifacts.append(
+            deep.Artifact(
+                Path("fitted_mi0006032000000.parquet"),
+                "input",
+                5,
+                "COMPLETED_DIRECTORY",
+                mtime=200.0,
+            )
+        )
+        deep.classify(observation, now=300.0, stale_seconds=3600.0)
+
+        realtime._defer_stale_task5_metadata_warning(
+            observation, deep_observed_epoch=100.0
+        )
+
+        self.assertNotIn(
+            "archive_without_task5_metadata", observation.anomalies
+        )
+
+    def test_task5_metadata_warning_remains_for_old_completion(self) -> None:
+        observation = deep.FileObservation(station=0, base="mi0006032000000")
+        observation.archive_valid = True
+        observation.metadata_tasks.add(4)
+        observation.artifacts.append(
+            deep.Artifact(
+                Path("fitted_mi0006032000000.parquet"),
+                "input",
+                5,
+                "COMPLETED_DIRECTORY",
+                mtime=90.0,
+            )
+        )
+        deep.classify(observation, now=300.0, stale_seconds=3600.0)
+
+        realtime._defer_stale_task5_metadata_warning(
+            observation, deep_observed_epoch=100.0
+        )
+
+        self.assertIn(
+            "archive_without_task5_metadata", observation.anomalies
+        )
+
     def test_uses_cached_metadata_and_current_artifacts_without_mutation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

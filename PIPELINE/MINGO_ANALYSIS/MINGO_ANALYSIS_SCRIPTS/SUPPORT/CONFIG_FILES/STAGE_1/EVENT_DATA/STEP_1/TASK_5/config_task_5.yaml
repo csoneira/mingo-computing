@@ -1,0 +1,14 @@
+last_file_test: true
+selection:
+  stations: [0, 1, 2]
+  date_ranges:
+    - start: 2024-09-27
+      end: 2024-10-01
+self_trigger: false
+complete_reanalysis: false
+# create_plots is a global true/false switch. Runtime aliases are selected in config_plots_task_5.yaml.
+create_plots: false
+keep_all_columns_output: false
+joined_analysis_files: 3
+joined_analysis_time_tolerance_hours: 5
+correct_angle: false

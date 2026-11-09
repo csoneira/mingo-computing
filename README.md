@@ -14,6 +14,8 @@ Repository for the MINGO detector software, including production processing, sim
 The diagram below records the intended flow and the relationship between simulation-derived calibration LUTs and their later use by analysis. The LUT generation studies belong with simulation comparisons; accepted LUTs used by calibration belong with analysis calibration assets.
 
 ```text
+# mingo-computing
+
 legacy
 DOCUMENTATION
 
@@ -32,16 +34,17 @@ PIPELINE
                                                                                                      |
                                                                                                      |
                                 "sidecar" ----------------------------------->  MINGO_SIMULATION_VS_SIMULATION ------------> correction LUTs
-                                    ^                                               |                ^                              |
-                                    |                                               |                |                              |
-------------------------            |                                             (LUTs)             |                              |
--- MINGO_DIGITAL_TWIN -- --> Simulated events --> mingo-like format ---             |        Analyzed simulated events              |
-------------------------                                               \            v       /               |                       |
+                                    ^                                              |                 ^                              |
+                                    |                                              |                 |                              |
+------------------------            |                                            (LUTs)              |                              |
+-- MINGO_DIGITAL_TWIN -- --> Simulated events --> mingo-like format ---            |         Analyzed simulated events              |
+------------------------                                               \           v        /               |                       |
                                                                         --------------------                v                       |
                                                                         -- MINGO_ANALYSIS --      MINGO_SIMULATION_VS_DATA          |
                                                                         --------------------                ^                       |
-                                                                       /                    \               |                       v
-"Real measurement" ----------> hld events ----> mingo-like format -----                      Analyzed real events --------> MINGO_CORRECTIONS
+                                                                       /           ^        \               |                       |
+"Real measurement" ----------> hld events ----> mingo-like format -----            |         \              |                       v
+                                                                                  QAR <------ Analyzed real events --------> MINGO_CORRECTIONS
          ^                                                                                           |                              |
          |                                                                                           |                              v
          |                                                                                           |                     Real corrected data
@@ -52,6 +55,12 @@ PIPELINE
     mingo station
     (makes use of
   FOR_MINGO_SYSTEMS)
+
+
+
+---
+Glossary:
+- QAR: Quality Assurance Reanalysis
 ```
 
 Simulation-versus-simulation studies may derive candidate calibration LUTs using simulation truth. The analysis calibration area is the destination for LUTs that have been reviewed and selected for use; generated candidates should remain traceable to their producing study.

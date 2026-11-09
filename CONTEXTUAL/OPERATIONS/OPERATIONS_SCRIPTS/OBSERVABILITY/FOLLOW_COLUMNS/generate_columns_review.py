@@ -19,7 +19,7 @@ if REPO_ROOT is None:
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.step1_shared import canonicalize_step1_columns
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_shared import canonicalize_step1_columns
 
 
 OUTPUT_PATH = REPO_ROOT / "CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/OBSERVABILITY/columns_review.md"

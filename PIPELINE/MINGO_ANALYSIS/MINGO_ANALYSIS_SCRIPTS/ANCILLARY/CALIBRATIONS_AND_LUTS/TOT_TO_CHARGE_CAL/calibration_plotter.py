@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_1/EVENT_DATA/STEP_1/TASK_2/TOT_TO_CHARGE_CAL/calibration_plotter.py
+Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALIBRATIONS_AND_LUTS/TOT_TO_CHARGE_CAL/calibration_plotter.py
 Purpose: Plot TOT-to-charge calibration curves and export them as PNG by default.
 Owner: DATAFLOW_v3 contributors
 Sign-off: csoneira <csoneira@ucm.es>
 Last Updated: 2026-03-05
 Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_1/EVENT_DATA/STEP_1/TASK_2/TOT_TO_CHARGE_CAL/calibration_plotter.py [options]
+Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALIBRATIONS_AND_LUTS/TOT_TO_CHARGE_CAL/calibration_plotter.py [options]
 Inputs: CLI args, config files, environment variables, and/or upstream files.
 Outputs: Files, logs, plots, or stdout/stderr side effects.
 Notes: Keep behavior configuration-driven and reproducible.

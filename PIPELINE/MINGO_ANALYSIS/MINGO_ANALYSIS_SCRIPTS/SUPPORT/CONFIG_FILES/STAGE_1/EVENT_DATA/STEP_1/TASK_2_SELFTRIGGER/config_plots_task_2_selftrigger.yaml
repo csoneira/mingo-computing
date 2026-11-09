@@ -1,0 +1,9 @@
+# Runtime diagnostics are PNG-only and selected explicitly by alias.
+plots:
+  - charge_spectra_selftrigger_one_plane_topologies
+non_plots:
+  - raw_channel_spectra
+  - tdif_spectra
+  - tsum_spectra
+  - charge_spectra
+  - cross_plane_delta_tsum

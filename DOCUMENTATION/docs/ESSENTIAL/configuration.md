@@ -95,7 +95,7 @@ The station’s crontab (`crontab -l` as rpcuser) contains entries for:
 - Report generation and email notification
 - Remote log archival and backup
 
-Refer to `CONFIG/add_to_crontab.info` in the main repository for the
+Refer to `CONTEXTUAL/CONFIG/CONTENTS/cron/analysis_pc.crontab` in the main repository for the
 cluster‑wide schedule; the station crontab mirrors the relevant lines.
 
 ## Troubleshooting

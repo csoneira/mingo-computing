@@ -21,10 +21,10 @@ def main() -> int:
     lake_dirs = [Path(value) for value in sys.argv[3:]]
     sys.path.insert(0, str(repo_root))
 
-    from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.file_selection import (
+    from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_selection import (
         file_name_in_any_date_range,
     )
-    from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import (
+    from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import (
         effective_date_ranges_for_station,
         load_master_selection,
     )

@@ -15,6 +15,17 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[5]
+DEFAULT_STORAGE_CONFIG = ROOT / 'CONTEXTUAL/CONFIG/CONTENTS/storage/external_storage.conf'
+
+def read_storage_config(path):
+    values={}
+    for raw in Path(path).read_text(encoding='utf-8').splitlines():
+        line=raw.strip()
+        if not line or line.startswith('#'):continue
+        key,sep,value=line.partition('=')
+        if not sep:raise ValueError(f'Invalid external storage config line: {line!r}')
+        values[key.strip()]=value.strip().strip('"\'')
+    return values
 
 def signature(path):
     s=path.stat();return (s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns)
@@ -93,13 +104,19 @@ def activate(source,dest,verified,journal):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root',type=Path,default=ROOT)
-    parser.add_argument('--destination',type=Path,default=Path('/home/mingo/data/PARQUET_LAKES'))
-    parser.add_argument('--stations',default='0,1,2,3,4')
+    parser.add_argument('--storage-config',type=Path,default=DEFAULT_STORAGE_CONFIG)
+    parser.add_argument('--destination',type=Path,default=None,help='Override configured external parquet lake root')
+    parser.add_argument('--stations',default='0,1,2',help='Station IDs to offload (default: active stations 0,1,2)')
     parser.add_argument('--apply',action='store_true',help='Copy and SHA256 verify; default is inventory only')
     parser.add_argument('--activate',action='store_true',help='Atomically redirect lake and remove verified originals; requires paused pipeline')
-    args=parser.parse_args();root=args.root.resolve();dest=args.destination.resolve()
+    args=parser.parse_args();root=args.root.resolve()
+    storage=read_storage_config(args.storage_config)
+    if storage.get('USE_EXTERNAL_PARQUET_LAKES','0')!='1':parser.error('External parquet lake storage is disabled in the storage config')
+    configured_root=Path(storage.get('EXTERNAL_STORAGE_ROOT','/home/data/mingo')).expanduser()
+    configured_dir=Path(storage.get('EXTERNAL_PARQUET_LAKES_DIR','PARQUET_LAKES'))
+    dest=(args.destination if args.destination is not None else configured_root/configured_dir).resolve()
     if args.activate and not args.apply:parser.error('--activate requires --apply')
-    if not (root/'CONFIG').is_dir():parser.error('Not a repository root')
+    if not (root/"CONTEXTUAL" / "CONFIG").is_dir():parser.error('Not a repository root')
     ids=[int(n) for n in args.stations.split(',')]
     if any(n<0 or n>99 for n in ids) or len(set(ids))!=len(ids):parser.error('Invalid/duplicate stations')
     parent=dest
@@ -114,8 +131,18 @@ def main():
             if not proc.name.isdigit():continue
             try:cmd=(proc/'cmdline').read_bytes().split(b'\0')
             except OSError:continue
-            if any(Path(os.fsdecode(a)).name=='script_5_fit_to_post.py' for a in cmd if a):
-                parser.error(f'Task-5 writer still running: PID {proc.name}')
+            active_task_scripts = {
+                'script_0_acq_to_raw.py',
+                'script_1_raw_to_clean.py',
+                'script_2_clean_to_cal.py',
+                'script_3_cal_to_list.py',
+                'script_4_list_to_fit.py',
+                'script_5_fit_to_post.py',
+                'script_1_selftrigger_raw_to_diagnostic.py',
+                'script_2_selftrigger_clean_to_cal.py',
+            }
+            if any(Path(os.fsdecode(a)).name in active_task_scripts for a in cmd if a):
+                parser.error(f'Stage-1 writer still running: PID {proc.name}')
     state=root/'CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/STATE/parquet_lake_offload'
     state.mkdir(parents=True,exist_ok=True)
     with (state/'offload.lock').open('a') as lock:

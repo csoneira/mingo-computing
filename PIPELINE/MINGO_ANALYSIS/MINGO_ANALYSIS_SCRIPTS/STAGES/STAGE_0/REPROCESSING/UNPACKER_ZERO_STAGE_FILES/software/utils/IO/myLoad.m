@@ -1,6 +1,6 @@
 % =============================================================================
 % DATAFLOW_v3 Script Header v1
-% Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/software/utils/IO/myLoad.m
+% Script: MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/software/utils/IO/myLoad.m
 % Purpose: MyLoad.
 % Owner: DATAFLOW_v3 contributors
 % Sign-off: csoneira <csoneira@ucm.es>

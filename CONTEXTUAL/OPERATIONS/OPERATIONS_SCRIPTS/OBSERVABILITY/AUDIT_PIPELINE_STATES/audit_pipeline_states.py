@@ -488,7 +488,7 @@ def station_inventory_entries(station: str) -> List[Dict[str, str]]:
         "queue_dir",
         stage0_to_1,
         "Raw .dat files ready for STEP_1/TASK_1.",
-        "PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/STEP_1/TASK_1/script_1_raw_to_clean.py",
+        "PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_1/script_1_raw_to_clean.py",
         count_dir_files(stage0_to_1),
     )
 
@@ -507,7 +507,7 @@ def station_inventory_entries(station: str) -> List[Dict[str, str]]:
                 label,
                 path,
                 f"STEP_1/TASK_{task} {suffix} files.",
-                f"PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/STEP_1/TASK_{task}/script_{task}_*.py",
+                f"PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_{task}/script_{task}_*.py",
                 count_dir_files(path),
             )
         for suffix, kind in (
@@ -521,7 +521,7 @@ def station_inventory_entries(station: str) -> List[Dict[str, str]]:
                 kind,
                 path,
                 f"STEP_1/TASK_{task} metadata CSV.",
-                f"PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/STEP_1/TASK_{task}/script_{task}_*.py",
+                f"PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_{task}/script_{task}_*.py",
                 count_csv_rows(path),
             )
 
@@ -530,7 +530,7 @@ def station_inventory_entries(station: str) -> List[Dict[str, str]]:
         "output_dir",
         step1_to_2,
         "Stage 1 event parquet lake (task 5 postprocessed products).",
-        "PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/STEP_1/TASK_5/script_5_fit_to_post.py",
+        "PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_5/script_5_fit_to_post.py",
         count_dir_files(step1_to_2),
     )
 

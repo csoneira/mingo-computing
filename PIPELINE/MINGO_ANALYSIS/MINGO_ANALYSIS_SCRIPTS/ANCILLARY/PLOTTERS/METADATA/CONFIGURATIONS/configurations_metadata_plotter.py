@@ -21,7 +21,7 @@ REPO_ROOT = ROOT_DIR.parents[4]
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import pdf_save_rasterized_page
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.plot_utils import pdf_save_rasterized_page
 
 log = logging.getLogger("configurations_metadata_plotter")
 
@@ -34,7 +34,7 @@ PLANE_COLORS = {
     "P4_z": "#1f77b4",
 }
 FILE_TS_RE = re.compile(r"(\d{11})$")
-ONLINE_RUN_ROOT = REPO_ROOT / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "CONFIG_FILES" / "STAGE_0" / "ONLINE_RUN_DICTIONARY"
+ONLINE_RUN_ROOT = REPO_ROOT / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "SUPPORT" / "CONFIG_FILES" / "STAGE_0" / "ONLINE_RUN_DICTIONARY"
 STATIONS_ROOT = REPO_ROOT / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_STATIONS"
 OUTPUT_DIR = ROOT_DIR / "PLOTS"
 OUTPUT_PDF = OUTPUT_DIR / "configurations_metadata_report.pdf"

@@ -34,7 +34,7 @@ REPO_ROOT = None
 for parent in CURRENT_PATH.parents:
     if parent.name == "MINGO_ANALYSIS_SCRIPTS":
         MASTER_ROOT = parent
-        REPO_ROOT = parent.parent.parent
+        REPO_ROOT = parent.parents[2]
         break
 if MASTER_ROOT is None:
     MASTER_ROOT = CURRENT_PATH.parents[-1]
@@ -43,16 +43,16 @@ if REPO_ROOT is None:
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.execution_logger import set_station, start_timer
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_master_config_root, get_repo_root
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import set_station, start_timer
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_master_config_root, get_repo_root
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import (
     date_in_ranges,
     effective_date_ranges_for_station,
     load_selection_for_paths,
     parse_station_id,
     station_is_selected,
 )
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.STAGES.STAGE_2.plot_joined_stage_groups import generate_joined_groups_plot
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.STAGES.STAGE_2.plot_joined_stage_groups import generate_joined_groups_plot
 
 
 CONFIG_PATH = get_master_config_root() / "STAGE_2" / "config_stage_2.yaml"

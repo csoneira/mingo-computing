@@ -213,7 +213,7 @@ def python_smoke(report):
         report.check(r.returncode == 0, f'Cron environment import {name}')
     r = run([PYTHON, '-m', 'pip', 'check'], env=cron_env())
     report.check(r.returncode == 0, 'pip dependency consistency')
-    r = run([PYTHON, '-c', 'import sys; assert sys.prefix != sys.base_prefix; import yaml; from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_repo_root; assert str(get_repo_root()) == sys.argv[1]', ROOT], env=cron_env())
+    r = run([PYTHON, '-c', 'import sys; assert sys.prefix != sys.base_prefix; import yaml; from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root; assert str(get_repo_root()) == sys.argv[1]', ROOT], env=cron_env())
     report.check(r.returncode == 0, 'Python path configuration resolves this checkout')
     r = run([ROOT / '.venv/bin/yq', '-r', '.logbook.gid_by_station."1"'], input='logbook:\n  gid_by_station:\n    "1": "123"\n', env=cron_env())
     report.check(r.returncode == 0 and r.stdout.strip() == '123', 'Pinned kislyuk/yq supports production jq-style query')
@@ -348,7 +348,7 @@ def doctor(args):
     report.check(tot.is_file() and tot.stat().st_size > 0, 'Restore empirical TOT-to-charge calibration; simulation Step 8 uses checked-in linear fallback until restored: ' + str(tot), warn=True)
     itineraries = ROOT / 'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALIBRATIONS_AND_LUTS/TIME_CALIBRATION_ITINERARIES/itineraries.csv'
     report.check(itineraries.is_file() and itineraries.stat().st_size > 0, 'Time-calibration itinerary table: ' + str(itineraries), warn=True)
-    outlier = ROOT / 'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_1/LOG_DATA/STEP_2/config_step_2.csv'
+    outlier = ROOT / 'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_1/LOG_DATA/STEP_2/config_step_2.csv'
     outlier_ok = False
     if outlier.is_file():
         try:
@@ -464,7 +464,7 @@ class Installer:
         if known.exists(): self.backup(known); known.chmod(0o600)
         print('Existing SSH identities preserved. Dedicated key is unencrypted for cron; see SSH README for enrollment and host-key verification.')
     def secrets(self):
-        legacy = ROOT / 'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_1/COPERNICUS/.cdsapirc'
+        legacy = ROOT / 'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_1/COPERNICUS/.cdsapirc'
         target = HOME / '.cdsapirc'
         if legacy.is_file() and not target.exists(): self.write(target, legacy.read_text())
         for item in manifest('secrets/manifest.json'):

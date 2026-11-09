@@ -50,7 +50,7 @@ miniTRASGO station during a measurement run.
   STAGE 0 (simulation ingestion).  To force an immediate ingestion, run:
 
   ```bash
-  python MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/SIMULATION/ingest_simulated_station_data.py
+  python PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/SIMULATION/ingest_simulated_station_data.py
   ```
 
 - Use `gzip` to compress old `.hld`, `.log`, and `.mat` files for long‑term

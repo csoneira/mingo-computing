@@ -1,0 +1,82 @@
+crontab_execution: true
+last_file_test: true
+selection:
+  stations: [0, 1]
+  date_ranges:
+    - start: 2024-09-27
+      end: 2024-10-01
+self_trigger: false
+timeseries_and_fits: false
+complete_reanalysis: false
+# create_plots is a global true/false switch. Runtime aliases are selected in config_plots_task_4.yaml.
+create_plots: false
+# Task 4 filter values are supplied by config_parameters_task_4.csv and its
+# task_3_filter references; this task has no separate filter overlay CSV.
+use_filter_parameter_config: false
+keep_all_columns_output: true
+joined_analysis_files: 3
+joined_analysis_time_tolerance_hours: 5
+save_rejected_rows: false
+create_reject_plots: false
+limit_number: null
+number_of_det_executions: 1
+number_of_tt_executions: 1
+# fit_method options: detached | timtrack | both
+fit_method: both
+fixed_speed: false
+res_ana_removing_planes: true
+efficiency_metadata:
+  x_bin_count: 15
+  y_bin_count: 20
+  theta_bin_count: 20
+  phi_bin_count: 24
+  x_min_mm: null
+  x_max_mm: null
+  y_min_mm: null
+  y_max_mm: null
+  theta_min_deg: null
+  theta_max_deg: null
+  phi_min_deg: null
+  phi_max_deg: null
+  min_pool_events: 20
+  min_accepted_events: 10
+  # These summary_fiducial_* entries only limit the scalar efficiency summaries.
+  # The main track-based-efficiency fiducial cuts live in config_parameters_task_4.csv.
+  summary_fiducial_x_abs_max_mm: null
+  summary_fiducial_y_abs_max_mm: null
+  # Limits the candidate theta bins for the scalar summary; the saved value is
+  # taken from the bin center closest to 0 deg within this admissible region.
+  summary_fiducial_theta_max_deg: null
+  summary_fiducial_phi_abs_max_deg: null
+# Optional TimTrack LOO (external residual) controls for runtime tuning:
+# - every_n=1 means compute LOO on every eligible event (current behavior).
+# - increase every_n to reduce CPU cost when LOO diagnostics are not critical.
+# - leave iter_max/cocut empty to inherit the main TimTrack convergence values.
+tt_loo_every_n: 5
+tt_loo_iter_max: null
+tt_loo_cocut: null
+# tt_loo_mode: single_step (one Newton-Raphson step from full-track solution)
+#              or iterative (legacy convergence loop). single_step is ~10x faster.
+tt_loo_mode: single_step
+offender_plot_settings:
+  theta_min_deg: 0.0
+  theta_max_deg: 90.0
+  focus_definitive_tt: [123, 124, 134, 234, 1234]
+  task1_cumulative_thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  total_cumulative_thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+projection_ellipse_diagnostic:
+  bin_count: 140
+  min_points: 300
+  smoothing_sigma_bins: 1.0
+  axis_quantile_min: 0.01
+  axis_quantile_max: 0.99
+  cmap: turbo
+  contour_fractions: [0.25, 0.50, 0.75]
+  focus_definitive_tt: [123, 124, 134, 234, 1234]
+  x_min: null
+  x_max: null
+  y_min: null
+  y_max: null
+# Upper quantile used for the x-range of the essential total-event-charge
+# histogram grid. The plot range becomes 0 .. q(quantile) of event_charge.
+total_event_charge_histogram_upper_quantile: 0.999

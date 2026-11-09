@@ -11,6 +11,10 @@ This archive contains dated development and research notes. Notebook entries are
 
 ## 2026
 
+### November
+
+- [2026-11-04 — Charge spectrum width and plane efficiency](2026/11_NOVEMBER/2026_11_04_notebook.md)
+
 ### October
 
 - [2026-10-22 — Muon TOF energy reconstruction](2026/10_OCTOBER/2026_10_22_notebook.md)

@@ -38,7 +38,7 @@ erase_cron_logs.sh [--dry-run] [--keep-lines N] [--log-dir PATH] [--crontab-file
 
 Keeps only the most recent N lines in cron logs under CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/CRON_LOGS.
 Targets include:
-1) files declared as redirection targets in CONTEXTUAL/CONFIG/add_to_crontab.info
+1) files declared as redirection targets in CONTEXTUAL/CONFIG/CONTENTS/cron/analysis_pc.crontab
 2) existing regular files found recursively under the cron log directory
 
 Options:

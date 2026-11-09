@@ -1,6 +1,6 @@
 % =============================================================================
 % DATAFLOW_v3 Script Header v1
-% Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/system/lookUpTables/lookUpTables_RPC.new.m
+% Script: MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/system/lookUpTables/lookUpTables_RPC.new.m
 % Purpose: LookUpTables RPC.new.
 % Owner: DATAFLOW_v3 contributors
 % Sign-off: csoneira <csoneira@ucm.es>

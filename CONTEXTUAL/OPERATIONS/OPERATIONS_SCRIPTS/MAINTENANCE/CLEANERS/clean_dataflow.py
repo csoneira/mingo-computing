@@ -16,7 +16,7 @@ import sys
 import time
 
 HERE = Path(__file__).resolve().parent
-CATEGORIES = {'plots', 'pdfs', 'pngs', 'temps', 'completed_data', 'unprocessed_data',
+CATEGORIES = {'plots', 'pdfs', 'pngs', 'temps', 'completed_data', 'error_data', 'unprocessed_data',
               'parquet_lake', 'simulation_intermediates', 'simulation_junk'}
 ALIASES = {'completed': 'completed_data'}
 PLOT_DIRS = {'PLOTS', 'DEBUG_PLOTS', 'FINAL_PLOTS', 'FIGURE_DIRECTORY', 'PDF_DIRECTORY'}
@@ -108,6 +108,9 @@ def classify(path, root):
         if 'COMPLETED' in upper or 'COMPLETED_DIRECTORY' in upper:
             if suffix in DATA_EXTENSIONS:
                 return 'completed_data', path
+        if 'ERROR' in upper or 'ERROR_DIRECTORY' in upper:
+            if suffix in DATA_EXTENSIONS:
+                return 'error_data', path
         if 'UNPROCESSED' in upper or 'UNPROCESSED_DIRECTORY' in upper:
             if suffix in DATA_EXTENSIONS:
                 return 'unprocessed_data', path
@@ -199,6 +202,50 @@ def delete_candidate(path, before, root):
         os.close(fd)
 
 
+def prune_empty_plot_directories(root, target_path=None):
+    """Remove empty descendants within generated plot folders, then empty roots."""
+    target_names = {'FIGURE_DIRECTORY', 'DEBUG_PLOTS'}
+    bases = [root/'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS',
+             root/'PIPELINE/MINGO_DIGITAL_TWIN/SIMULATION_OUTPUTS',
+             root/'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY',
+             root/'PIPELINE/MINGO_DIGITAL_TWIN/PLOTTERS']
+    if target_path is not None:
+        target_path = Path(target_path)
+        targets = {target_path} if target_path.name in target_names else set()
+    else:
+        targets = set()
+        for base in bases:
+            if not safe_path(base, root) or not base.is_dir():
+                continue
+            for directory, dirs, _ in os.walk(base, topdown=True, followlinks=False):
+                parent = Path(directory)
+                dirs[:] = sorted(d for d in dirs if safe_path(parent/d, root))
+                targets.update(parent/name for name in dirs if name in target_names)
+
+    removed = 0
+    for target in sorted(targets, key=lambda p: len(p.parts), reverse=True):
+        if not safe_path(target, root) or not target.is_dir():
+            continue
+        # Prune only empty descendants inside this generated figure directory.
+        for directory, dirs, _ in os.walk(target, topdown=False, followlinks=False):
+            current = Path(directory)
+            if not safe_path(current, root):
+                continue
+            dirs[:] = [d for d in dirs if safe_path(current/d, root)]
+            for child in dirs:
+                try:
+                    (current/child).rmdir()
+                    removed += 1
+                except OSError:
+                    pass
+            try:
+                current.rmdir()
+                removed += 1
+            except OSError:
+                pass
+    return removed
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, default=HERE.parents[4])
@@ -214,8 +261,8 @@ def main():
     parser.add_argument('--report', type=Path, help='Write candidate CSV including byte sizes')
     args = parser.parse_args()
     root = args.root.resolve()
-    if not (root/'CONFIG').is_dir() or not (root/'MINGO_ANALYSIS').is_dir():
-        parser.error('Root must contain CONFIG and MINGO_ANALYSIS')
+    if not (root/"CONTEXTUAL" / "CONFIG").is_dir() or not (root/"PIPELINE" / "MINGO_ANALYSIS").is_dir():
+        parser.error('Root must contain CONTEXTUAL/CONFIG and PIPELINE/MINGO_ANALYSIS')
     config = load_config(args.config)
     selected = {c for c,r in config['categories'].items() if r['enabled']}
     if args.select:
@@ -270,6 +317,9 @@ def main():
             if not args.compact: print(f'{category}\t{before.st_size}\t{path}')
         for category,(count,size) in sorted(totals.items()):
             print(f'{category}: {count} files, {size/1024**3:.3f} GiB '+('deleted' if args.apply else 'eligible'))
+        if args.apply and selected & {'plots', 'pdfs', 'pngs'}:
+            removed_dirs = prune_empty_plot_directories(root)
+            print(f'Empty DEBUG_PLOTS/FIGURE_DIRECTORY folders removed: {removed_dirs}')
         print(f'Total: {sum(v[1] for v in totals.values())/1024**3:.3f} GiB; errors={failures}')
         if args.apply and config['check_archive_consistency']:
             env=dict(os.environ,DATAFLOW_CLEAN_ROOT=str(root))

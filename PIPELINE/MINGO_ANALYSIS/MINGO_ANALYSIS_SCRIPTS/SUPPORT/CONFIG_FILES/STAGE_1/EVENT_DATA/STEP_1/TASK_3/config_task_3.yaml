@@ -1,0 +1,51 @@
+last_file_test: false
+selection:
+  stations: [0, 1]
+  date_ranges:
+    - start: 2024-09-27
+      end: 2024-10-01
+default_z_positions:
+- 0
+- 150
+- 300
+- 450
+complete_reanalysis: false
+stratos_save: false
+# create_plots is a global true/false switch. Runtime aliases are selected in config_plots_task_3.yaml.
+create_plots: true
+weighted_by_charge_for_plane_tsum_and_tdif: true
+keep_all_columns_output: false
+joined_analysis_files: 3
+joined_analysis_time_tolerance_hours: 10
+removed_marker: x
+removed_marker_size: 10
+removed_marker_alpha: 0.9
+filter_parameter_config_csv: config_filter_parameters_task_3.csv
+# tt_task3_list_qsum_pair_plot_mode options: hexbin | scatter
+tt_task3_list_qsum_pair_plot_mode: scatter
+# Plot-only cap for the Task 3 tt_task3_list Q_sum lower-triangular figure.
+tt_task3_list_qsum_pair_plot_charge_cap: null
+# Threshold grid for charge-filtered diagnostics.
+# mode: manual | auto (alias: quantile)
+# auto mode builds thresholds from 0 to Q(quantile) using N linearly spaced steps.
+tt_task3_list_charge_threshold_mode: auto
+tt_task3_list_charge_threshold_auto_quantile: 95
+tt_task3_list_charge_threshold_auto_steps: 10
+# Optional manual cap applied to threshold generation and charge-range plots.
+# You can set a global value with tt_task3_list_charge_limit, and/or station-specific overrides here.
+tt_task3_list_charge_limit_by_station:
+  mingo00: 150
+  mingo01: 150
+# Charge asymmetry (Q_diff/Q_sum) x-axis controls:
+# - Set charge_asymmetry_x_abs_max to force symmetric limits [-abs_max, +abs_max].
+# - Keep null to use shared auto-limits from quantiles below.
+charge_asymmetry_x_abs_max: null
+charge_asymmetry_x_low_quantile: 0.5
+charge_asymmetry_x_high_quantile: 99.5
+# Manual fallback / optional explicit grid.
+tt_task3_list_charge_thresholds: [0, 5, 10, 20, 50]
+limit_number: null
+y_new_method: false
+# Fixed Q_sum boundary for topology coding:
+# 0 = no charge, 1 = avalanche, 2 = streamer. Set null to fall back to auto-detection.
+streamer_charge_sum_threshold: 100.0

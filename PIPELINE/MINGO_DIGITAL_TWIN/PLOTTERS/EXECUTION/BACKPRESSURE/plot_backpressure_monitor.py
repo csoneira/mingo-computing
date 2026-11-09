@@ -37,7 +37,7 @@ REPO_ROOT = DT_ROOT.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.plot_utils import pdf_save_rasterized_page
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.plot_utils import pdf_save_rasterized_page
 
 DEFAULT_FREQUENCY_CONFIG = DT_ROOT / "CONFIG_FILES" / "sim_main_pipeline_frequency.conf"
 DEFAULT_MESH_PATH = DT_ROOT / "SIMULATION_OUTPUTS" / "INTERSTEPS" / "STEP_0_TO_1" / "param_mesh.csv"

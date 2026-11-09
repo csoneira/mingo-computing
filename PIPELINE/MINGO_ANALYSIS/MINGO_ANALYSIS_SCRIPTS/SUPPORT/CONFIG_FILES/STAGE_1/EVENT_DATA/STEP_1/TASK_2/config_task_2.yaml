@@ -1,0 +1,72 @@
+last_file_test: true
+selection:
+  stations: [1]
+  date_ranges:
+    - start: 2026-10-16
+      end: 2026-11-05
+complete_reanalysis: true
+article_format: false
+# create_plots is a global true/false switch. Runtime aliases are selected in config_plots_task_2.yaml.
+create_plots: false
+keep_all_columns_output: false
+filter_parameter_config_csv: config_filter_parameters_task_2.csv
+calibration_subsample_config_yaml: config_calibration_subsample_task_2.yaml
+# Optional filter-parameter overlay. Keep true to apply
+# config_filter_parameters_task_2.csv bounds/thresholds.
+use_filter_parameter_config: true
+strip_pair_min_events: 10
+track_removed_rows_task2: false
+save_time_slewing_pair_residuals: false
+removed_marker: x
+removed_marker_size: 10
+removed_marker_alpha: 0.9
+touched_marker: +
+touched_marker_size: 24
+touched_marker_alpha: 0.95
+strip_pair_figsize: [7, 7]
+limit_number: null
+number_of_time_cal_figures: 3
+calibrate_charge_ns_to_fc: true
+validate_charge_pedestal_calibration: true
+# Calibration modes: null (skip) | file (load from QA CSV) | make (compute fresh)
+# Each key accepts either a scalar (all stations) or a per-station list
+# [MINGO00, MINGO01, MINGO02, MINGO03, MINGO04]; missing entries default to "make".
+# analysis_mode is a prime-product composite: cs×cfb×tc×tdc×qtdif
+# charge_side primes:       null=×1, file=×2,  make=×3
+# charge_front_back primes: null=×1, file=×5,  make=×7
+# time_calibration primes:  null=×1, file=×11, make=×13
+# time_dif_calibration:     null=×1, file=×17, make=×19
+# q_dif_t_dif_correction:   null=×1, file=×23, make=×29
+charge_side: [make]
+charge_front_back: [make]
+q_dif_t_dif_correction: [make]
+time_calibration: [make]
+time_dif_calibration: [make]
+slewing_correction: true
+# Binning for slewing_delta_t_vs_qsum2_by_qsum1_bins.
+# Q_sum_1 uses quantile bins; Q_sum_2 uses equal-width bins within each Q_sum_1 bin.
+slewing_delta_t_qsum1_bins: 7
+slewing_delta_t_qsum2_bins: 8
+slewing_delta_t_fit_degree: 1
+# Use signed_log1p(Q_sum) instead of linear Q_sum for the slewing stage and its
+# plots. This retains finite non-zero negative charge values.
+slewing_use_log_qsum: true
+# Reference convention for slewing_per_strip_from_pair_fit: mean_zero | max_charge
+slewing_per_strip_reference_mode: mean_zero
+apply_slewing_correction_from_pair_fit: true
+slewing_application_mode: per_channel_polynomial
+slewing_application_reference_mode: mean_zero
+slewing_per_channel_poly_degree: 1
+slewing_per_channel_outside_domain: clip
+slewing_per_channel_curve_max_points_per_channel: 30000
+slewing_relative_tsum_vs_qsum_qsum_clip_left: 0
+slewing_relative_tsum_vs_qsum_qsum_clip_right: 50
+joined_analysis_files: 15
+joined_analysis_time_tolerance_hours: 24
+time_window_filtering: false
+# All hard filters defining and evolving calibration_df live only in:
+# config_calibration_subsample_task_2.yaml
+old_timing_method: true
+# Calibration behaviour flags (moved here from config_parameters_task_2.csv)
+validate_pos_cal: true
+interpolate_fast_charge_log_scale: true

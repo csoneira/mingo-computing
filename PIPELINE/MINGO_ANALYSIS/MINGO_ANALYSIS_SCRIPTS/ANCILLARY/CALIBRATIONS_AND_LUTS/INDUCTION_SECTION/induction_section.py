@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_2/EVENT_DATA/STEP_1_ACCUMULATION/INDUCTION_SECTION/induction_section.py
+Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALIBRATIONS_AND_LUTS/INDUCTION_SECTION/induction_section.py
 Purpose: !/usr/bin/env python3.
 Owner: DATAFLOW_v3 contributors
 Sign-off: csoneira <csoneira@ucm.es>
 Last Updated: 2026-03-02
 Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_2/EVENT_DATA/STEP_1_ACCUMULATION/INDUCTION_SECTION/induction_section.py [options]
+Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALIBRATIONS_AND_LUTS/INDUCTION_SECTION/induction_section.py [options]
 Inputs: CLI args, config files, environment variables, and/or upstream files.
 Outputs: Files, logs, plots, or stdout/stderr side effects.
 Notes: Keep behavior configuration-driven and reproducible.
@@ -31,15 +31,15 @@ CURRENT_PATH = Path(__file__).resolve()
 REPO_ROOT = None
 for parent in CURRENT_PATH.parents:
     if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parent.parent
+        REPO_ROOT = parent.parents[2]
         break
 if REPO_ROOT is None:
     REPO_ROOT = CURRENT_PATH.parents[-1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.execution_logger import start_timer
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import start_timer
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import (
     get_master_config_root,
     get_repo_root,
     resolve_home_path_from_config,

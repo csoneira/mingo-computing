@@ -174,8 +174,8 @@ plot_output_dir="${plot_output_dir:-PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIP
 scan_log_csv="${scan_log_csv:-PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/TIMTRACK_QUALITY_SCAN/OUTPUT/timtrack_quality_scan_log.csv}"
 run_reference_csv="${run_reference_csv:-PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/TIMTRACK_QUALITY_SCAN/OUTPUT/timtrack_quality_scan_run_reference.csv}"
 plot_run_back="${plot_run_back:-0}"
-task4_script="${task4_script:-PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/STEP_1/TASK_4/script_4_list_to_fit.py}"
-task4_parameters_csv="${task4_parameters_csv:-PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_1/EVENT_DATA/STEP_1/TASK_4/config_parameters_task_4.csv}"
+task4_script="${task4_script:-PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_4/script_4_list_to_fit.py}"
+task4_parameters_csv="${task4_parameters_csv:-PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_1/EVENT_DATA/STEP_1/TASK_4/config_parameters_task_4.csv}"
 task4_specific_metadata_csv="${task4_specific_metadata_csv:-}"
 task4_profiling_metadata_csv="${task4_profiling_metadata_csv:-}"
 

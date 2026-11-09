@@ -43,7 +43,7 @@ from STEP_6.step_6_triggered_to_timing import compute_front_back
 from STEP_7.step_7_timing_to_uncalibrated import apply_calibration
 from STEP_8.step_8_uncalibrated_to_threshold import apply_fee, apply_threshold
 from STEP_9.step_9_threshold_to_trigger import apply_trigger
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.tot_charge_calibration import (
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.tot_charge_calibration import (
     TotChargeCalibration,
     default_tot_charge_calibration_path,
 )

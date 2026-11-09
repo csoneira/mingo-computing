@@ -15,6 +15,14 @@ nav:
       - Hardware: ESSENTIAL/hardware.md
       - DAQ and Infrastructure: ESSENTIAL/daq-and-infrastructure.md
       - HLD Structure: ESSENTIAL/hld_structure.md
+  - Digital Twin Model:
+      - Overview: DIGITAL_TWIN_MODEL/index.md
+      - Architecture and Orchestration: DIGITAL_TWIN_MODEL/ARCHITECTURE_AND_ORCHESTRATION.md
+      - Configuration and Parameter Mesh: DIGITAL_TWIN_MODEL/CONFIGURATION_AND_PARAM_MESH.md
+      - Methods and Data Model: DIGITAL_TWIN_MODEL/METHODS_AND_DATA_MODEL.md
+      - Outputs and Validation: DIGITAL_TWIN_MODEL/OUTPUTS_METADATA_AND_VALIDATION.md
+      - Troubleshooting Runbook: DIGITAL_TWIN_MODEL/TROUBLESHOOTING/RUNBOOK.md
+      - Step Contracts: DIGITAL_TWIN_MODEL/contracts/STEP_CONTRACTS.md
   - Collaboration and Publications:
       - Collaborators: ESSENTIAL/collaborators.md
       - Publications: ESSENTIAL/publications.md

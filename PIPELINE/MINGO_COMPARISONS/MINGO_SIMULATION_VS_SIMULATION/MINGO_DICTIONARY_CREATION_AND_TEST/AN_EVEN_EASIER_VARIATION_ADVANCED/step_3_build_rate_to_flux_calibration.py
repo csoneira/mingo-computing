@@ -1153,14 +1153,7 @@ def _step3_is_mingo00_config(config: dict[str, Any]) -> bool:
 
 
 def _step3_repo_root() -> Path:
-    # __file__:
-    #   /home/mingo/DATAFLOW_v3/
-    #   PIPELINE/MINGO_COMPARISONS/MINGO_SIMULATION_VS_SIMULATION/MINGO_DICTIONARY_CREATION_AND_TEST/
-    #   AN_EVEN_EASIER_VARIATION_ADVANCED/
-    #   step_3_build_rate_to_flux_calibration.py
-    #
-    return Path(__file__).resolve().parents[5]
-    #   /home/mingo/DATAFLOW_v3
+    # Resolve the checkout root after this module was nested in the comparison tree.
     return Path(__file__).resolve().parents[5]
 
 

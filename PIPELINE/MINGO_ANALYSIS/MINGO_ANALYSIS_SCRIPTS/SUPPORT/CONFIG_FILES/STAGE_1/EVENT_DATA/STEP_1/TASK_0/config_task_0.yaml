@@ -1,0 +1,14 @@
+selection:
+  stations: [0, 1]
+  date_ranges:
+    - start: 2024-09-27
+      end: 2024-10-01
+
+last_file_test: false
+complete_reanalysis: false
+force_replacement: true
+create_plots: false
+limit_number: null
+EXPECTED_COLUMNS_config: 71
+joined_analysis_files: 3
+joined_analysis_time_tolerance_hours: 5

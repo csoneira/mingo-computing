@@ -135,9 +135,9 @@ while [[ "${MASTER_DIR}" != "/" && "$(basename "${MASTER_DIR}")" != "MINGO_ANALY
 done
 REPO_ROOT="$(dirname "$(dirname "${MASTER_DIR}")")"
 
-config_file_shared="${MASTER_DIR}/CONFIG_FILES/STAGE_0/REPROCESSING/config_reprocessing.yaml"
-config_file_step="${MASTER_DIR}/CONFIG_FILES/STAGE_0/REPROCESSING/STEP_2/config_step_2.yaml"
-reprocessing_policy_script="${MASTER_DIR}/common/reprocessing_policy.py"
+config_file_shared="${MASTER_DIR}/SUPPORT/CONFIG_FILES/STAGE_0/REPROCESSING/config_reprocessing.yaml"
+config_file_step="${MASTER_DIR}/SUPPORT/CONFIG_FILES/STAGE_0/REPROCESSING/STEP_2/config_step_2.yaml"
+reprocessing_policy_script="${MASTER_DIR}/SUPPORT/SHARED_CODE/reprocessing_policy.py"
 UNPACKER_ROOT="${MASTER_DIR}/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES"
 
 is_reprocessing_step_enabled() {
@@ -222,10 +222,10 @@ if str(repo_root) not in sys.path:
     sys.path.append(str(repo_root))
 
 try:
-    from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import load_selection_for_paths, station_is_selected
+    from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import load_selection_for_paths, station_is_selected
     selection = load_selection_for_paths(
         [cfg_path],
-        master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "CONFIG_FILES",
+        master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "SUPPORT" / "CONFIG_FILES",
     )
     if not station_is_selected(station_id, selection.stations):
         print("0")
@@ -475,7 +475,7 @@ mark_qa_retry_admitted_state() {
     local summary
     if summary=$(
         PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" \
-        python3 -m MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.reprocessing_qa_retry mark-admitted \
+        python3 -m MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.reprocessing_qa_retry mark-admitted \
             --state-csv "$qa_retry_state_csv" \
             --basename "$base" \
             --admitted-at "$admitted_at"

@@ -16,7 +16,7 @@ import unittest
 import pandas as pd
 import numpy as np
 
-from MINGO_DIGITAL_TWIN.PLOTTERS.EXECUTION.MESH.plot_param_mesh import parse_efficiencies_column
+from PIPELINE.MINGO_DIGITAL_TWIN.PLOTTERS.EXECUTION.MESH.plot_param_mesh import parse_efficiencies_column
 
 
 class TestParseEfficienciesColumn(unittest.TestCase):

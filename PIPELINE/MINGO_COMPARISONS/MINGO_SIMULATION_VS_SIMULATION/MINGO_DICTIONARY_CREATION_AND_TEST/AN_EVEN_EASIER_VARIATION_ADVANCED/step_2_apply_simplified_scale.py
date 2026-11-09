@@ -19,7 +19,7 @@ from common import DEFAULT_CONFIG_PATH, REPO_ROOT, cfg_path, ensure_output_dirs,
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 
-from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import load_master_event_markers, parse_station_id
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import load_master_event_markers, parse_station_id
 
 
 def _configure_logging() -> None:

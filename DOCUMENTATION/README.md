@@ -7,9 +7,11 @@ This MkDocs documentation is part of the `mingo-computing` repository and lives 
 ```text
 mingo-computing/
 ├── DOCUMENTATION/
+│   ├── REFERENCE/
 │   ├── mkdocs.yml
-│   ├── requirements.txt
 │   └── docs/
+├── CONTEXTUAL/CONFIG/CONTENTS/packages/
+│   └── docs-requirements.txt
 └── .github/workflows/deploy-documentation.yml
 ```
 
@@ -23,13 +25,15 @@ Contributions are made through pull requests against the main repository.
 
 You can also use GitHub's web editor for quick text fixes in `DOCUMENTATION/docs/`.
 
+Repository guides and component-specific manuals that are not part of the published site are collected in [REFERENCE](REFERENCE/README.md), organized by their original repository component.
+
 ## Build and serve locally
 
 ```bash
 cd DOCUMENTATION
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r ../CONTEXTUAL/CONFIG/CONTENTS/packages/docs-requirements.txt
 mkdocs serve
 ```
 

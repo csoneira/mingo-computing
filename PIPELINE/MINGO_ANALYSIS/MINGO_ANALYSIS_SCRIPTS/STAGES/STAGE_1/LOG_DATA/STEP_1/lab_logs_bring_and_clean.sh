@@ -114,13 +114,13 @@ MASTER_DIR="$SCRIPT_DIR"
 while [[ "${MASTER_DIR}" != "/" && "$(basename "${MASTER_DIR}")" != "MINGO_ANALYSIS_SCRIPTS" ]]; do
   MASTER_DIR="$(dirname "${MASTER_DIR}")"
 done
-# STATUS_HELPER="${MASTER_DIR}/common/status_csv.py"
+# STATUS_HELPER="${MASTER_DIR}/SUPPORT/SHARED_CODE/status_csv.py"
 # STATUS_TIMESTAMP=""
 # STATUS_CSV=""
 
-LAB_LOGS_CONFIG_SHARED="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_1/LOG_DATA/config_lab_logs.yaml"
-LAB_LOGS_CONFIG_STEP1="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_1/LOG_DATA/STEP_1/config_step_1.yaml"
-LAB_LOGS_COLUMN_COUNTS_CSV="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES/STAGE_1/LOG_DATA/STEP_1/config_step_1.csv"
+LAB_LOGS_CONFIG_SHARED="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_1/LOG_DATA/config_lab_logs.yaml"
+LAB_LOGS_CONFIG_STEP1="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_1/LOG_DATA/STEP_1/config_step_1.yaml"
+LAB_LOGS_COLUMN_COUNTS_CSV="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_1/LOG_DATA/STEP_1/config_step_1.csv"
 
 is_lab_logs_station_enabled() {
   local station_id="$1"
@@ -143,10 +143,10 @@ if str(repo_root) not in sys.path:
     sys.path.append(str(repo_root))
 
 try:
-    from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import load_selection_for_paths, station_is_selected
+    from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import load_selection_for_paths, station_is_selected
     selection = load_selection_for_paths(
         [shared_cfg, step_cfg],
-        master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "CONFIG_FILES",
+        master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "SUPPORT" / "CONFIG_FILES",
     )
     print("1" if station_is_selected(station_id, selection.stations) else "0")
 except Exception:
@@ -185,16 +185,16 @@ if str(repo_root) not in sys.path:
 epochs = ""
 labels = ""
 try:
-    from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import (
+    from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import (
         load_selection_for_paths,
         serialize_date_ranges_for_shell,
     )
 
     selection = load_selection_for_paths(
         [shared_path, step_path],
-        master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "CONFIG_FILES",
+        master_config_root=repo_root / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "SUPPORT" / "CONFIG_FILES",
     )
-    from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.selection_config import effective_date_ranges_for_station
+    from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import effective_date_ranges_for_station
 
     ranges = effective_date_ranges_for_station(station_raw, selection)
     epochs, labels = serialize_date_ranges_for_shell(ranges)

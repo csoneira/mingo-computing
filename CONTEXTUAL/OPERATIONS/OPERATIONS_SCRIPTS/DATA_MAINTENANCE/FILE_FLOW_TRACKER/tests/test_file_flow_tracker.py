@@ -80,6 +80,7 @@ def run_tracker(stations: Path, runtime: Path, processed: Path, **kwargs):
         stations_root=stations,
         runtime_root=runtime,
         processed_root=processed,
+        pipeline_lock_root=processed.parent / "pipeline-locks",
         selection_ranges={1: [(datetime(2026, 1, 1), datetime(2026, 1, 2))]},
         disk_check_path=stations,
         max_repair_disk_percent=101,
@@ -210,3 +211,26 @@ def test_malformed_extra_csv_fields_are_audited_and_removed(tmp_path):
     assert len(audit) == 1
     assert "__extra_fields__" in audit[0]["row_json"]
     assert "unexpected-extra-field" in audit[0]["row_json"]
+
+
+def test_prune_batch_streams_metadata_without_reading_whole_csv(tmp_path, monkeypatch):
+    metadata = tmp_path / "task_2_metadata.csv"
+    rows = [[f"mi0126001{index + 1:06d}", "2026-01-01"] for index in range(200)]
+    rows.append([BASE, "2026-01-01"])
+    write_csv(metadata, ["filename_base", "execution_date"], rows)
+
+    def fail_if_materialized(_path):
+        raise AssertionError("pruning must stream rows, not call read_csv")
+
+    monkeypatch.setattr(tracker, "read_csv", fail_if_materialized)
+    removed = tracker.apply_prune_batch(
+        {metadata: {BASE: (1, "streaming_regression_test")}}, tmp_path / "runtime"
+    )
+
+    assert removed == 1
+    kept = read_rows(metadata)
+    assert len(kept) == len(rows) - 1
+    assert all(row["filename_base"] != BASE for row in kept)
+    audit = read_rows(tmp_path / "runtime" / "removed_metadata_rows.csv.gz")
+    assert len(audit) == 1
+    assert audit[0]["filename_base"] == BASE

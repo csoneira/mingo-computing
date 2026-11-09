@@ -1,32 +1,7 @@
-# MINGO_PRESSURE legacy archive
+# MINGO_PRESSURE legacy provenance
 
-> **LEGACY / HISTORICAL ONLY.** This directory preserves the conceptual source code of the former `MINGO_PRESSURE` repository for later review and selective recovery. It is not part of the active `mingo-computing` analysis or operations pipeline.
+This directory retains the original README files and provenance for the historical MINGO pressure study. The older `pressure_CALMA.py` working copy has been removed as superseded. Its original source blob SHA was `33ff74f3b327a7c43ffa11c3e0585c65682a49fa`; an identical blob appears in the archived December 2024 nested repository history.
 
-## Provenance
+The single selected working version is now [`pressure_CALMA.py`](../../PIPELINE/MINGO_COMPARISONS/MINGO_DATA_VS_DATA/EXTERNAL_REFERENCE_STUDIES/OULU_PRESSURE_RATE/pressure_CALMA.py). It is the more complete local version from the TRASGO source snapshot dated 2025-03-10 (blob `15ebe61c4bcfb80983270e0e160e52fef40fcc99`), adding daily beta extraction and smoothing analyses while retaining the common pressure/rate input processing.
 
-- Original repository: `https://github.com/csoneira/MINGO_PRESSURE`
-- Original branch: `master`
-- Archived source commit: `d71adace37abab7ecdf0cddd0817e84358ebb5d2`
-- Archived into `mingo-computing`: 2026-10-21
-- Original `pressure_CALMA.py` blob: `33ff74f3b327a7c43ffa11c3e0585c65682a49fa`
-- Original `README.md` blob: `2fb3e70f9627a585118a3e0396cc405067efad69`
-
-## Preserved source
-
-- `pressure_CALMA.py`: historical pressure/cosmic-ray-rate analysis script, preserved byte-for-byte.
-- `ORIGINAL_README.md`: original repository documentation, preserved byte-for-byte.
-
-The script studies the barometric coefficient by combining pressure and cosmic-ray count-rate time series, performing sliding-window regressions, estimating coefficient uncertainties and R² values, and visualizing their evolution with window length and date.
-
-## Intentionally excluded data
-
-The following tracked CSV files from the original repository are **not** copied into this archive:
-
-- `filtered_data.csv`
-- `filtered_data_1_52_1.csv`
-- `pressure_OULU.csv`
-- `rate_OULU.csv`
-
-They are data/results payloads rather than the conceptual implementation requested for preservation. The historical script still refers to these filenames; that is intentional because the source is archived rather than repaired or made runnable in place.
-
-If this analysis is revived, recover the useful concepts into the current analysis architecture instead of treating this directory as production code.
+The upstream `MINGO_PRESSURE` repository URL recorded in the original archive is no longer publicly available, so this selection is based on the newest verified local source snapshot. The archived Oulu CSV inputs remain in the local, Git-excluded `legacy/ALL_MINITRASGO_from_fistensor2/MINGO_PRESSURE/` archive. The historical filtered-data CSVs are absent.

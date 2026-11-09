@@ -13,7 +13,7 @@ import urllib.request
 import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
-CONFIG = ROOT / 'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/CONFIG_FILES'
+CONFIG = ROOT / 'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES'
 
 
 def main():
@@ -58,7 +58,7 @@ def main():
     retry = c.get('qa_retry', {})
     if retry.get('enabled'):
         path = Path(retry.get('source_csv', '')).expanduser()
-        if not path.is_absolute(): path = Path.home() / path
+        if not path.is_absolute(): path = ROOT / path
         results.append((path.is_file(), 'QA retry is enabled: restore/rebuild the real QA summary before reprocessing: ' + str(path)))
     print(json.dumps(results))
     return int(any(not ok for ok, _ in results))

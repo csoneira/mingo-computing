@@ -200,6 +200,39 @@ def scan_live_artifacts(
     return observations, deep_observed_at, deep_observed_epoch
 
 
+def _defer_stale_task5_metadata_warning(
+    obs: deep.FileObservation, deep_observed_epoch: float
+) -> None:
+    """Avoid reporting missing Task-5 metadata for work newer than the cache.
+
+    Realtime snapshots refresh live files and archives every minute, but use
+    metadata facts from the last deep scan. A newly completed Task-5 file can
+    therefore look like an archive without metadata until that scan catches
+    up. Keep the warning when the Task-5 completion artifact predates the
+    cached snapshot; that is evidence of a persistent metadata gap.
+    """
+    if not obs.archive_valid or 5 in obs.metadata_tasks:
+        return
+
+    completed_task5_mtimes = [
+        artifact.mtime
+        for artifact in obs.artifacts
+        if artifact.kind == "input"
+        and artifact.task == 5
+        and artifact.queue == "COMPLETED_DIRECTORY"
+    ]
+    if not completed_task5_mtimes:
+        return
+
+    newest_completion = max(completed_task5_mtimes)
+    if not deep_observed_epoch or newest_completion > deep_observed_epoch:
+        obs.anomalies = [
+            code
+            for code in obs.anomalies
+            if code != "archive_without_task5_metadata"
+        ]
+
+
 def run(
     *,
     stations: Sequence[int],
@@ -264,6 +297,7 @@ def run(
                 state, recommended, highest = deep.classify(
                     obs, observed_epoch, stale_hours * 3600.0
                 )
+                _defer_stale_task5_metadata_warning(obs, deep_observed_epoch)
                 row = deep.tracking_row(
                     obs,
                     observed_at=observed_at,

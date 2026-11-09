@@ -1,8 +1,0 @@
-# Runtime plots: PNG-only diagnostics created while the task is executing.
-plots:
-  debug_suite: debug
-  usual_suite: usual
-  essential_suite: essential
-  polar_theta_phi_definitive_tt_2d_detail_pre: usual
-  polar_theta_phi_definitive_tt_2d_detail_angle_correction: usual
-  channel_combination_filter_by_tt: usual

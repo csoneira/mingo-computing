@@ -1,6 +1,6 @@
 # TRASGO_TESTS_AND_TOOLS legacy archive
 
-> **LEGACY / HISTORICAL ONLY.** This directory is a curated source archive for recovering old ideas and analysis concepts. It is not part of the active `mingo-computing` pipeline and should not be imported or executed by production tooling.
+> **LEGACY / HISTORICAL ONLY.** This directory keeps studies that have not been promoted elsewhere, plus provenance documentation. Exact duplicate source files were removed after copies were placed in their classified locations. It is not part of the active `mingo-computing` pipeline and should not be imported or executed by production tooling.
 
 ## Provenance
 
@@ -10,7 +10,7 @@
 - Source commit date: 2025-04-02
 - Archived into `mingo-computing`: 2026-10-21
 
-The files retained below are historical source snapshots. Where an original source blob is retained, its Git blob SHA is unchanged, which makes the copy auditable against the source commit.
+The remaining files are historical source snapshots. The archive manifest records original paths, current dispositions, and source Git blob SHAs so relocated copies remain auditable against the source repository.
 
 ## Archive policy
 
@@ -44,7 +44,7 @@ This means this directory is **not a byte-for-byte mirror of the former reposito
 - waiting-time / Poisson-process study;
 - XY extraction and strip-width/Y-position resolution studies.
 
-See `ARCHIVE_MANIFEST.md` for the exact retained paths and source blob SHAs. The original repository README is stored as `ORIGINAL_README.md`.
+See `ARCHIVE_MANIFEST.md` for the original paths, current locations, and source blob SHAs. The original repository README is stored as `ORIGINAL_README.md`.
 
 ## Revival rule
 

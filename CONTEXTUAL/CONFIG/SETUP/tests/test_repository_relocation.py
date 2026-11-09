@@ -54,7 +54,7 @@ class RepositoryRelocationTests(unittest.TestCase):
         import sys
 
         sys.path.insert(0, str(REPO_ROOT))
-        from MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.common.path_config import get_repo_root
+        from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
 
         self.assertEqual(REPO_ROOT.resolve(), get_repo_root().resolve())
 

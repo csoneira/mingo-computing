@@ -47,6 +47,10 @@ Try to open dabc26205162220.hld
       *** Subsubevent size   1 id 0x5555 full 00015555
 ```
 
+*Recovered screenshot showing an example HLD dump with nested subevents and TDC data.*
+
+![Example HLD event structure from a terminal dump](../assets/figures/hld_structure.png)
+
 Note the basic unit of the event:
 
 ```text
