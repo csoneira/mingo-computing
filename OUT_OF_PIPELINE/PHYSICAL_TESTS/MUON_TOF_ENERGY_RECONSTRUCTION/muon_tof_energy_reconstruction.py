@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALCULATIONS_AND_TUNINGS/MUON_TOF_ENERGY_RECONSTRUCTION/muon_tof_energy_reconstruction.py
+Script: OUT_OF_PIPELINE/PHYSICAL_TESTS/MUON_TOF_ENERGY_RECONSTRUCTION/muon_tof_energy_reconstruction.py
 Purpose: Explore muon-energy reconstruction from time-of-flight measurements across equidistant detector planes.
 Owner: DATAFLOW_v3 contributors
 Sign-off: C. Soneira-Landín <cayesoneira@gmail.com>
