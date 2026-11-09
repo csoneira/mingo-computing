@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
+import yaml
 
 
 REPOSITORY_ROOT = next(
@@ -39,10 +40,20 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.tot_char
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.tot_charge_order_comparison import (  # noqa: E402
     calibration_order_arrays,
     plot_calibration_order_comparison,
+    plot_calibration_order_scatter,
 )
 
 
 STUDY_ROOT = Path(__file__).resolve().parent
+DEFAULT_CONFIG = STUDY_ROOT / "config.yaml"
+
+
+def _load_config(path: Path) -> dict:
+    with path.open("r", encoding="utf-8") as handle:
+        config = yaml.safe_load(handle) or {}
+    if not isinstance(config, dict):
+        raise ValueError(f"Study config must be a YAML mapping: {path}")
+    return config
 
 
 def _task5_successful_basenames(station_root: Path) -> set[str]:
@@ -106,7 +117,7 @@ def _columns_to_read(path: Path) -> list[str]:
 def analyze_station(
     station: int,
     *,
-    max_files: int | None = None,
+    max_files: int = 1,
     output_dir: Path | None = None,
     bins: int = 70,
 ) -> Path:
@@ -114,10 +125,11 @@ def analyze_station(
     station_root = paths.stations_root / f"MINGO{station:02d}"
     successful = _task5_successful_basenames(station_root)
     products = _task3_products(station_root, successful)
-    if max_files is not None:
-        if max_files < 1:
-            raise ValueError("--max-files must be positive")
-        products = products[-max_files:]
+    if max_files < 1:
+        raise ValueError("consecutive file count must be positive")
+    # Products are sorted by acquisition basename; take the most recent
+    # consecutive completed products, not every historical file.
+    products = products[-max_files:]
     if not products:
         raise RuntimeError(
             f"No Task-3 listed parquet has a matching Task-5 COMPLETED input and "
@@ -169,8 +181,16 @@ def analyze_station(
     output_path = target_dir / f"task3_tot_charge_calibration_order_mingo{station:02d}.png"
     figure.savefig(output_path, dpi=160, bbox_inches="tight")
     plt.close(figure)
+    scatter = plot_calibration_order_scatter(
+        joined_spectra,
+        station=station,
+        file_count=len(products),
+    )
+    scatter_path = target_dir / f"task3_tot_charge_calibration_order_scatter_mingo{station:02d}.png"
+    scatter.savefig(scatter_path, dpi=160, bbox_inches="tight")
+    plt.close(scatter)
     print(
-        f"Saved {output_path}; files={len(products)}, rows={total_rows:,}, "
+        f"Saved {output_path} and {scatter_path}; files={len(products)}, rows={total_rows:,}, "
         f"legacy products recalculated from Task-3 ns columns={legacy_fallback_files}."
     )
     return output_path
@@ -178,21 +198,30 @@ def analyze_station(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--station", type=int, choices=range(5), default=1)
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    parser.add_argument("--station", type=int, choices=range(5), default=None)
     parser.add_argument(
         "--max-files",
         type=int,
         default=None,
-        help="optional cap on the newest Task-5-completed files; default uses all matching files",
+        help="override the configured number of newest consecutive Task-5-completed files",
     )
-    parser.add_argument("--bins", type=int, default=70)
+    parser.add_argument("--bins", type=int, default=None)
     parser.add_argument("--output-dir", type=Path, default=None)
     args = parser.parse_args()
+    config = _load_config(args.config)
+    station = args.station if args.station is not None else int(config.get("station", 1))
+    max_files = (
+        args.max_files
+        if args.max_files is not None
+        else int(config.get("consecutive_files", 1))
+    )
+    bins = args.bins if args.bins is not None else int(config.get("histogram_bins", 70))
     analyze_station(
-        args.station,
-        max_files=args.max_files,
+        station,
+        max_files=max_files,
         output_dir=args.output_dir,
-        bins=args.bins,
+        bins=bins,
     )
     return 0
 

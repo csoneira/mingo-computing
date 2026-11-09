@@ -24,6 +24,9 @@ Run from the repository root:
 python3 PIPELINE/MINGO_COMPARISONS/MINGO_DATA_VS_DATA/DATED_STUDIES/2026-11-09/task3_tot_charge_calibration_order/analyze_task3_tot_charge_calibration_order.py --station 1
 ```
 
-Use `--max-files N` for a recent-file smoke run or `--output-dir PATH` to choose
-another output directory. By default, the figure is written to this study's
-ignored `PLOTS/` directory.
+The adjacent `config.yaml` sets `consecutive_files` (default `1`), so the study
+uses only the newest consecutive Task-5-completed Task-3 products unless asked
+to use more. `--max-files N` overrides that setting; `--output-dir PATH` selects
+another output directory. The study writes the charge-spectrum comparison and
+a per-event scatter comparison of the two methods to its ignored `PLOTS/`
+directory.

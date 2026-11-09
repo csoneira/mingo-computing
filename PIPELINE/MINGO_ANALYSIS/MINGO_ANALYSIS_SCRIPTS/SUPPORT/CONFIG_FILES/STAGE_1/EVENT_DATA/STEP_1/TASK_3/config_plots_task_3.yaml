@@ -1,6 +1,7 @@
 # Only the requested Task-3 ToT-to-fC calibration-order diagnostic is active.
 -plot:
   - tot_charge_calibration_order_comparison
+  - tot_charge_calibration_order_scatter
 -not_plot:
   - acquisition_rate_vs_time_by_task_tt_with_histograms
   - incoming_parquet_main_columns_debug

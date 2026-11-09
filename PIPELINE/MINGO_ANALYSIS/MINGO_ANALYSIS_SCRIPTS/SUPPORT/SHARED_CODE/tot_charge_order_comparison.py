@@ -252,3 +252,74 @@ def plot_calibration_order_comparison(
     )
     fig.tight_layout(rect=(0, 0, 1, 0.96))
     return fig
+
+
+def plot_calibration_order_scatter(
+    spectra: Mapping[int, Mapping[str, np.ndarray]],
+    *,
+    station: int,
+    file_count: int,
+):
+    """Compare per-event plane charge from the two calibration orders."""
+    fig, axes = plt.subplots(2, 2, figsize=(12, 11), sharex=True, sharey=True)
+    axes = np.asarray(axes).ravel()
+    paired: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+    all_values: list[np.ndarray] = []
+    for plane in range(1, 5):
+        series = spectra.get(plane)
+        if not series:
+            continue
+        x = np.asarray(series["calibrate_then_sum_fc"], dtype=float)
+        y = np.asarray(series["sum_then_calibrate_fc"], dtype=float)
+        finite = np.isfinite(x) & np.isfinite(y)
+        x, y = x[finite], y[finite]
+        if x.size:
+            paired[plane] = (x, y)
+            all_values.extend((x, y))
+
+    if all_values:
+        pooled = np.concatenate(all_values)
+        lower, upper = np.quantile(pooled, [0.005, 0.995])
+        if not np.isfinite(lower) or not np.isfinite(upper) or upper <= lower:
+            lower, upper = float(np.min(pooled)), float(np.max(pooled))
+        if upper <= lower:
+            upper = lower + 1.0
+    else:
+        lower, upper = 0.0, 1.0
+
+    for plane, axis in enumerate(axes, start=1):
+        series = spectra.get(plane)
+        axis.set_title(f"Plane {plane}")
+        axis.set_xlabel("Sum strip-calibrated charges [fC]")
+        axis.set_ylabel("Calibrate summed ToT [fC]")
+        axis.grid(alpha=0.2)
+        if not series:
+            axis.text(0.5, 0.5, "Required Task-3 columns unavailable", ha="center", va="center", transform=axis.transAxes)
+            continue
+
+        if plane not in paired:
+            axis.text(0.5, 0.5, "No paired finite values", ha="center", va="center", transform=axis.transAxes)
+            continue
+        x, y = paired[plane]
+        axis.scatter(x, y, s=5, alpha=0.18, linewidths=0, rasterized=True)
+        axis.plot([lower, upper], [lower, upper], color="#c53030", linestyle="--", linewidth=1.4, label="Equal result")
+        axis.set_xlim(lower, upper)
+        axis.set_ylim(lower, upper)
+        axis.set_aspect("equal", adjustable="box")
+        axis.text(
+            0.03,
+            0.97,
+            f"N={len(x):,}\nshared view: 0.5–99.5%",
+            transform=axis.transAxes,
+            va="top",
+            fontsize=8,
+        )
+        axis.legend(fontsize=8, loc="lower right")
+
+    fig.suptitle(
+        "Task 3 charge by calibration order · per-event comparison\n"
+        f"MINGO{station:02d} · {file_count:,} consecutive Task-5-completed files",
+        fontsize=14,
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    return fig

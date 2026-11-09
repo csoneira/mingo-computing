@@ -1,0 +1,5 @@
+# Analyze only the most recent consecutive Task-3 products whose matching
+# Task-5 files completed successfully. Increase deliberately for more statistics.
+station: 1
+consecutive_files: 1
+histogram_bins: 70

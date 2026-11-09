@@ -102,6 +102,7 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.tot_char
     add_task3_charge_fc_columns,
     calibration_order_arrays,
     plot_calibration_order_comparison,
+    plot_calibration_order_scatter,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.status_csv import (
     delete_status_row,
@@ -2642,6 +2643,7 @@ TASK3_PLOT_ALIASES: tuple[str, ...] = (
     "charge_by_strip_multiplicity_adj",
     "charge_by_strip_multiplicity_dis",
     "tot_charge_calibration_order_comparison",
+    "tot_charge_calibration_order_scatter",
 )
 
 TT_COUNT_VALUES: tuple[int, ...] = (
@@ -7773,13 +7775,11 @@ print(
     f"source_columns={len(set(task3_fc_source_columns))}"
 )
 
-if task3_plot_enabled("tot_charge_calibration_order_comparison"):
+if task3_any_plot_enabled(
+    "tot_charge_calibration_order_comparison",
+    "tot_charge_calibration_order_scatter",
+):
     task3_spectra = calibration_order_arrays(working_df, tot_charge_calibration)
-    task3_figure = plot_calibration_order_comparison(
-        task3_spectra,
-        station=int(station),
-        file_count=len(joined_input_records),
-    )
     data_dates = pd.to_datetime(working_df.get("datetime"), errors="coerce").dropna()
     if data_dates.empty:
         try:
@@ -7793,14 +7793,35 @@ if task3_plot_enabled("tot_charge_calibration_order_comparison"):
         "DEBUG_PLOTS",
         f"{data_date:%Y_%m_%d}_FIGURES_EXEC_ON_{date_execution}",
     )
-    task3_plot_path = os.path.join(
-        task3_plot_directory,
-        f"{debug_fig_idx:02d}_task3_tot_charge_calibration_order_{basename_no_ext}.png",
-    )
-    save_plot_figure(task3_plot_path, fig=task3_figure, format="png", dpi=150)
-    print(f"Task-3 ToT-to-fC order comparison saved: {task3_plot_path}")
-    debug_fig_idx += 1
-    plt.close(task3_figure)
+    if task3_plot_enabled("tot_charge_calibration_order_comparison"):
+        task3_figure = plot_calibration_order_comparison(
+            task3_spectra,
+            station=int(station),
+            file_count=len(joined_input_records),
+        )
+        task3_plot_path = os.path.join(
+            task3_plot_directory,
+            f"{debug_fig_idx:02d}_task3_tot_charge_calibration_order_{basename_no_ext}.png",
+        )
+        save_plot_figure(task3_plot_path, fig=task3_figure, format="png", dpi=150)
+        print(f"Task-3 ToT-to-fC order comparison saved: {task3_plot_path}")
+        debug_fig_idx += 1
+        plt.close(task3_figure)
+
+    if task3_plot_enabled("tot_charge_calibration_order_scatter"):
+        scatter_figure = plot_calibration_order_scatter(
+            task3_spectra,
+            station=int(station),
+            file_count=len(joined_input_records),
+        )
+        scatter_path = os.path.join(
+            task3_plot_directory,
+            f"{debug_fig_idx:02d}_task3_tot_charge_calibration_order_scatter_{basename_no_ext}.png",
+        )
+        save_plot_figure(scatter_path, fig=scatter_figure, format="png", dpi=150)
+        print(f"Task-3 ToT-to-fC order scatter saved: {scatter_path}")
+        debug_fig_idx += 1
+        plt.close(scatter_figure)
 
 # Ensure no figure handles remain open before persistence/final move.
 plt.close("all")
