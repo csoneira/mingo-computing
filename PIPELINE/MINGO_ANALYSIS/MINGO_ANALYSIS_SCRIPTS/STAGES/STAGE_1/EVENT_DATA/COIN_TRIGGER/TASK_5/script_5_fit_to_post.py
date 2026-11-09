@@ -1410,8 +1410,6 @@ base_directories = {
     "stratos_list_events_directory": os.path.join(home_directory, "STRATOS_XY_DIRECTORY"),
 
     "base_plots_directory": os.path.join(raw_to_list_working_directory, "PLOTS"),
-
-    "pdf_directory": os.path.join(raw_to_list_working_directory, "PLOTS/PDF_DIRECTORY"),
     "base_figure_directory": os.path.join(raw_to_list_working_directory, "PLOTS/FIGURE_DIRECTORY"),
     "figure_directory": os.path.join(raw_to_list_working_directory, f"PLOTS/FIGURE_DIRECTORY/FIGURES_EXEC_ON_{date_execution}"),
 
@@ -2708,9 +2706,7 @@ print("----------------------------------------------------------------------")
 # Defining the directories that will store the data
 save_full_filename = f"full_list_events_{save_filename_suffix}.txt"
 save_filename = f"list_events_{save_filename_suffix}.txt"
-save_pdf_filename = f"mingo{str(station).zfill(2)}_task5_{basename_no_ext}_{date_execution}.pdf"
 
-save_pdf_path = os.path.join(base_directories["pdf_directory"], save_pdf_filename)
 
 fig_idx, plot_list = ensure_plot_state(globals())
 # FINAL plot block moved out of the runtime flow: charge_tt_task4_fit_1234_per_plane_and_total

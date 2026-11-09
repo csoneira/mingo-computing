@@ -935,3 +935,9 @@
 
 # 2026-10-30: obsolete runtime PDF callback removed; target function no longer exists.
 # finalize_saved_plots_to_pdf()
+
+
+# Archived dead runtime PDF path setup removed after the PNG-only split.
+# "pdf_directory": os.path.join(raw_to_list_working_directory, "PLOTS/PDF_DIRECTORY"),
+# save_pdf_filename = f"mingo{station}_task1_{basename_no_ext}_{date_execution}.pdf"
+# save_pdf_path = os.path.join(base_directories["pdf_directory"], save_pdf_filename)

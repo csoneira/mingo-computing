@@ -3045,3 +3045,9 @@
 # ============================================================================
 # atexit.register(close_direct_pdf_writer)
 
+
+
+# Archived dead runtime PDF path setup removed after the PNG-only split.
+# "pdf_directory": os.path.join(raw_to_list_working_directory, "PLOTS/PDF_DIRECTORY"),
+# save_pdf_filename = f"mingo{station}_task4_{basename_no_ext}_{date_execution}.pdf"
+# save_pdf_path = os.path.join(base_directories["pdf_directory"], save_pdf_filename)

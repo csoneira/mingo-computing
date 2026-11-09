@@ -1988,3 +1988,9 @@
 # 2026-10-30: obsolete runtime PDF callback removed; target function no longer exists.
 # atexit.register(finalize_task2_plots_to_pdf)
 # import atexit  # removed together with the obsolete callback registration above.
+
+
+# Archived dead runtime PDF path setup removed after the PNG-only split.
+# "pdf_directory": os.path.join(raw_to_list_working_directory, "PLOTS/PDF_DIRECTORY"),
+# save_pdf_filename = f"mingo{station}_task2_{basename_no_ext}_{date_execution}.pdf"
+# save_pdf_path = os.path.join(base_directories["pdf_directory"], save_pdf_filename)

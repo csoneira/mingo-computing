@@ -58,6 +58,8 @@ class RuntimeFinalPlotSplitTests(unittest.TestCase):
             active_source = "\n".join(line for line in source.splitlines() if not line.lstrip().startswith("#"))
             self.assertNotIn("PdfPages", active_source, task)
             self.assertNotIn("finalize_saved_plots_to_pdf", active_source, task)
+            self.assertNotIn('"pdf_directory"', active_source, task)
+            self.assertNotIn("save_pdf_path", active_source, task)
 
     def test_final_plotting_module_does_not_import_task_runtime_scripts(self):
         source = (SCRIPTS / "SUPPORT/SHARED_CODE/final_plotting.py").read_text(encoding="utf-8")
