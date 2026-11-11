@@ -13,6 +13,7 @@ This archive contains dated development and research notes. Notebook entries are
 
 ### November
 
+- [2026-11-11 — Generated muon zenith-angle models](2026/11_NOVEMBER/2026_11_11_notebook.md)
 - [2026-11-04 — Charge spectrum width and plane efficiency](2026/11_NOVEMBER/2026_11_04_notebook.md)
 
 ### October
