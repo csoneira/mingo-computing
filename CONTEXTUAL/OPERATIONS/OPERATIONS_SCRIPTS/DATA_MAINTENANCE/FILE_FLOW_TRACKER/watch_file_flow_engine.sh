@@ -55,7 +55,7 @@ if (( $# == 1 )) && [[ ! "$1" =~ ^[0-9]+$ ]]; then
     exit 2
 fi
 
-# Resolve the checkout from this script's location when production data is used
+# Find the checkout root before reading production file-flow data.
 # and the caller did not provide DATAFLOW_ROOT.
 if (( TEST_MODE == 0 )) && [[ -z "${DATAFLOW_ROOT:-}" ]]; then
     _repo_probe="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"

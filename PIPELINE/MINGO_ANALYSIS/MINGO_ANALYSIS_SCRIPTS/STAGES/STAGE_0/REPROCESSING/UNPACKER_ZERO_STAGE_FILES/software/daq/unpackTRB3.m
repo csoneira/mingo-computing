@@ -147,7 +147,7 @@ while done
     %Initialize some variables.
     %This is the matrix used to mark events with wrong size on the ADC
     %subevent. Initially it was a matrix with a column for each FPGA, but
-    %it is much better to just delete the complete event.
+    % Drop the whole event when an ADC subevent has an invalid size.
     wrongSizeADCEvents = [];
     
     A= fread(fid,numberOfBitsToRead,'uint32','b');
@@ -359,7 +359,7 @@ while done
                     
                     
                     
-                    %%Reconstruction of the epoch counter in order to give a epoch couter to each meassurment
+                    %% Reconstruct the epoch counter for each measurement.
                     %%this will loop a maximum number of iterations equal to the maximum number of hits on a channel
                     
                     type_ = type;

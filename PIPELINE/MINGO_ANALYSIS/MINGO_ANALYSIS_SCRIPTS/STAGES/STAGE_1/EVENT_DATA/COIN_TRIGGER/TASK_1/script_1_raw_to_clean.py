@@ -3930,8 +3930,7 @@ now = time.time()
 os.utime(processing_file_path, (now, now))
 
 # Check the station number in the datafile
-# It might be that the data header is, instead of mi01: minI, which is the same, in that
-# case consider minI as mi01
+# Station 1 data may use the legacy label minI instead of mi01.
 try:
     station_name_for_check = file_name[4:] if file_name.startswith("raw_") else file_name
     station_label = station_name_for_check[3]  # 4th character (index 3)
@@ -4120,7 +4119,7 @@ if bad_acquisition_type_mask.any():
 
 print(working_df["acquisition_type"].value_counts())
 
-# Note that the middle between start and end time could also be taken. This is for calibration storage.
+# The interval midpoint is another candidate timestamp for calibration metadata.
 datetime_series = pd.to_datetime(working_df["datetime"], errors="coerce").dropna()
 if datetime_series.empty:
     print(

@@ -164,7 +164,7 @@ def start(message):
     user_first_name = message.from_user.first_name  # Get the user's first name
     user_last_name = message.from_user.last_name  # Get the user's last name (if available)
 
-    # You can now use this user information as needed
+    # Print the user profile fields returned by Telegram.
     print(f"User ID: {user_id}")
     print(f"Username: {user_username}")
     print(f"First Name: {user_first_name}")

@@ -1,6 +1,6 @@
 # Purpose: Set environment variables shared by repository dataflow scripts.
 
-# Source from Bash. Derive the single root from this file, not the working directory.
+# Derive DATAFLOW_ROOT from this file, independent of the caller's directory.
 export DATAFLOW_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../../.." && pwd -P)"
 export MASTER_STAGE_ROOT="$DATAFLOW_ROOT/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES"
 export PYTHON_BIN="$DATAFLOW_ROOT/.venv/bin/python3"

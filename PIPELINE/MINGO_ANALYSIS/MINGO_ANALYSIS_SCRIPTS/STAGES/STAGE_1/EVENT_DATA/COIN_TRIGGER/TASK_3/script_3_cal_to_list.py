@@ -5308,7 +5308,7 @@ if status_execution_date is not None:
 # e.g.:
 # run_calibration(working_df)
 
-# Note that the middle between start and end time could also be taken. This is for calibration storage.
+# The interval midpoint is another candidate timestamp for calibration metadata.
 if "datetime" in working_df.columns:
     datetime_series = pd.to_datetime(working_df["datetime"], errors="coerce").dropna()
 else:

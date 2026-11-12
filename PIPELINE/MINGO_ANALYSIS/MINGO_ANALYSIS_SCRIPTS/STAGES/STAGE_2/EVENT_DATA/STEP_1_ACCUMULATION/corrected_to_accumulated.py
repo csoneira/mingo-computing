@@ -14,7 +14,7 @@ Created on Thu Jun 20 09:15:33 2024
 """
 
 #
-# Note: this script is executed under cron; avoid banner/ascii-art output so
+# Keep cron output compact; avoid banners and ASCII art.
 # CRON_LOGS stay compact and readable.
 
 
@@ -2310,13 +2310,13 @@ if side_calculations:
             if topo not in colors:
                 colors[topo] = cmap(i % 10)
         
-        # Define placeholder variables
+        # Initialize missing topology series with zero counts.
         for topo in inferred_topologies:
             try:
                 globals()[f'noise_{topo}']
             except KeyError:
                 globals()[f'noise_{topo}'] = np.zeros_like(bin_centers)
-                colors[topo] = 'gray'  # Or assign a distinct color per topology if desired
+                colors[topo] = 'gray'  # No events were recorded for this topology.
         
         # Initialize figure and axes
         fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(9, 15), sharex=True)
@@ -2586,7 +2586,7 @@ if side_calculations:
         
         # Plotting with theta ranges
         if create_plots or create_essential_plots:
-            fig, axs = plt.subplots(2, 2, figsize=(10, 8))  # Adjust size as needed
+            fig, axs = plt.subplots(2, 2, figsize=(10, 8))
 
             for i in range(1, 5):
                 row = (i - 1) // 2
@@ -3492,17 +3492,11 @@ if side_calculations:
         print("----------------------------------------------------------------------")
 
         # STEP 0 ----------------------------------------
-        # We could add here a step 0 which is the calculation of the real single particle
-        # spectrum, as I did in the new_charge_analysis code, but it would require to study
-        # the self-trigger spectrum, in case some double non adjacent etc are remarkably
-        # noisy and should not be taken into account as pure single particle events.
+        # This study does not derive a single-particle spectrum from self-trigger events.
         
         # STEP 1 ----------------------------------------
-        # Assuming a single particle spectrum for each plane (we could refine this creating
-        # a single particle spectrum for each strip using the completed STEP 0, and even for
-        # each trigger-type), we can fit a Polya to it and generate the sums of Polya's to
-        # see how the total charge spectrum for each cluster size can be explained by the sum
-        # of the single particle spectra.
+        # Fit one Polya spectrum per plane, then sum the fitted spectra to model each cluster size.
+        # This approximation does not separate strips or trigger types.
 
         # Take the cluster size 1 charge spectrum per plane for four-plane coincidence events
 
@@ -3620,7 +3614,7 @@ if side_calculations:
                         
                     
 
-        # Convert lists to DataFrames for better visualization
+        # Assemble histogram data for plotting.
         df_double_adj_M1 = pd.DataFrame({"Min": double_adjacent_P1_min, "Max": double_adjacent_P1_max, "Sum": np.array(double_adjacent_P1_min) + np.array(double_adjacent_P1_max)})
         df_double_adj_M2 = pd.DataFrame({"Min": double_adjacent_P2_min, "Max": double_adjacent_P2_max, "Sum": np.array(double_adjacent_P2_min) + np.array(double_adjacent_P2_max)})
         df_double_adj_M3 = pd.DataFrame({"Min": double_adjacent_P3_min, "Max": double_adjacent_P3_max, "Sum": np.array(double_adjacent_P3_min) + np.array(double_adjacent_P3_max)})
@@ -3702,7 +3696,7 @@ if side_calculations:
                         triple_non_adjacent_P4_mid.append(mid_charge)
                         triple_non_adjacent_P4_max.append(max_charge)
 
-        # Convert lists to DataFrames for better visualization
+        # Assemble histogram data for plotting.
         df_triple_adj_M1 = pd.DataFrame({"Min": triple_adjacent_P1_min, "Mid": triple_adjacent_P1_mid, "Max": triple_adjacent_P1_max, "Sum": np.array(triple_adjacent_P1_min) + np.array(triple_adjacent_P1_mid) + np.array(triple_adjacent_P1_max)})
         df_triple_adj_M2 = pd.DataFrame({"Min": triple_adjacent_P2_min, "Mid": triple_adjacent_P2_mid, "Max": triple_adjacent_P2_max, "Sum": np.array(triple_adjacent_P2_min) + np.array(triple_adjacent_P2_mid) + np.array(triple_adjacent_P2_max)})
         df_triple_adj_M3 = pd.DataFrame({"Min": triple_adjacent_P3_min, "Mid": triple_adjacent_P3_mid, "Max": triple_adjacent_P3_max, "Sum": np.array(triple_adjacent_P3_min) + np.array(triple_adjacent_P3_mid) + np.array(triple_adjacent_P3_max)})
@@ -3751,7 +3745,7 @@ if side_calculations:
                     elif i == 4:
                         single_sample_M4.append(charges[0])
 
-        # Convert lists to DataFrames for better visualization
+        # Assemble histogram data for plotting.
         df_single_sample_M1 = pd.DataFrame({"Charge": single_sample_M1})
         df_single_sample_M2 = pd.DataFrame({"Charge": single_sample_M2})
         df_single_sample_M3 = pd.DataFrame({"Charge": single_sample_M3})
@@ -3810,7 +3804,7 @@ if side_calculations:
                     elif i == 4:
                         quadruple_M4.append(total_charge)
 
-        # Convert lists to DataFrames for better visualization
+        # Assemble histogram data for plotting.
         df_single_M1 = pd.DataFrame({"Charge": single_M1})
         df_single_M2 = pd.DataFrame({"Charge": single_M2})
         df_single_M3 = pd.DataFrame({"Charge": single_M3})
@@ -4504,7 +4498,6 @@ if side_calculations:
             x_vals = charge_edges[:-1]
 
             for key in hist_no:
-                # Just for clarity
                 Nn = hist_no[key]   # 'no crosstalk' counts
                 Ny = hist_yes[key]  # 'yes crosstalk' counts
                 D = Nn + Ny         # denominator
@@ -5252,8 +5245,8 @@ if create_essential_plots:
     colors = plt.cm.turbo
 
     # Select theta/phi range (optional filtering)
-    theta_min, theta_max = theta_left_filter, theta_right_filter    # adjust as needed
-    phi_min, phi_max     = phi_left_filter, phi_right_filter        # adjust as needed
+    theta_min, theta_max = theta_left_filter, theta_right_filter    # Use the configured angular bounds.
+    phi_min, phi_max     = phi_left_filter, phi_right_filter        # Use the configured angular bounds.
     
     vmax_global = df_filtered.groupby('definitive_tt').apply(lambda df: np.histogram2d(df['theta'], df['phi'], bins=[theta_bins, phi_bins])[0].max()).max()
     

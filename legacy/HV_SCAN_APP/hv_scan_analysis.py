@@ -11,7 +11,7 @@ Created on Mon Jun 24 19:02:22 2024
 @author: gfn
 """
 
-# A header to print and act as a CLI
+# Print a banner before the HV scan results.
 print("""
 +-------------------------------------------------------------------+
 |                                                                   |

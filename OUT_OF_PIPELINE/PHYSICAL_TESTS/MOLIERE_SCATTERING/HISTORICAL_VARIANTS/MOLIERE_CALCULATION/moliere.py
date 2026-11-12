@@ -124,7 +124,7 @@ else:
 
             from datetime import datetime
 
-            # Muon mass in GeV (not keV for better precision)
+            # Use GeV for the muon mass to match the energy units.
             m_muon_GeV = m_muon_MeV / 1000
 
             def energy_spectrum(E, cos_theta):

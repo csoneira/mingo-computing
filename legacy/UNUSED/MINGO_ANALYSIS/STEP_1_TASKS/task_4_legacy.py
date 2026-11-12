@@ -133,8 +133,8 @@
 #     colors = plt.cm.turbo
 #
 #     # Select theta/phi range (optional filtering)
-#     theta_min, theta_max = theta_left_filter, theta_right_filter    # adjust as needed
-#     phi_min, phi_max     = phi_left_filter, phi_right_filter        # adjust as needed
+#     theta_min, theta_max = theta_left_filter, theta_right_filter    # Use the configured angular bounds.
+#     phi_min, phi_max     = phi_left_filter, phi_right_filter        # Use the configured angular bounds.
 #
 #     vmax_global = (
 #         df_filtered.groupby(task4_plot_tt_column)[['theta', 'phi']]

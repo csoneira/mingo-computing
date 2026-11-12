@@ -4,10 +4,7 @@
 # ----------------------------------------------------------------
 # MUON ENERGY RECONSTRUCTION SIMULATION
 # ----------------------------------------------------------------
-# This script simulates the time-of-flight (TOF) method for 
-# estimating muon energy based on timing measurements across 
-# equidistant detector planes. It evaluates the effect of 
-# timing resolution on energy reconstruction accuracy.
+# Model TOF energy reconstruction for fixed and varied plane spacing and timing resolution.
 # 
 # Two simulation scenarios:
 #   1. Standard Simulation: Fixed distance and number of planes.

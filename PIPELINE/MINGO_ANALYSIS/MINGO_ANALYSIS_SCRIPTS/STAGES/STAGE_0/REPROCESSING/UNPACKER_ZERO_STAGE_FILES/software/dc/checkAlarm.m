@@ -67,7 +67,7 @@ for j=1:size(distributionLookUpTable,2)
                           message2log = ['The log file of variable ' varName ' from device ' dev2Distribute  ' is not present but Alarm is armed. Please check'];   
                           inputvars = {alarms(locateAlarm('Online Monitoring',alarms)),message2log,SYSTEMNAME};sendAlarm(inputvars);
                 else              %Check the variable and alarm if needed
-                          %Just load the last file but could be better. 
+                          % Use the most recent log file for the active alarm check.
                           load([path s(end).name]);
                           %Find the values of last hour
                           I = find(-etime(datevec(timeStamp),datevec(repmat(now,length(timeStamp),1))) < 60*60*0.9);

@@ -5581,7 +5581,7 @@ globals().update(
     )
 )
 
-# Note that the middle between start and end time could also be taken. This is for calibration storage.
+# The interval midpoint is another candidate timestamp for calibration metadata.
 datetime_value = working_df['datetime'].iloc[0]
 end_datetime_value = working_df['datetime'].iloc[-1]
 
@@ -7688,9 +7688,8 @@ if create_plots and task4_plot_enabled("polar_theta_phi_tt_task4_fit_2d"):
     colors = plt.cm.turbo
 
     # Select theta/phi range (optional filtering)
-    theta_min, theta_max = theta_left_filter, theta_right_filter    # adjust as needed
-    phi_min, phi_max     = phi_left_filter, phi_right_filter        # adjust as needed
-
+    theta_min, theta_max = theta_left_filter, theta_right_filter
+    phi_min, phi_max = phi_left_filter, phi_right_filter
     vmax_global = (
         df_filtered.groupby(task4_plot_tt_column)[['theta', 'phi']]
         .apply(
@@ -8491,7 +8490,6 @@ total_execution_time_minutes = execution_time_minutes
 param_hash_value = str(simulated_param_hash) if simulated_param_hash else str(global_variables.get("param_hash", ""))
 global_variables["param_hash"] = param_hash_value
 
-# This line is a placeholder
 
 # -------------------------------------------------------------------------------
 # Filter metadata (ancillary) ----------------------------------------------------

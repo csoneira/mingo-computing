@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Purpose: Run a scheduled command, log its output, and record its exit status.
 
-# Resolve the checkout from this script's location when the caller did not provide it.
+# Walk up from this file to find the checkout unless DATAFLOW_ROOT is set.
 if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
   _repo_probe="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
   while [[ "$_repo_probe" != "/" && ! -f "$_repo_probe/CONTEXTUAL/CONFIG/CONTENTS/environment/dataflow.sh" ]]; do
