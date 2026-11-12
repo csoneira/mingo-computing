@@ -1,16 +1,5 @@
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/SHARED_CODE/selection_config.py
-Purpose: Shared parsing for station/date selection config with master overrides.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/SHARED_CODE/selection_config.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Shared parsing for station/date selection config with master overrides."""
 
 from __future__ import annotations
 

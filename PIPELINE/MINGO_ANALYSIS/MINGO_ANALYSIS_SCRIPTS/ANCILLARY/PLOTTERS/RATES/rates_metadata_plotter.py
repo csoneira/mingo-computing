@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/PLOTTERS/RATES/rates_metadata_plotter.py
-Purpose: Plot task rate histograms and global rate trends gated by Stage 0 basenames.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/PLOTTERS/RATES/rates_metadata_plotter.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Plot task rate histograms and global rate trends gated by Stage 0 basenames."""
 
 from __future__ import annotations
 
@@ -34,14 +23,12 @@ from matplotlib.backends.backend_pdf import PdfPages
 SCRIPT_PATH = Path(__file__).resolve()
 
 
-def detect_repo_root() -> Path:
-    for parent in SCRIPT_PATH.parents:
-        if (parent / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS").is_dir() and (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file():
-            return parent
-    raise RuntimeError(f"Could not locate repository root from {SCRIPT_PATH}")
+_REPO_IMPORT_ROOT = SCRIPT_PATH.parents[6]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
 
-
-REPO_ROOT = detect_repo_root()
+REPO_ROOT = get_repo_root()
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 

@@ -1,16 +1,4 @@
-% =============================================================================
-% DATAFLOW_v3 Script Header v1
-% Script: MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/software/untitled.m
-% Purpose: Untitled.
-% Owner: DATAFLOW_v3 contributors
-% Sign-off: csoneira <csoneira@ucm.es>
-% Last Updated: 2026-03-02
-% Runtime: octave/matlab
-% Usage: Run from MATLAB/Octave entrypoint with expected args/context.
-% Inputs: Variables, config files, environment, and/or upstream files.
-% Outputs: Variables, files, plots, or logs.
-% Notes: Keep behavior configuration-driven and reproducible.
-% =============================================================================
+% Purpose: Define untitled values for the legacy Stage-0 unpacker.
 
 figure;
 for i=1:4
@@ -70,4 +58,3 @@ for i=1:34
     hold on;
     histf(leadingFineTime(:,i),10:1000)
 end
-

@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/VALIDATION/run_validation.py
-Purpose: Run MINGO digital twin validation suite and write CSV reports.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/VALIDATION/run_validation.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Run MINGO digital twin validation suite and write CSV reports."""
 
 from __future__ import annotations
 

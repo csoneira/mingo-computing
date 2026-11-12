@@ -1,13 +1,12 @@
 crontab_execution: true
 last_file_test: true
-selection:
-  stations: [0, 1]
-  date_ranges:
-    - start: 2024-09-27
-      end: 2024-10-01
+file_selection_mode: random
+process_only_qa_retry_files: false
+prioritize_other_than_qa_files: false
 self_trigger: false
 timeseries_and_fits: false
-complete_reanalysis: false
+reprocess_from_completed: true
+reprocess_from_unprocessed: false
 # create_plots is a global true/false switch. Runtime aliases are selected in config_plots_task_4.yaml.
 create_plots: false
 # Task 4 filter values are supplied by config_parameters_task_4.csv and its

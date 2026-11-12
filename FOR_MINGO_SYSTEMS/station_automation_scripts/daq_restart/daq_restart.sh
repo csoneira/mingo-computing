@@ -1,17 +1,5 @@
 #!/bin/bash
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: FOR_MINGO_SYSTEMS/station_automation_scripts/daq_restart/daq_restart.sh
 # Purpose: daq_restart.sh - restart DAQ when data is stale or missing.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-07-15
-# Runtime: bash
-# Usage: bash FOR_MINGO_SYSTEMS/station_automation_scripts/daq_restart/daq_restart.sh [options]
-# Inputs: CLI args, station DAQ data directory, startup_TRB399.sh.
-# Outputs: bounded operational/startup logs and DAQ restart side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
 
 # ------------------------------------------------------------------
 # daq_restart.sh - restart DAQ when data is stale or missing.

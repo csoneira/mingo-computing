@@ -22,16 +22,14 @@ import time
 import pandas as pd
 
 CURRENT_PATH = Path(__file__).resolve()
-REPO_ROOT = None
-for parent in CURRENT_PATH.parents:
-    if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parents[2]
-        break
-if REPO_ROOT is None:
-    REPO_ROOT = CURRENT_PATH.parents[-1]
+_SCRIPTS_ROOT = next(parent for parent in CURRENT_PATH.parents if parent.name == "MINGO_ANALYSIS_SCRIPTS")
+_REPO_IMPORT_ROOT = _SCRIPTS_ROOT.parents[2]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
 if str(REPO_ROOT) not in sys.path:
-    sys.path.append(str(REPO_ROOT))
-
+    sys.path.insert(0, str(REPO_ROOT))
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import set_station, start_timer
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.debug_plots import plot_debug_histograms
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_selection import (
@@ -42,7 +40,7 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_sel
     sync_unprocessed_with_date_range,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.input_file_config import select_input_file_configuration
-from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root, resolve_home_path_from_config
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import resolve_home_path_from_config
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.reprocessing_utils import (
     filter_filenames_by_qa_retry_basenames,
     load_active_qa_retry_basenames,
@@ -55,6 +53,8 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.status_c
     update_status_progress,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_shared import (
+    resolve_reprocessing_options,
+    atomic_write_parquet,
     add_topology_task1_channel,
     build_step1_cli_parser,
     build_step1_filtered_print,
@@ -107,10 +107,14 @@ def _select_candidate(file_names: list[str], station: str) -> str | None:
     if not file_names:
         return None
     mode = str(config.get("file_selection_mode", "new")).strip().lower()
-    if mode == "qa":
+    if mode == "qa" or bool(config.get("process_only_qa_retry_files", False)):
         active_qa_basenames = load_active_qa_retry_basenames(station, repo_root=REPO_ROOT)
         qa_file_names = filter_filenames_by_qa_retry_basenames(file_names, active_qa_basenames)
-        if qa_file_names:
+        if bool(config.get("process_only_qa_retry_files", False)):
+            file_names = qa_file_names
+            if not file_names:
+                return None
+        elif qa_file_names:
             file_names = qa_file_names
     if mode == "random":
         return random.choice(file_names)
@@ -362,6 +366,7 @@ if not raw_directory.exists():
     raise FileNotFoundError(f"Task 0 raw acquisition directory does not exist: {raw_directory}")
 
 if not user_file_selection:
+    reprocess_from_completed, reprocess_from_unprocessed = resolve_reprocessing_options(config)
     known_files = set()
     for key in ("unprocessed", "processing", "completed"):
         known_files.update(p.name for p in directories[key].iterdir() if p.is_file())
@@ -378,6 +383,9 @@ if not user_file_selection:
             safe_move(src, dst)
             continue
         if src.name in known_files:
+            continue
+        expected_raw_output = directories["output"] / f"raw_{src.stem}.parquet"
+        if expected_raw_output.exists() and not reprocess_from_unprocessed:
             continue
         dst = directories["unprocessed"] / src.name
         safe_move(src, dst)
@@ -405,7 +413,7 @@ if not user_file_selection:
             completed = directories["completed"] / selected
             candidates_by_source.append((selected, src, completed))
             break
-    if not candidates_by_source and bool(config.get("complete_reanalysis", False)):
+    if not candidates_by_source and reprocess_from_completed:
         names = [p.name for p in directories["completed"].iterdir() if p.is_file() and p.name.lower().endswith(".dat")]
         if date_ranges:
             names = [name for name in names if file_name_in_any_date_range(name, date_ranges)]
@@ -436,6 +444,8 @@ if not user_file_selection:
         sys.exit(0)
 
     file_name, source_path, completed_file_path = candidates_by_source[0]
+    source_state = next((key.upper() for key in ("unprocessed", "processing", "completed") if source_path.parent == directories[key]), "UNKNOWN")
+    print(f"[FILE_SELECTION] source_state={source_state} input={file_name}")
     processing_file_path = directories["processing"] / file_name
     if source_path != processing_file_path:
         if processing_file_path.exists():
@@ -608,13 +618,13 @@ if not self_trigger_df.empty:
 raw_output_path = directories["output"] / f"raw_{basename_no_ext}.parquet"
 selftrigger_output_path = directories["output"] / f"selftrigger_raw_{basename_no_ext}.parquet"
 
-coincidence_df.to_parquet(raw_output_path, engine="pyarrow", compression="zstd", index=False)
+atomic_write_parquet(coincidence_df, raw_output_path, engine="pyarrow", compression="zstd", index=False)
 print(f"Task 0 coincidence raw parquet saved: {raw_output_path} rows={len(coincidence_df)}", force=True)
 
 if self_trigger_df.empty:
     print("Task 0 self-trigger raw parquet skipped: no self-trigger rows.", force=True)
 else:
-    self_trigger_df.to_parquet(selftrigger_output_path, engine="pyarrow", compression="zstd", index=False)
+    atomic_write_parquet(self_trigger_df, selftrigger_output_path, engine="pyarrow", compression="zstd", index=False)
     print(f"Task 0 self-trigger raw parquet saved: {selftrigger_output_path} rows={len(self_trigger_df)}", force=True)
 
 coincidence_first, coincidence_last = datetime_bounds(coincidence_df)

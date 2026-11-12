@@ -1,3 +1,5 @@
+"""Simulate Molière scattering and compare the angular distribution with the model."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd

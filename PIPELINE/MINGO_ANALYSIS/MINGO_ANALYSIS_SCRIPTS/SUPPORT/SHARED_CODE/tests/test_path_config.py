@@ -1,3 +1,5 @@
+"""Test repository and runtime path configuration resolution."""
+
 from __future__ import annotations
 
 from pathlib import Path

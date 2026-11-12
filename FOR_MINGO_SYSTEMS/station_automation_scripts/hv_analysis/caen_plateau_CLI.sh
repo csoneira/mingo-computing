@@ -1,23 +1,5 @@
 #!/usr/bin/env bash
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: FOR_MINGO_SYSTEMS/station_automation_scripts/hv_analysis/plateau_CAEN_CLI.sh
-# Purpose: Run simultaneous or plane-by-plane CAEN HV scans with clean DAQ
-#          file boundaries and optional deadline-based dwell allocation.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-07-30
-# Runtime: bash
-# Usage: ./plateau_CAEN_CLI.sh [options]
-# Inputs: HV range in kV, dwell/settling times, CAEN monitor.py controller,
-#         and DABC start script.
-# Outputs: One clean DAQ acquisition interval per voltage and restored safe HV.
-# Notes:
-#   - DABC is stopped with SIGINT; this script never uses SIGKILL.
-#   - User-facing voltage values are in kV.
-#   - monitor.py receives voltage values in volts.
-#   - The same VSET and ISET are applied to CAEN channels 0 through 7.
-# =============================================================================
+# Purpose: Run simultaneous or plane-by-plane CAEN HV scans with clean DAQ.
 
 set -Eeuo pipefail
 

@@ -1,17 +1,5 @@
 #!/bin/bash
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: FOR_MINGO_SYSTEMS/station_automation_scripts/hv_analysis/plateau_legacy.sh
 # Purpose: Modify to perform a personalized study. (init HV, step, end HV [included]), all in kV.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash FOR_MINGO_SYSTEMS/station_automation_scripts/hv_analysis/plateau_legacy.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
 
 # Modify to perform a personalized study. (init HV, step, end HV [included]), all in kV
 

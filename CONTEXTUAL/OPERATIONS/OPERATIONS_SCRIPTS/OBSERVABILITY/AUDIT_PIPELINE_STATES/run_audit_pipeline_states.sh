@@ -1,17 +1,5 @@
 #!/usr/bin/env bash
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/OBSERVABILITY/AUDIT_PIPELINE_STATES/run_audit_pipeline_states.sh
 # Purpose: Run audit pipeline states.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/OBSERVABILITY/AUDIT_PIPELINE_STATES/run_audit_pipeline_states.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
 
 set -euo pipefail
 

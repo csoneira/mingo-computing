@@ -1,3 +1,5 @@
+% Purpose: Send Email2.
+
 function [status, result] = sendbashEmail2(subject,to,message,attachment)
 % Legacy mail helper deliberately disabled during public-repository recovery.
 % It previously carried an SMTP password literal and exposed it in shell args.

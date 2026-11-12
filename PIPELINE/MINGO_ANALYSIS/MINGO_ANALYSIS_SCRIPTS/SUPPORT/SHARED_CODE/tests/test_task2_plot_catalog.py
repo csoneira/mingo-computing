@@ -1,3 +1,5 @@
+"""Test Task 2 runtime plot catalogue parsing and selection."""
+
 from __future__ import annotations
 
 from pathlib import Path

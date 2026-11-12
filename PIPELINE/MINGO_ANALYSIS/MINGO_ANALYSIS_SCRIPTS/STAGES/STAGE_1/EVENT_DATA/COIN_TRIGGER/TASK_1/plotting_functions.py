@@ -1,3 +1,5 @@
+"""Implement runtime diagnostic plots for coincidence Task 1."""
+
 from __future__ import annotations
 
 import hashlib

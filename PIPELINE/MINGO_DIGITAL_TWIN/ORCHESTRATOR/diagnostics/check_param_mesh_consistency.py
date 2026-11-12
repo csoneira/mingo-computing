@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/diagnostics/check_param_mesh_consistency.py
-Purpose: Check param_mesh rows for missing upstream INTERSTEPS SIM_RUNs.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/diagnostics/check_param_mesh_consistency.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Check param_mesh rows for missing upstream INTERSTEPS SIM_RUNs."""
 
 from __future__ import annotations
 
@@ -20,7 +9,11 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
+_TWIN_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import digital_twin_root, repository_root
+ROOT_DIR = digital_twin_root()
 sys.path.append(str(ROOT_DIR))
 
 from MASTER_STEPS.STEP_SHARED import sim_utils

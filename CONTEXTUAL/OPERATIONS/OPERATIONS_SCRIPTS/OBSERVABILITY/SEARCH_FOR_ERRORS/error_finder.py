@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/OBSERVABILITY/SEARCH_FOR_ERRORS/error_finder.py
-Purpose: Scan cron log files for Tracebacks and store the stack traces in a single report.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/OBSERVABILITY/SEARCH_FOR_ERRORS/error_finder.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Scan cron log files for Tracebacks and store the stack traces in a single report."""
 
 from __future__ import annotations
 

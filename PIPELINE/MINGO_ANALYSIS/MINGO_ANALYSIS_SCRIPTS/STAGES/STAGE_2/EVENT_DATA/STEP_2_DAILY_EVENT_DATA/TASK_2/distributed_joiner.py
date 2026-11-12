@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_2/EVENT_DATA/STEP_2_DAILY_EVENT_DATA/TASK_2/distributed_joiner.py
-Purpose: !/usr/bin/env python3.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_2/EVENT_DATA/STEP_2_DAILY_EVENT_DATA/TASK_2/distributed_joiner.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Join distributed event files into daily analysis products."""
 
 from __future__ import annotations
 
@@ -27,17 +16,15 @@ import yaml
 
 
 CURRENT_PATH = Path(__file__).resolve()
-MASTER_ROOT = None
-REPO_ROOT = None
-for parent in CURRENT_PATH.parents:
-    if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        MASTER_ROOT = parent
-        REPO_ROOT = parent.parents[2]
-        break
-if MASTER_ROOT is None:
-    MASTER_ROOT = CURRENT_PATH.parents[-1]
-if REPO_ROOT is None:
-    REPO_ROOT = CURRENT_PATH.parents[-1]
+_SCRIPTS_ROOT = next(parent for parent in CURRENT_PATH.parents if parent.name == "MINGO_ANALYSIS_SCRIPTS")
+_REPO_IMPORT_ROOT = _SCRIPTS_ROOT.parents[2]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+MASTER_ROOT = _SCRIPTS_ROOT
+REPO_ROOT = get_repo_root()
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 

@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_4/script_4_list_to_fit.py
-Purpose: !/usr/bin/env python3.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_4/script_4_list_to_fit.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Run Task 4, fitting listed detector events."""
 
 #%%
 
@@ -72,16 +61,14 @@ from tqdm import tqdm
 
 # Resolve repo root for local imports
 CURRENT_PATH = Path(__file__).resolve()
-REPO_ROOT = None
-for parent in CURRENT_PATH.parents:
-    if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parents[2]
-        break
-if REPO_ROOT is None:
-    REPO_ROOT = CURRENT_PATH.parents[-1]
+_SCRIPTS_ROOT = next(parent for parent in CURRENT_PATH.parents if parent.name == "MINGO_ANALYSIS_SCRIPTS")
+_REPO_IMPORT_ROOT = _SCRIPTS_ROOT.parents[2]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
 if str(REPO_ROOT) not in sys.path:
-    sys.path.append(str(REPO_ROOT))
-
+    sys.path.insert(0, str(REPO_ROOT))
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.debug_plots import plot_debug_histograms
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import set_station, start_timer
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_selection import (
@@ -96,7 +83,6 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.input_fi
     select_input_file_configuration,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import (
-    get_repo_root,
     resolve_home_path_from_config,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.plot_utils import ensure_plot_state
@@ -123,6 +109,9 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.simulate
     resolve_simulated_z_positions,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_shared import (
+    resolve_reprocessing_options,
+    filter_unprocessed_with_existing_outputs,
+    atomic_write_parquet,
     add_normalized_count_metadata,
     add_trigger_type_total_offender_threshold_metadata,
     build_events_per_second_metadata,
@@ -812,9 +801,9 @@ def compute_tt_task4_fit_from_charge(df: pd.DataFrame) -> pd.Series:
         candidate_columns: list[str] = [
             col_name
             for col_name in (
+                f"p{plane}_qsum",
                 f"charge_{plane}",
                 f"tim_charge_{plane}",
-                f"p{plane}_qsum",
             )
             if col_name in df.columns
         ]
@@ -1013,7 +1002,7 @@ def load_iteration_settings(cfg):
         cfg["fixed_speed"],
         cfg["res_ana_removing_planes"],
         number_of_tt_executions,
-        cfg.get("complete_reanalysis", False),
+        resolve_reprocessing_options(cfg)[0],
         cfg.get("limit_number", None),
     )
 
@@ -1046,7 +1035,7 @@ def initialize_task4_runtime_context(
             "fixed_speed": fixed_speed,
             "res_ana_removing_planes": res_ana_removing_planes,
             "number_of_tt_executions": number_of_tt_executions,
-            "complete_reanalysis": complete_reanalysis,
+            "reprocess_from_completed": complete_reanalysis,
             "limit_number": limit_number,
             "limit": limit_number is not None,
         }
@@ -2237,6 +2226,143 @@ def apply_task4_final_filter(
         rejected_df["zero_count"] = zero_count_per_row[~final_mask]
         rejected_df["primary_zero_col"] = primary_zero_col[~final_mask]
     return working, rejected_df, summary
+
+
+def plot_task4_filter_input_output_histograms(df: pd.DataFrame) -> None:
+    """Overlay Task-4 fit quantities before and after its final pass filter."""
+    variables = (
+        ("event_charge", "Event charge"),
+        ("x", "X position"),
+        ("y", "Y position"),
+        ("theta", "Theta"),
+        ("phi", "Phi"),
+        ("s", "Slowness"),
+        ("det_chi2_pos", "Detached position chi-square"),
+        ("det_chi2_tsum", "Detached timing chi-square"),
+    )
+    pass_column = "filter_task4_final_pass"
+    if pass_column not in df.columns:
+        print("Skipping Task-4 filter input/output histograms: final pass mask is missing.")
+        return
+    passed = df[pass_column].fillna(False).to_numpy(dtype=bool)
+    pos_abs = abs(_task4_config_float(config, "det_pos_filter", default=200.0))
+    phi_abs = abs(_task4_config_float(config, "det_phi_filter_abs", "det_phi_right_filter", default=3.141592))
+    event_bounds = (
+        ("event_charge", "event_combination_detector_event_charge_left", "event_combination_detector_event_charge_right", _task4_config_float(config, "charge_plot_limit_left", default=0.0), _task4_config_float(config, "charge_plot_event_limit_right", "charge_plot_limit_right", default=400.0)),
+        ("x", "event_combination_detector_x_left", "event_combination_detector_x_right", -pos_abs, pos_abs),
+        ("y", "event_combination_detector_y_left", "event_combination_detector_y_right", -pos_abs, pos_abs),
+        ("s", "event_combination_detector_s_left", "event_combination_detector_s_right", _task4_config_float(config, "det_slowness_filter_left", default=-0.02), _task4_config_float(config, "det_slowness_filter_right", default=0.03)),
+        ("theta", "event_combination_detector_theta_left", "event_combination_detector_theta_right", _task4_config_float(config, "det_theta_left_filter", default=0.0), _task4_config_float(config, "det_theta_right_filter", default=1.5708)),
+        ("phi", "event_combination_detector_phi_left", "event_combination_detector_phi_right", -phi_abs, phi_abs),
+    )
+    cut_bounds = {}
+    for column_name, left_key, right_key, default_left, default_right in event_bounds:
+        if not any(_task4_parse_optional_float(config.get(key)) is not None for key in (left_key, right_key)):
+            continue
+        left = _task4_get_optional_config_float(config, left_key)
+        right = _task4_get_optional_config_float(config, right_key)
+        cut_bounds[column_name] = (
+            float(default_left) if left is None else float(left),
+            float(default_right) if right is None else float(right),
+        )
+    fig, axes = plt.subplots(2, 4, figsize=(18, 8), squeeze=False)
+    for index, (column, label) in enumerate(variables):
+        ax = axes.flat[index]
+        if column not in df.columns:
+            ax.text(0.5, 0.5, "missing", ha="center", va="center", transform=ax.transAxes)
+            ax.set_title(label)
+            continue
+        values = pd.to_numeric(df[column], errors="coerce").to_numpy(dtype=float)
+        finite = np.isfinite(values)
+        before = values[finite]
+        after = values[finite & passed]
+        rejected = values[finite & ~passed]
+        if after.size == 0:
+            ax.text(0.5, 0.5, "no accepted data", ha="center", va="center", transform=ax.transAxes)
+            ax.set_title(label)
+            continue
+        lo, hi = (float(value) for value in np.quantile(after, [0.005, 0.995]))
+        if lo == hi:
+            padding = max(abs(lo) * 0.05, 0.5)
+            lo, hi = lo - padding, hi + padding
+        bins = np.linspace(lo, hi, 61)
+        ax.hist(before, bins=bins, histtype="step", linewidth=0.9, color="0.45", label="before filter")
+        ax.hist(after, bins=bins, histtype="step", linewidth=1.0, color="tab:blue", label="accepted")
+        ax.hist(rejected, bins=bins, histtype="step", linewidth=0.9, color="tab:red", linestyle="--", label="rejected")
+        if column in cut_bounds:
+            bounds = cut_bounds[column]
+            for cut_index, bound in enumerate(bounds):
+                if bound is not None and np.isfinite(float(bound)):
+                    ax.axvline(
+                        float(bound), color="tab:red", linestyle=":", linewidth=1.1,
+                        label="configured numeric limit" if index == 0 and cut_index == 0 else None,
+                    )
+            finite_bounds = [float(bound) for bound in bounds if bound is not None and np.isfinite(float(bound))]
+            if finite_bounds:
+                lo = min(lo, *finite_bounds)
+                hi = max(hi, *finite_bounds)
+        else:
+            ax.text(
+                0.98, 0.96, "no direct numeric cut", ha="right", va="top",
+                fontsize=7, color="0.35", transform=ax.transAxes,
+            )
+        ax.set_xlim(lo, hi)
+        ax.set_yscale("log")
+        ax.set_title(label)
+        ax.grid(True, alpha=0.2)
+        if index == 0:
+            ax.legend(fontsize=8)
+    fig.suptitle("Task 4 fit quantities before filtering and final accepted population")
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    if save_plots:
+        global fig_idx, plot_list
+        filename = f"{fig_idx}_task4_filter_input_output_histograms.png"
+        fig_idx += 1
+        save_path = os.path.join(base_directories["figure_directory"], filename)
+        plot_list.append(save_path)
+        save_plot_figure(save_path, fig=fig, format="png", dpi=150, alias="filter_input_output_histograms")
+        print(f"Task-4 prefilter/accepted histogram figure saved: {save_path}")
+    if show_plots:
+        plt.show()
+    plt.close(fig)
+
+
+def plot_task4_filter_cut_details(summary: dict[str, object]) -> None:
+    """Show Task-4 filter criteria that cannot be represented by axis lines."""
+    global fig_idx
+    categories = (
+        ("TT below minimum", int(summary.get("rows_failed_tt_task4_fit_min", 0) or 0)),
+        ("Required input zero/invalid", int(summary.get("rows_failed_nonzero_required", 0) or 0)),
+    )
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    labels = [label for label, _ in categories]
+    counts = [count for _, count in categories]
+    bars = ax.bar(labels, counts, color=("tab:orange", "tab:purple"), alpha=0.85)
+    ax.bar_label(bars, padding=3)
+    ax.set_ylabel("Rows failing criterion")
+    ax.set_title(
+        "Task 4 non-axis filter criteria\n"
+        f"TT minimum = {TASK4_FINAL_FIT_TT_MIN}; required atomic inputs must be finite and nonzero"
+    )
+    ax.grid(axis="y", alpha=0.25)
+    small_rows = int(summary.get("rows_with_small_values", 0) or 0)
+    ax.text(
+        0.99, 0.96,
+        f"Optional small-value cleanup: {'enabled' if TASK4_FINAL_FILTER_REMOVE_SMALL else 'disabled'}"
+        + (f" ({small_rows} rows contain values below {TASK4_FINAL_FILTER_REMOVE_SMALL_EPS:g})" if TASK4_FINAL_FILTER_REMOVE_SMALL else ""),
+        ha="right", va="top", transform=ax.transAxes, fontsize=8,
+    )
+    fig.tight_layout()
+    if save_plots:
+        filename = f"{fig_idx}_task4_filter_cut_details.png"
+        fig_idx += 1
+        path = os.path.join(base_directories["figure_directory"], filename)
+        plot_list.append(path)
+        save_plot_figure(path, fig=fig, format="png", alias="filter_cut_details")
+        print(f"Task-4 non-axis filter detail figure saved: {path}")
+    if show_plots:
+        plt.show()
+    plt.close(fig)
 
 
 # -----------------------------------------------------------------------------
@@ -4226,6 +4352,8 @@ TASK4_PLOT_ALIASES: tuple[str, ...] = (
     "debug_suite",
     "usual_suite",
     "essential_suite",
+    "filter_input_output_histograms",
+    "filter_cut_details",
     "acquisition_rate_vs_time_by_task_tt_with_histograms",
     "flat_values_histogram",
     "detached_timeseries_combo",
@@ -4420,7 +4548,8 @@ if not station_is_selected(station, selection_config.stations):
     sys.exit(0)
 
 # Cron job switch that decides if completed files can be revisited.
-complete_reanalysis = config.get("complete_reanalysis", False)
+reprocess_from_completed, reprocess_from_unprocessed = resolve_reprocessing_options(config)
+complete_reanalysis = reprocess_from_completed
 
 selected_input_file = CLI_ARGS.input_file_flag or CLI_ARGS.input_file
 if selected_input_file:
@@ -4896,6 +5025,18 @@ elif process_only_qa_retry_files:
         f"COMPLETED={len(completed_files)}"
     )
 
+if not user_file_selection and not reprocess_from_unprocessed:
+    _unprocessed_before_duplicate_guard = len(unprocessed_files)
+    unprocessed_files = filter_unprocessed_with_existing_outputs(
+        unprocessed_files,
+        base_directories["output_directory"],
+        input_prefix="listed_",
+        output_prefix="fitted_",
+        force_reprocess=reprocess_from_unprocessed,
+    )
+    if len(unprocessed_files) != _unprocessed_before_duplicate_guard:
+        print(f"[FILE_SELECTION] skipped {_unprocessed_before_duplicate_guard - len(unprocessed_files)} UNPROCESSED input(s) with existing outputs")
+
 if user_file_selection:
     processing_file_path = user_file_path
     file_name = os.path.basename(user_file_path)
@@ -4939,7 +5080,7 @@ else:
                 processing_file_path = error_file_path
                 print(f"File moved to ERROR: {processing_file_path}")
 
-            elif complete_reanalysis and completed_files:
+            elif reprocess_from_completed and completed_files:
                 latest_completed = select_latest_candidate(completed_files, station)
                 if latest_completed:
                     file_name = latest_completed
@@ -4989,7 +5130,7 @@ else:
             print(f"File moved to ERROR: {processing_file_path}")
 
         elif completed_files:
-            if complete_reanalysis:
+            if reprocess_from_completed:
                 print("Selecting a random file in COMPLETED...")
                 file_name = random.choice(completed_files)
                 selected_file_source = "completed"
@@ -5182,6 +5323,29 @@ for joined_record in joined_input_records:
 if not joined_frames:
     sys.exit("No Task 4 input dataframes were loaded.")
 working_df = pd.concat(joined_frames, ignore_index=True, sort=False)
+# Task 4 uses the Task-3 accepted plane observables and Task-2 accepted strip
+# components. Keep the incoming parquet values under explicit input names so
+# the fit inputs can always be compared with the values that preceded filters.
+for plane in range(1, 5):
+    for variable in ("qsum", "qdif", "tsum", "tdif", "xpos", "ypos"):
+        accepted_column = f"p{plane}_{variable}_task3"
+        canonical_column = f"p{plane}_{variable}"
+        if accepted_column not in working_df.columns or canonical_column not in working_df.columns:
+            continue
+        input_column = f"{canonical_column}_task4_input"
+        if input_column not in working_df.columns:
+            working_df.loc[:, input_column] = working_df[canonical_column].copy()
+        working_df.loc[:, canonical_column] = working_df[accepted_column]
+    for strip in range(1, 5):
+        for variable in ("qsum", "qdif", "tsum", "tdif"):
+            accepted_column = f"p{plane}_s{strip}_{variable}_task2"
+            canonical_column = f"p{plane}_s{strip}_{variable}"
+            if accepted_column not in working_df.columns or canonical_column not in working_df.columns:
+                continue
+            input_column = f"{canonical_column}_task4_input"
+            if input_column not in working_df.columns:
+                working_df.loc[:, input_column] = working_df[canonical_column].copy()
+            working_df.loc[:, canonical_column] = working_df[accepted_column]
 joined_analysis_active = len(joined_input_records) > 1
 if joined_analysis_active:
     print(
@@ -7140,6 +7304,10 @@ working_df, task4_final_filter_rejected_df, task4_final_filter_summary = apply_t
     apply_changes=True,
 )
 task4_final_filter_applied = True
+if task4_plot_enabled("filter_input_output_histograms"):
+    plot_task4_filter_input_output_histograms(working_df)
+if task4_plot_enabled("filter_cut_details"):
+    plot_task4_filter_cut_details(task4_final_filter_summary)
 
 tt_task4_fit_total = int(task4_final_filter_summary.get("input_rows", len(working_df)))
 tt_task4_fit_removed = int(task4_final_filter_summary.get("rows_failed_tt_task4_fit_min", 0))
@@ -7191,7 +7359,7 @@ if save_rejected_rows and not task4_final_filter_rejected_df.empty:
         rejected_files_directory,
         f"rejected_final_filtering_{basename_no_ext}.parquet",
     )
-    task4_final_filter_rejected_df.to_parquet(
+    atomic_write_parquet(task4_final_filter_rejected_df,
         final_rejected_path,
         engine="pyarrow",
         compression="zstd",
@@ -8154,6 +8322,18 @@ upstream_offender_count_cols = [
     )
     if col_name in working_df.columns
 ]
+task4_filter_input_columns = [
+    f"p{plane}_{variable}_task4_input"
+    for plane in range(1, 5)
+    for variable in ("qsum", "qdif", "tsum", "tdif", "xpos", "ypos")
+    if f"p{plane}_{variable}_task4_input" in working_df.columns
+]
+task4_strip_input_columns = [
+    f"p{plane}_s{strip}_qsum_task4_input"
+    for plane in range(1, 5)
+    for strip in range(1, 5)
+    if f"p{plane}_s{strip}_qsum_task4_input" in working_df.columns
+]
 task4_pass_filter_cols = [
     col_name
     for col_name in (
@@ -8171,6 +8351,8 @@ columns_to_keep = (
     tt_columns_present
     + param_hash_cols
     + upstream_offender_count_cols
+    + task4_filter_input_columns
+    + task4_strip_input_columns
     + task4_pass_filter_cols
     + [
         # New definitions
@@ -8678,7 +8860,7 @@ if joined_analysis_active and joined_source_file_column in working_df.columns:
             errors="ignore",
         )
         joined_output_df = canonicalize_step1_columns(joined_output_df)
-        joined_output_df.to_parquet(
+        atomic_write_parquet(joined_output_df,
             joined_out_path,
             engine="pyarrow",
             compression=_preferred_parquet_compression(),
@@ -8691,7 +8873,7 @@ else:
         errors="ignore",
     )
     output_df = canonicalize_step1_columns(output_df)
-    output_df.to_parquet(
+    atomic_write_parquet(output_df,
         OUT_PATH,
         engine="pyarrow",
         compression=_preferred_parquet_compression(),

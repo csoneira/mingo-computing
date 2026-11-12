@@ -1,3 +1,5 @@
+"""Test Task 2 calibration-sample flow and filtering behavior."""
+
 import ast
 from pathlib import Path
 from typing import Iterable
@@ -61,6 +63,10 @@ def test_requested_branch_topologies_are_explicit() -> None:
     assert flow["q_tdif"]["fit_mask"]["strip_topology"] == flow["qfb"]["fit_mask"]["strip_topology"]
     assert flow["t_sum"]["fit_mask"]["plane_combination"] == [1234, 123, 234]
     assert flow["t_sum"]["fit_mask"]["use_high_common_charge_cut"] is False
+    cdf_diagnostic = flow["t_dif"]["cdf_top_hat_diagnostic"]
+    assert cdf_diagnostic["enabled"] is True
+    assert cdf_diagnostic["plane_combination"] == [1234, 124, 134]
+    assert flow["t_dif"]["fit_mask"]["plane_combination"] == [1234, 123, 234, 124, 134]
 
 
 def test_obsolete_qfb_and_one_strip_controls_are_removed() -> None:
@@ -164,6 +170,92 @@ def test_crosstalk_logistic_cdf_recovers_synthetic_center_and_width() -> None:
     assert abs(float(fit["width_10_90"]) - 2 * np.log(9) * 4.5) < 1.0
 
 
+def test_unbinned_top_hat_cdf_recovers_uniform_interval() -> None:
+    tree = ast.parse(_source())
+    fit_node = next(
+        node for node in tree.body
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "_fit_tdif_top_hat_cdf"
+    )
+    namespace: dict[str, object] = {"np": np}
+    exec(compile(ast.Module(body=[fit_node], type_ignores=[]), str(SCRIPT_PATH), "exec"), namespace)
+    rng = np.random.default_rng(117)
+    values = rng.uniform(-3.2, 5.7, size=12000)
+    result = namespace["_fit_tdif_top_hat_cdf"](values)
+    assert result["status"] == "fit_succeeded"
+    assert abs(float(result["a"]) - (-3.2)) < 0.12
+    assert abs(float(result["b"]) - 5.7) < 0.12
+    assert abs(float(result["center"]) - 1.25) < 0.1
+    assert float(result["rmse"]) < 0.01
+
+
+def test_tdif_cdf_diagnostic_renders_candidate_and_reference_curves(tmp_path: Path) -> None:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    tree = ast.parse(_source())
+    plot_node = next(
+        node for node in tree.body
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "_save_tdif_cdf_top_hat_diagnostic"
+    )
+    output_path = tmp_path / "1_tdif_cdf_top_hat_diagnostic_4x4.png"
+
+    def _save_plot(path, *, fig, **_kwargs):
+        fig.savefig(path)
+
+    namespace: dict[str, object] = {
+        "np": np,
+        "plt": plt,
+        "os": __import__("os"),
+        "task2_plot_requested": lambda *_args, **_kwargs: True,
+        "save_plot_figure": _save_plot,
+        "base_directories": {"figure_directory": str(tmp_path)},
+        "index_of_cal_plot": 1,
+    }
+    exec(compile(ast.Module(body=[plot_node], type_ignores=[]), str(SCRIPT_PATH), "exec"), namespace)
+    rng = np.random.default_rng(991)
+    values = rng.uniform(-2.0, 3.0, size=1000)
+    fit_tree = ast.parse(_source())
+    fit_node = next(
+        node for node in fit_tree.body
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "_fit_tdif_top_hat_cdf"
+    )
+    fit_namespace: dict[str, object] = {"np": np}
+    exec(compile(ast.Module(body=[fit_node], type_ignores=[]), str(SCRIPT_PATH), "exec"), fit_namespace)
+    fit = fit_namespace["_fit_tdif_top_hat_cdf"](values)
+    diagnostic = {
+        (plane, strip): {
+            "fit": fit,
+            "reference_values": values + 0.2,
+            "current_offset": 0.5,
+            "same_sample_offset": 0.4,
+        }
+        for plane in range(1, 5)
+        for strip in range(1, 5)
+    }
+    namespace["_save_tdif_cdf_top_hat_diagnostic"](
+        diagnostic,
+        plane_combinations=[1234, 124, 134],
+    )
+    assert output_path.exists()
+    assert output_path.stat().st_size > 0
+
+
+def test_top_hat_tdif_plot_is_enabled_without_changing_production_mask() -> None:
+    plot_config = yaml.safe_load(
+        (CALIBRATION_CONFIG_PATH.parents[0] / "config_plots_task_2.yaml").read_text(encoding="utf-8")
+    )
+    assert "tdif_cdf_top_hat_diagnostic_4x4" in plot_config["-plot"]
+    source = _source()
+    assert 'tdif_cdf_config.get(' in source
+    assert 'plane_combination", [1234, 124, 134]' in source
+    assert 'tdif_river_config["fit_mask"]' in source
+    assert "Production offsets are unchanged." in source
+
+
 def test_charge_gate_histogram_plots_the_quantities_actually_gated() -> None:
     source = _source()
     assert "plt.subplots(4, 2" in source
@@ -262,7 +354,7 @@ def test_exact_topology_requires_exact_active_planes_and_strip_patterns() -> Non
     assert mask.tolist() == [True, False, False]
 
 
-def test_final_calibrated_strip_gate_only_zeroes_the_four_final_columns() -> None:
+def test_final_calibrated_strip_gate_preserves_inputs_and_creates_accepted_copies() -> None:
     data: dict[str, object] = {"metadata": ["keep", "keep", "keep"]}
     calibrated_suffixes = ("qsum_cal", "qdif_cal", "tsum_cal", "tdif_cal")
     valid_values = (100.0, 0.5, -110.0, 0.2)
@@ -273,9 +365,8 @@ def test_final_calibrated_strip_gate_only_zeroes_the_four_final_columns() -> Non
             data[f"p{plane}_s{strip}_qsum"] = [91.0, 92.0, 93.0]
     frame = pd.DataFrame(data)
     frame.loc[1, "p2_s3_qdif_cal"] = 3.0
-    untouched_before = frame[
-        ["metadata"] + [column for column in frame if column.endswith("_qsum")]
-    ].copy(deep=True)
+    calibrated_before = frame[[column for column in frame if column.endswith("_cal")]].copy(deep=True)
+    untouched_before = frame[["metadata"] + [column for column in frame if column.endswith("_qsum")]].copy(deep=True)
 
     summary = _selection_function_namespace()["apply_task2_final_calibrated_strip_gate"](
         frame,
@@ -290,11 +381,14 @@ def test_final_calibrated_strip_gate_only_zeroes_the_four_final_columns() -> Non
         },
     )
 
-    failing_columns = [f"p2_s3_{suffix}" for suffix in calibrated_suffixes]
+    failing_columns = [f"p2_s3_{suffix.replace('_cal', '_task2')}" for suffix in calibrated_suffixes]
     assert frame.loc[1, failing_columns].tolist() == [0.0, 0.0, 0.0, 0.0]
     assert frame.loc[0, failing_columns].tolist() == list(valid_values)
     assert frame.loc[2, failing_columns].tolist() == [0.0, 0.0, 0.0, 0.0]
+    pd.testing.assert_frame_equal(frame[calibrated_before.columns], calibrated_before)
     pd.testing.assert_frame_equal(frame[untouched_before.columns], untouched_before)
+    assert frame.loc[1, "filter_task2_calibrated_strip_P2_s3_pass"] == False
+    assert frame.loc[0, "filter_task2_calibrated_strip_P2_s3_pass"] == True
     assert summary["strip_blocks_zeroed"] == 1
     assert summary["rows_affected"] == 1
     assert summary["values_zeroed"] == 4

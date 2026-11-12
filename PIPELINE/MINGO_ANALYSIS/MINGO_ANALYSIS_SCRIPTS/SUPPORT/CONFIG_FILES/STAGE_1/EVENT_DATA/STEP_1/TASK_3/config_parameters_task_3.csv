@@ -1,4 +1,4 @@
-parameter,default,station_1,station_2,station_3,station_4,source_task
+parameter,default,station_1,station_2,station_3,station_4,source_task,station_0
 strip_speed_factor_of_c,,,,,,task_2
 narrow_strip,,,,,,task_2
 wide_strip,,,,,,task_2
@@ -6,3 +6,4 @@ anc_std,0.075,0.075,0.075,0.075,0.075,
 streamer_high_charge_factor,0.2,0.2,0.2,0.2,0.2,
 charge_per_strip_plot_threshold,40,40,40,40,40,
 charge_per_plane_plot_threshold,50,50,50,50,50,
+joined_analysis_files,,,,,,,1

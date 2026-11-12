@@ -1,3 +1,5 @@
+"""Test cleaner selection, retention rules, and file deletion safeguards."""
+
 import importlib.util
 from pathlib import Path
 import tempfile

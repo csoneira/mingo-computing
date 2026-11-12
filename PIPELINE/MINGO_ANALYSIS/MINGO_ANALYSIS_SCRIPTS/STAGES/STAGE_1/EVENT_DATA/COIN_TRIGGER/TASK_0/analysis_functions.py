@@ -1,3 +1,5 @@
+"""Implement scientific calculations for coincidence Task 0."""
+
 from __future__ import annotations
 
 import re

@@ -8,6 +8,7 @@ import ast
 import math
 import os
 from pathlib import Path
+import sys
 
 import numpy as np
 import pandas as pd
@@ -16,7 +17,12 @@ os.environ.setdefault("MPLCONFIGDIR", "/tmp/dataflow_v3_matplotlib")
 import matplotlib.pyplot as plt
 
 
-DIGITAL_TWIN_ROOT = Path(__file__).resolve().parents[2]
+_TWIN_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import digital_twin_root
+
+DIGITAL_TWIN_ROOT = digital_twin_root()
 GENERATOR_DIR = Path(__file__).resolve().parent
 DEFAULT_INPUT = (
     DIGITAL_TWIN_ROOT

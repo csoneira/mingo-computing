@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/OBSERVABILITY/VERSION_CONTROL/snapshot_config.py
-Purpose: Persist snapshots of the main config files when they change.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/OBSERVABILITY/VERSION_CONTROL/snapshot_config.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Persist snapshots of the main config files when they change."""
 
 from __future__ import annotations
 
@@ -24,7 +13,11 @@ from typing import Callable, Optional, Sequence, Tuple
 
 import yaml
 
-REPO_ROOT = Path(__file__).resolve().parents[5]
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[5]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 

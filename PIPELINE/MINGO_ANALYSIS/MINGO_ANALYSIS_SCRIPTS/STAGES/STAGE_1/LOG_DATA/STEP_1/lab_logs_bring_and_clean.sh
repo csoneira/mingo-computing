@@ -1,4 +1,5 @@
 #!/bin/bash
+# Purpose: Retrieve and clean laboratory logs for one configured station.
 
 # Resolve the checkout from this script's location when the caller did not provide it.
 if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
@@ -15,20 +16,6 @@ if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
   fi
 fi
 unset _repo_probe
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/LOG_DATA/STEP_1/lab_logs_bring_and_clean.sh
-# Purpose: Only this changes between mingos and computers.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/LOG_DATA/STEP_1/lab_logs_bring_and_clean.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
-
 # ----------------------------------------------
 # Only this changes between mingos and computers
 if [[ ${1:-} =~ ^(-h|--help)$ ]]; then

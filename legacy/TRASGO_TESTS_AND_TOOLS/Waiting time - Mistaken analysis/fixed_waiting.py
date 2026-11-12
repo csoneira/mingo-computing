@@ -1,3 +1,5 @@
+"""Analyze waiting-time measurements from the historical test."""
+
 #%%
 
 import numpy as np

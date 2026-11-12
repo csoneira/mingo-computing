@@ -1,4 +1,4 @@
-parameter,default,station_1,station_2,station_3,station_4,source_task
+parameter,default,station_1,station_2,station_3,station_4,source_task,station_0
 T_side_left_pre_cal_debug,,,,,,task_1
 T_side_right_pre_cal_debug,,,,,,task_1
 CRT_gaussian_fit_quantile,0.03,0.03,0.03,0.03,0.03,
@@ -61,3 +61,4 @@ streamer_high_charge_factor,0.2,0.2,0.2,0.2,0.2,
 distance_sum_charges_plot,800,800,800,800,800,
 scatter_2d_and_fit_new_xlim_left,-5,-5,-5,-5,-5,
 scatter_2d_and_fit_new_xlim_right,200,200,200,200,200,
+joined_analysis_files,,,,,,,1

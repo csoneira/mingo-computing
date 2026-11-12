@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/sanitize_sim_runs.py
-Purpose: Remove completed, broken, or stale INTERSTEPS SIM_RUN directories under explicit safeguards.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/sanitize_sim_runs.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Remove completed, broken, or stale INTERSTEPS SIM_RUN directories under explicit safeguards."""
 
 from __future__ import annotations
 
@@ -27,7 +16,11 @@ from pathlib import Path
 
 import pandas as pd
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
+_TWIN_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import digital_twin_root, repository_root
+ROOT_DIR = digital_twin_root()
 sys.path.append(str(ROOT_DIR))
 sys.path.append(str(ROOT_DIR / "MASTER_STEPS"))
 
@@ -193,12 +186,12 @@ def main() -> None:
     )
     parser.add_argument(
         "--intersteps-dir",
-        default=str(next(parent for parent in Path(__file__).resolve().parents if (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file()) / "PIPELINE/MINGO_DIGITAL_TWIN/SIMULATION_OUTPUTS/INTERSTEPS"),
+        default=str(ROOT_DIR / "SIMULATION_OUTPUTS/INTERSTEPS"),
         help="Base INTERSTEPS directory.",
     )
     parser.add_argument(
         "--param-mesh",
-        default=str(next(parent for parent in Path(__file__).resolve().parents if (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file()) / "PIPELINE/MINGO_DIGITAL_TWIN/SIMULATION_OUTPUTS/INTERSTEPS/STEP_0_TO_1/param_mesh.csv"),
+        default=str(ROOT_DIR / "SIMULATION_OUTPUTS/INTERSTEPS/STEP_0_TO_1/param_mesh.csv"),
         help="Path to param_mesh.csv.",
     )
     parser.add_argument(
@@ -217,7 +210,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--step-final-lock",
-        default=str(next(parent for parent in Path(__file__).resolve().parents if (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file()) / "CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/LOCKS/cron/sim_final.lock"),
+        default=str(repository_root() / "CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/LOCKS/cron/sim_final.lock"),
         help=(
             "Lock file used by STEP_FINAL cron. If locked, STEP_10_TO_FINAL cleanup is skipped "
             "to avoid deleting active inputs."

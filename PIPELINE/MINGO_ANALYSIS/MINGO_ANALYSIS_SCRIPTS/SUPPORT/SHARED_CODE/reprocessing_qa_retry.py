@@ -1,16 +1,5 @@
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/SHARED_CODE/reprocessing_qa_retry.py
-Purpose: Shared helpers for QA-driven reprocessing retries.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-04-22
-Runtime: python3
-Usage: python3 -m MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.reprocessing_qa_retry [options]
-Inputs: Config files and CSV manifests.
-Outputs: QA retry manifests/state CSVs or stdout summaries.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Shared helpers for QA-driven reprocessing retries."""
 
 from __future__ import annotations
 

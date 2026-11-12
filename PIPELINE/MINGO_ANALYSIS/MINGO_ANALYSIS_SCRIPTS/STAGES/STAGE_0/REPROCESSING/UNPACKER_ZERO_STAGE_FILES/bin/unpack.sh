@@ -1,3 +1,5 @@
+# Purpose: Run the configured legacy Stage-0 HLD unpacking workflow.
+
 # =============================================================================
 
 # Resolve the checkout from this script's location when the caller did not provide it.
@@ -15,18 +17,6 @@ if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
   fi
 fi
 unset _repo_probe
-# DATAFLOW_v3 Script Header v1
-# Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/bin/unpack.sh
-# Purpose: What to really change when the directory is changed:.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/bin/unpack.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
 
 # What to really change when the directory is changed:
 #    unpack.sh, of course, the cd should lead to software

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Purpose: Retrieve HLD files selected for reprocessing.
 
 # Resolve the checkout from this script's location when the caller did not provide it.
 if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
@@ -15,20 +16,6 @@ if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
   fi
 fi
 unset _repo_probe
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/STEP_1/bring_reprocessing_files.sh
-# Purpose: bring_reprocessing_files.sh.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/STEP_1/bring_reprocessing_files.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
-
 # ---------------------------------------------------------------------------
 # bring_reprocessing_files.sh
 #   Fetch HLD data from backuplip, writing
@@ -80,6 +67,8 @@ Options:
   -h, --help            Show this help message and exit.
   -r, --random          Select a single random basename from metadata and download it.
   -n, --newest          Select the newest (lexicographically last) unprocessed basename.
+      --basename NAME   Select one exact basename from remote metadata.
+      --force-reprocess Include completed/local files in exact or date requests.
   -m, --refresh-metadata
                         Refresh the metadata CSV with the latest list of basenames
                         from the remote host. Can be combined with --random or a
@@ -102,6 +91,7 @@ Usage:
   bring_reprocessing_files.sh <station> [--refresh-metadata|-m] [--plot] --random/-r
   bring_reprocessing_files.sh <station> [--refresh-metadata|-m] [--plot] --newest/-n
   bring_reprocessing_files.sh <station> [--refresh-metadata|-m] [--plot] YYMMDD YYMMDD
+  bring_reprocessing_files.sh <station> [--refresh-metadata|-m] --basename NAME [--force-reprocess]
 
 Options:
   -h, --help            Show this help message and exit.
@@ -133,6 +123,8 @@ random_mode=false
 newest_mode=false
 refresh_metadata=false
 plot_hist=false
+force_reprocess=false
+requested_basename=""
 start_arg=""
 end_arg=""
 
@@ -144,6 +136,15 @@ while [[ $# -gt 0 ]]; do
       ;;
     --plot)
       plot_hist=true
+      shift
+      ;;
+    --basename)
+      [[ $# -ge 2 && -z "$requested_basename" ]] || usage
+      requested_basename="$2"
+      shift 2
+      ;;
+    --force-reprocess)
+      force_reprocess=true
       shift
       ;;
     --random|-r)
@@ -184,7 +185,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 perform_download=true
-if $random_mode || $newest_mode; then
+if $random_mode || $newest_mode || [[ -n "$requested_basename" ]]; then
   if [[ -n "$start_arg" || -n "$end_arg" ]]; then
     usage
   fi
@@ -216,6 +217,7 @@ step0_output_directory="${step0_directory}/OUTPUT_FILES"
 qa_retry_manifest_csv="${step0_output_directory}/qa_retry_manifest_${station}.csv"
 active_reprocessing_csv="${REPO_ROOT}/CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/STATE/REPROCESS_BASENAMES/active_reprocessing.csv"
 dat_unpacked_csv="${station_directory}/STAGE_0/REPROCESSING/STEP_2/METADATA/dat_files_unpacked.csv"
+step2_error_directory="${station_directory}/STAGE_0/REPROCESSING/STEP_2/INPUT_FILES/ERROR"
 stage0_to_1_directory="${station_directory}/STAGE_0_TO_1"
 task0_directory="${station_directory}/STAGE_1/EVENT_DATA/STEP_1/TASK_0"
 task0_input_directory="${task0_directory}/INPUT_FILES"
@@ -631,6 +633,15 @@ basename_has_local_file() {
   return 1
 }
 
+# A failed unpack is quarantined in STEP_2/ERROR. Do not automatically fetch
+# that basename again after a cleaner removes the local archive; an operator
+# can still explicitly retry it with --force-reprocess.
+basename_has_unpack_error() {
+  local base="$1"
+  [[ -s "${step2_error_directory}/${base}.hld" || \
+     -s "${step2_error_directory}/${base}.HLD" ]]
+}
+
 basename_time_key() {
   local name="$1"
   local base
@@ -844,16 +855,22 @@ declare -a selected_bases=()
 
 mapfile -t active_candidates < <(
   for base in "${metadata_basenames[@]}"; do
+    if ! $force_reprocess && basename_has_unpack_error "$base"; then
+      continue
+    fi
     [[ -n ${active_reprocessing_basenames["$base"]+_} ]] && printf "%s\n" "$base"
   done | sort
 )
 
-if (( ${#active_candidates[@]} > 0 )); then
+if (( ${#active_candidates[@]} > 0 )) && [[ -z "$requested_basename" && -z "$start_arg" && -z "$end_arg" ]]; then
   selected_bases=("${active_candidates[@]:0:random_batch_size}")
   log_info "Prioritizing ${#selected_bases[@]} active operator reprocessing request(s): ${selected_bases[*]}"
 elif $random_mode; then
   mapfile -t random_candidates < <(
     for base in "${metadata_basenames[@]}"; do
+      if ! $force_reprocess && basename_has_unpack_error "$base"; then
+        continue
+      fi
       [[ -n ${brought_basenames["$base"]+_} ]] && continue
       if [[ -z ${qa_retry_basenames["$base"]+_} ]] && has_safe_local_handoff "$base"; then
         continue
@@ -879,6 +896,9 @@ elif $random_mode; then
 elif $newest_mode; then
   mapfile -t newest_candidates < <(
     for base in "${metadata_basenames[@]}"; do
+      if ! $force_reprocess && basename_has_unpack_error "$base"; then
+        continue
+      fi
       [[ -n ${brought_basenames["$base"]+_} ]] && continue
       if [[ -z ${qa_retry_basenames["$base"]+_} ]] && has_safe_local_handoff "$base"; then
         continue
@@ -912,6 +932,32 @@ elif $newest_mode; then
   else
     log_info "--newest flag active; newest unprocessed basename selected: ${selected_bases[0]}"
   fi
+elif [[ -n "$requested_basename" ]]; then
+  [[ "$requested_basename" =~ ^mi0${station}[0-9]{11}$ ]] || {
+    log_info "Invalid MINGO0${station} basename: ${requested_basename}" >&2
+    exit 1
+  }
+  if [[ ! " ${metadata_basenames[*]} " == *" ${requested_basename} "* ]]; then
+    log_warn "Requested basename ${requested_basename} is absent from remote metadata."
+    exit 1
+  fi
+  if ! $force_reprocess && basename_has_unpack_error "$requested_basename"; then
+    log_warn "Requested basename ${requested_basename} is retained in STEP_2/ERROR; use --force-reprocess to retry it explicitly."
+    exit 0
+  fi
+  if ! $force_reprocess; then
+    if [[ -n ${brought_basenames["$requested_basename"]+_} ]] || \
+       { [[ -z ${qa_retry_basenames["$requested_basename"]+_} ]] && has_safe_local_handoff "$requested_basename"; }; then
+      log_info "Requested basename ${requested_basename} is already local/downstream; skipping duplicate fetch."
+      exit 0
+    fi
+    if ! $reprocess_completed && [[ -z ${qa_retry_basenames["$requested_basename"]+_} ]] && [[ -n ${processed_basenames["$requested_basename"]+_} ]]; then
+      log_info "Requested basename ${requested_basename} is already completed; skipping duplicate fetch."
+      exit 0
+    fi
+  fi
+  selected_bases=("$requested_basename")
+  log_info "Exact basename request matched one file: ${selected_bases[0]}"
 else
   start="$start_arg"
   end="$end_arg"
@@ -933,12 +979,15 @@ else
   end_bound="mi0${station}${end_key}"
 
   for base in "${metadata_basenames[@]}"; do
-    [[ -n ${brought_basenames["$base"]+_} ]] && continue
-    if [[ -z ${qa_retry_basenames["$base"]+_} ]] && has_safe_local_handoff "$base"; then
-      continue
-    fi
-    if ! $reprocess_completed && [[ -z ${qa_retry_basenames["$base"]+_} ]] && [[ -n ${processed_basenames["$base"]+_} ]]; then
-      continue
+    if ! $force_reprocess; then
+      basename_has_unpack_error "$base" && continue
+      [[ -n ${brought_basenames["$base"]+_} ]] && continue
+      if [[ -z ${qa_retry_basenames["$base"]+_} ]] && has_safe_local_handoff "$base"; then
+        continue
+      fi
+      if ! $reprocess_completed && [[ -z ${qa_retry_basenames["$base"]+_} ]] && [[ -n ${processed_basenames["$base"]+_} ]]; then
+        continue
+      fi
     fi
     [[ "$base" < "$start_bound" ]] && continue
     [[ "$base" > "$end_bound" ]] && continue

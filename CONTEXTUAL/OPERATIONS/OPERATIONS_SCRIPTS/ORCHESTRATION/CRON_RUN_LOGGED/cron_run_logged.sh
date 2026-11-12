@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Purpose: Run a scheduled command, log its output, and record its exit status.
 
 # Resolve the checkout from this script's location when the caller did not provide it.
 if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
@@ -27,6 +28,7 @@ fi
 log_path="$1"
 shift 2
 
+started_epoch="$(date +%s)"
 started_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 command_text="$(printf '%q ' "$@")"
 marker_path="$(mktemp "${TMPDIR:-/tmp}/dataflow_cron_run_output.XXXXXX")"
@@ -42,7 +44,7 @@ trap 'rm -f "$marker_path"' EXIT
         printf '%s [CRON_RUN] command=%s\n' "$started_at" "$command_text" >>"$log_path"
         first_line=false
       fi
-      printf '%s\n' "$line" >>"$log_path"
+      printf '%s [CRON_OUTPUT] %s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$line" >>"$log_path"
     done
   }
 rc="${PIPESTATUS[0]}"
@@ -52,10 +54,17 @@ if [[ $rc -eq 1 && ! -s "$marker_path" && "${1:-}" == */flock ]]; then
   silent_expected_lock_contention=true
 fi
 
-if [[ $rc -ne 0 && "$silent_expected_lock_contention" != true ]]; then
+finished_epoch="$(date +%s)"
+elapsed_seconds=$((finished_epoch - started_epoch))
+if [[ "$silent_expected_lock_contention" != true && ( $rc -ne 0 || -s "$marker_path" ) ]]; then
   mkdir -p "$(dirname "$log_path")"
-  printf '%s [CRON_RUN] status=failed exit_code=%d command=%s\n' \
-    "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$rc" "$command_text" >>"$log_path"
+  if [[ ! -s "$marker_path" ]]; then
+    printf '%s [CRON_RUN] command=%s\n' "$started_at" "$command_text" >>"$log_path"
+  fi
+  run_status=ok
+  if [[ $rc -ne 0 ]]; then run_status=failed; fi
+  printf '%s [CRON_RUN] status=%s exit_code=%d elapsed_seconds=%d command=%s\n' \
+    "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$run_status" "$rc" "$elapsed_seconds" "$command_text" >>"$log_path"
 elif [[ ! -s "$marker_path" && -f "$log_path" && ! -s "$log_path" ]]; then
   rm -f "$log_path"
 fi

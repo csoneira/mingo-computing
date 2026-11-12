@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/PLOTTERS/EXECUTION/EFFICIENCY_PROXY_AUDIT/plot_efficiency_proxy_audit.py
-Purpose: Audit how configured plane efficiencies map into stagewise proxy observables without modifying the simulator.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-27
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/PLOTTERS/EXECUTION/EFFICIENCY_PROXY_AUDIT/plot_efficiency_proxy_audit.py [options]
-Inputs: Existing STEP 2 / STEP 3 / STEP 9 interstep chunk manifests and pickles.
-Outputs: CSV, JSON summary, and PDF diagnostics under this plotter directory (or user-selected output dir).
-Notes: Read-only diagnostic. Does not modify any simulation artifact.
-"""
+
+"""Audit how configured plane efficiencies map into stagewise proxy observables without modifying the simulator."""
 
 from __future__ import annotations
 

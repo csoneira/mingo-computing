@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fnmatch import fnmatch
 from pathlib import Path
+import sys
 import math
 import re
 from typing import Any
@@ -49,7 +50,11 @@ from .status_reports import (
 )
 
 COMPONENT_COLUMN_RE = re.compile(r"^(?P<source>.+)__([0-9]+)$")
-REPO_ROOT = Path(__file__).resolve().parents[5]
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[5]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
 
 
 def _source_column_from_component_name(column_name: str) -> str | None:
@@ -84,8 +89,15 @@ def _step_summary_files_dir(step_dir: Path, station_name: str) -> Path:
 def load_step_bundle(step_dir: Path, root_config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     """Load one step config plus its simple column/plot configs."""
     step_config = deep_merge_dicts(root_config, load_yaml_mapping(step_dir / "config.yaml", required=True))
-    category_config = load_yaml_mapping(step_dir / "columns.yaml")
-    plot_config = load_yaml_mapping(step_dir / "plots.yaml")
+    defaults_dir = step_dir.parent / "DEFAULTS"
+    columns_path = step_dir / "columns.yaml"
+    plots_path = step_dir / "plots.yaml"
+    category_config = load_yaml_mapping(
+        columns_path if columns_path.is_file() else defaults_dir / "columns.yaml"
+    )
+    plot_config = load_yaml_mapping(
+        plots_path if plots_path.is_file() else defaults_dir / "plots.yaml"
+    )
     return step_config, category_config, plot_config
 
 
@@ -1456,7 +1468,7 @@ def run_step(
     if not stations:
         raise ValueError(f"{step_dir} is missing non-empty 'stations'.")
 
-    repo_root = step_dir.parents[5]
+    repo_root = REPO_ROOT
 
     total_plots = 0
     total_references = 0

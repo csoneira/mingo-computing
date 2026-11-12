@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Purpose: Render a live tmux monitoring pane for the selected dataflow view.
+
 set -euo pipefail
 source "$(dirname -- "${BASH_SOURCE[0]}")/../CONTENTS/environment/dataflow.sh"
 mode="${1:?pane mode required}"

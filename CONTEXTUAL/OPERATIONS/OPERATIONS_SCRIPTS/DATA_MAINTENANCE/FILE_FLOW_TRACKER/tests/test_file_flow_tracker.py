@@ -1,3 +1,5 @@
+"""Test file-flow state discovery and timeline rendering."""
+
 from __future__ import annotations
 
 import csv

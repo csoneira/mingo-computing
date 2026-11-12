@@ -1,20 +1,14 @@
 # Documentation photo archive and missing-image inventory
 
-The recovered source collection from `/home/mingo/PHOTOS_FOR_DOCUMENTATION` is now stored under `assets/photos/PHOTOS_FOR_DOCUMENTATION/USED_IN_DOCUMENTATION/`. Original JPEGs and their WebP versions are retained there; byte-identical source assets already used by the Hardware page remain at their existing canonical paths as well.
+The recovered source collection from `/home/mingo/PHOTOS_FOR_DOCUMENTATION` is stored under `assets/photos/PHOTOS_FOR_DOCUMENTATION/USED_IN_DOCUMENTATION/`. Byte-identical copies were removed; pages use one canonical asset path.
 
-## Recovered documentation images
+## Recovered images kept as distinct originals
 
-![miniTRASGO telescope overview](../assets/photos/PHOTOS_FOR_DOCUMENTATION/USED_IN_DOCUMENTATION/hardware_telescope_overview.webp)
+![MiniTRASGO telescope overview, original JPEG](../assets/photos/PHOTOS_FOR_DOCUMENTATION/USED_IN_DOCUMENTATION/hardware_telescope_overview.jpg)
 
-![RPC cross-section](../assets/photos/PHOTOS_FOR_DOCUMENTATION/USED_IN_DOCUMENTATION/hardware_rpc_cross_section.png)
+![MiniTRASGO electronics box, original JPEG](../assets/photos/PHOTOS_FOR_DOCUMENTATION/USED_IN_DOCUMENTATION/hardware_electronics_box.JPG)
 
-![Documentation setup screenshot from 2026-10-28](<../assets/photos/PHOTOS_FOR_DOCUMENTATION/USED_IN_DOCUMENTATION/Screenshot from 2026-10-28 09-44-25.png>)
-
-![RPC readout strips](../assets/photos/PHOTOS_FOR_DOCUMENTATION/USED_IN_DOCUMENTATION/hardware_readout_strips.webp)
-
-![miniTRASGO electronics box](../assets/photos/PHOTOS_FOR_DOCUMENTATION/USED_IN_DOCUMENTATION/hardware_electronics_box.webp)
-
-![miniTRASGO coordinate frame](../assets/photos/PHOTOS_FOR_DOCUMENTATION/USED_IN_DOCUMENTATION/hardware_coordinate_frame.png)
+The telescope WebP, electronics-box WebP, readout-strip images, coordinate-frame diagram, RPC cross-section diagram, and electronics diagram matched canonical files elsewhere in `assets/`; the canonical copies are used in the [hardware documentation](hardware.md).
 
 ## Images still missing from the documentation
 

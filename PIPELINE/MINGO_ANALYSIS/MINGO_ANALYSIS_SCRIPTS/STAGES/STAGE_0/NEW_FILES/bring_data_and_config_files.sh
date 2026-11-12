@@ -1,4 +1,5 @@
 #!/bin/bash
+# Purpose: Fetch new HLD data and station configuration files for processing.
 
 # Resolve the checkout from this script's location when the caller did not provide it.
 if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
@@ -15,20 +16,6 @@ if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
   fi
 fi
 unset _repo_probe
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/NEW_FILES/bring_data_and_config_files.sh
-# Purpose: log_file="${LOG_FILE:-~/cron_logs/bring_and_analyze_events_${station}.log}".
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/NEW_FILES/bring_data_and_config_files.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
-
 # log_file="${LOG_FILE:-~/cron_logs/bring_and_analyze_events_${station}.log}"
 # mkdir -p "$(dirname "$log_file")"
 

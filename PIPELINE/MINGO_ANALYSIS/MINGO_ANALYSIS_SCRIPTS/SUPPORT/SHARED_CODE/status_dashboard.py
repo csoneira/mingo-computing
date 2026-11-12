@@ -1,16 +1,5 @@
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/SHARED_CODE/status_dashboard.py
-Purpose: Utilities for aggregating status CSV logs and serving them for dashboards.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/SHARED_CODE/status_dashboard.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Utilities for aggregating status CSV logs and serving them for dashboards."""
 
 from __future__ import annotations
 
@@ -25,7 +14,11 @@ from pathlib import Path
 from typing import Iterable, List, Dict, Optional
 from urllib.parse import urlparse, parse_qs
 
-REPO_ROOT = Path(__file__).resolve().parents[5]
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[5]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
 DEFAULT_OUTPUT = REPO_ROOT / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS" / "SUPPORT" / "SHARED_CODE" / "status_dashboard" / "status_timeseries.csv"
 
 

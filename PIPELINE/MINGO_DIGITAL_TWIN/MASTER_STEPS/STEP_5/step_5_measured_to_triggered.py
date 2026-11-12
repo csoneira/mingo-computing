@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/MASTER_STEPS/STEP_5/step_5_measured_to_triggered.py
-Purpose: Step 5: derive per-strip time/charge differences from measured hits.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/MASTER_STEPS/STEP_5/step_5_measured_to_triggered.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Step 5: derive per-strip time/charge differences from measured hits."""
 
 from __future__ import annotations
 
@@ -29,7 +18,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
+_TWIN_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import digital_twin_root, repository_root
+ROOT_DIR = digital_twin_root()
 sys.path.append(str(ROOT_DIR))
 sys.path.append(str(ROOT_DIR / "MASTER_STEPS"))
 

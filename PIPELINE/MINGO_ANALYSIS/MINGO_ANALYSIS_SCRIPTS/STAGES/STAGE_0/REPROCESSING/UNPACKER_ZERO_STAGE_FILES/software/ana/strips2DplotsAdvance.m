@@ -1,16 +1,4 @@
-% =============================================================================
-% DATAFLOW_v3 Script Header v1
-% Script: MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/software/ana/strips2DplotsAdvance.m
-% Purpose: strips2DplotsAdvance function implementation.
-% Owner: DATAFLOW_v3 contributors
-% Sign-off: csoneira <csoneira@ucm.es>
-% Last Updated: 2026-03-02
-% Runtime: octave/matlab
-% Usage: Run from MATLAB/Octave entrypoint with expected args/context.
-% Inputs: Variables, config files, environment, and/or upstream files.
-% Outputs: Variables, files, plots, or logs.
-% Notes: Keep behavior configuration-driven and reproducible.
-% =============================================================================
+% Purpose: Plot advanced two-dimensional strip occupancy and charge distributions.
 
 function [XY,XY_Qmean,XY_Qmedian,XY_ST,XY_Q] = strips2DplotsAdvance(X,Y,Q,binsX,binsY,STLevel)
 

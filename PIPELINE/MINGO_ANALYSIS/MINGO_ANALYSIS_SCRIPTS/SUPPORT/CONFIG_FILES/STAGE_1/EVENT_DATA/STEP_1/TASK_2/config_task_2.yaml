@@ -1,13 +1,13 @@
 last_file_test: true
-selection:
-  stations: [1]
-  date_ranges:
-    - start: 2026-10-16
-      end: 2026-11-05
-complete_reanalysis: true
+file_selection_mode: random
+process_only_qa_retry_files: false
+prioritize_other_than_qa_files: false
+reprocess_from_completed: true
+reprocess_from_unprocessed: false
 article_format: false
 # create_plots is a global true/false switch. Runtime aliases are selected in config_plots_task_2.yaml.
 create_plots: false
+adjacent_strip_charge_ratio_cut: 0.1
 keep_all_columns_output: false
 filter_parameter_config_csv: config_filter_parameters_task_2.csv
 calibration_subsample_config_yaml: config_calibration_subsample_task_2.yaml
@@ -61,7 +61,7 @@ slewing_per_channel_outside_domain: clip
 slewing_per_channel_curve_max_points_per_channel: 30000
 slewing_relative_tsum_vs_qsum_qsum_clip_left: 0
 slewing_relative_tsum_vs_qsum_qsum_clip_right: 50
-joined_analysis_files: 15
+joined_analysis_files: 3
 joined_analysis_time_tolerance_hours: 24
 time_window_filtering: false
 # All hard filters defining and evolving calibration_df live only in:

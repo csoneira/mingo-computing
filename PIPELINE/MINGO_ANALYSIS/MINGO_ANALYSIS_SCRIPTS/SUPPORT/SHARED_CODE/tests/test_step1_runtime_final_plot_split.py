@@ -1,3 +1,5 @@
+"""Test step1 runtime final plot split behavior."""
+
 from __future__ import annotations
 
 import ast

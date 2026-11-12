@@ -1,16 +1,4 @@
-% =============================================================================
-% DATAFLOW_v3 Script Header v1
-% Script: MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/software/dc/sendData2DB_0.m
-% Purpose: sendData2DB_0 function implementation.
-% Owner: DATAFLOW_v3 contributors
-% Sign-off: csoneira <csoneira@ucm.es>
-% Last Updated: 2026-03-02
-% Runtime: octave/matlab
-% Usage: Run from MATLAB/Octave entrypoint with expected args/context.
-% Inputs: Variables, config files, environment, and/or upstream files.
-% Outputs: Variables, files, plots, or logs.
-% Notes: Keep behavior configuration-driven and reproducible.
-% =============================================================================
+% Purpose: Send Data2 DB 0.
 
 function [outputVars] = sendData2DB_0(inputVars)
 
@@ -63,5 +51,3 @@ fclose(fid);
 
 outputVars = 0;
 return
-
-

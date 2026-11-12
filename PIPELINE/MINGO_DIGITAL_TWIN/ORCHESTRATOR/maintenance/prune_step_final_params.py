@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/prune_step_final_params.py
-Purpose: Prune step_final_simulation_params.csv using real file/metadata presence.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/prune_step_final_params.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Prune step_final_simulation_params.csv using real file/metadata presence."""
 
 from __future__ import annotations
 
@@ -21,12 +10,12 @@ import pathlib
 import sys
 from collections import OrderedDict
 
-ROOT = next(
-    (parent for parent in pathlib.Path(__file__).resolve().parents if (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file()),
-    None,
-)
-if ROOT is None:
-    raise RuntimeError(f"Could not locate repository root from {__file__}")
+_TWIN_BOOTSTRAP_ROOT = pathlib.Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import repository_root
+
+ROOT = repository_root()
 STEP_FINAL_CSV = (
     ROOT
     / "PIPELINE" / "MINGO_DIGITAL_TWIN"

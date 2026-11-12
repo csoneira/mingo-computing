@@ -12,7 +12,11 @@ import tempfile
 import urllib.request
 import yaml
 
-ROOT = Path(__file__).resolve().parents[3]
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[3]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+ROOT = get_repo_root()
 CONFIG = ROOT / 'PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES'
 
 

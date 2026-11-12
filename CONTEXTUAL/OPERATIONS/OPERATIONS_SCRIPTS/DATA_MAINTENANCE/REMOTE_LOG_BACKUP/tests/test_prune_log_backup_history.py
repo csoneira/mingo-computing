@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Test prune log backup history behavior."""
+
 from __future__ import annotations
 
 import importlib.util

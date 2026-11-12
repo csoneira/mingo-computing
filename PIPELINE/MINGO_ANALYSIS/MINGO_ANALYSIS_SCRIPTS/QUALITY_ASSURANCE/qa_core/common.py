@@ -1,4 +1,4 @@
-"""Shared helpers for the simplified QUALITY_ASSURANCE package."""
+"""Provide shared data-loading and feature calculations for the rate-to-flux study."""
 
 from __future__ import annotations
 

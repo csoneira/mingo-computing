@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -160,9 +161,13 @@ class RecoverySafetyTests(unittest.TestCase):
         if (recovery.STATE / 'production-enabled').exists():
             self.skipTest('production gate is live; test only applies while paused')
         script = recovery.ROOT / 'CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/DATA_MAINTENANCE/FILE_FLOW_TRACKER/file_flow_realtime.py'
+        # Production cron uses the repository virtualenv. CI intentionally does
+        # not create that host runtime, so use the interpreter running this
+        # test suite when the virtualenv is absent.
+        interpreter = recovery.PYTHON if recovery.PYTHON.is_file() else Path(sys.executable)
         result = subprocess.run(
             ['bash', str(recovery.ROOT / 'CONTEXTUAL/CONFIG/SETUP/run-job.sh'), '--',
-             str(recovery.PYTHON), str(script), '--help'],
+             str(interpreter), str(script), '--help'],
             text=True, capture_output=True,
         )
         self.assertEqual(result.returncode, 0, result.stderr)

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Purpose: Install the managed hourly self-trigger cron entry while preserving unrelated entries.
+
 set -euo pipefail
 
 # Install only the managed hourly self-trigger entry, preserving every other

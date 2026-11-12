@@ -1,3 +1,5 @@
+"""Estimate particle energy from time-of-flight measurements in the AR18 setup."""
+
 # %%
 # ----------------------------------------------------------------
 # MUON ENERGY RECONSTRUCTION SIMULATION

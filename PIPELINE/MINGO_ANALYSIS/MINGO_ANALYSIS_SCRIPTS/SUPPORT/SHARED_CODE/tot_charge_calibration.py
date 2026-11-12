@@ -1,3 +1,5 @@
+"""Convert time-over-threshold measurements to calibrated charge."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -5,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.interpolate import CubicSpline, PchipInterpolator
+from scipy.interpolate import CubicHermiteSpline, CubicSpline, PchipInterpolator
 
 
 def default_tot_charge_calibration_path(repo_root: str | Path) -> Path:
@@ -26,6 +28,7 @@ class TotChargeCalibration:
     widths_ns: np.ndarray
     charges_fc: np.ndarray
     _width_to_charge: CubicSpline
+    _near_zero_to_charge: CubicHermiteSpline
     _charge_to_width: PchipInterpolator
 
     @classmethod
@@ -42,9 +45,24 @@ class TotChargeCalibration:
             raise ValueError(f"Invalid TOT calibration table: {path}")
 
         width_to_charge = CubicSpline(widths_ns, charges_fc, bc_type="natural")
+        first_width = float(widths_ns[0])
+        first_charge = float(charges_fc[0])
+        # Smoothly connect the physical origin to the first LUT knot. The
+        # zero slope at the origin joins the negative-width clamp smoothly;
+        # the derivative at the LUT knot matches the measured-range spline.
+        near_zero_to_charge = CubicHermiteSpline(
+            [0.0, first_width],
+            [0.0, first_charge],
+            [0.0, float(width_to_charge(first_width, 1))],
+        )
 
-        widths_ext = np.concatenate(([0.0], widths_ns))
-        charges_ext = np.concatenate(([0.0], charges_fc))
+        # Sample the same smooth forward bridge for the inverse LUT. This keeps
+        # charge→width consistent with width→charge below the first measured
+        # point instead of retaining the former straight-line inverse segment.
+        near_zero_widths = np.linspace(0.0, first_width, 257)
+        near_zero_charges = near_zero_to_charge(near_zero_widths)
+        widths_ext = np.concatenate((near_zero_widths, widths_ns[1:]))
+        charges_ext = np.concatenate((near_zero_charges, charges_fc[1:]))
         order = np.argsort(charges_ext)
         charge_to_width = PchipInterpolator(
             charges_ext[order],
@@ -57,6 +75,7 @@ class TotChargeCalibration:
             widths_ns=widths_ns,
             charges_fc=charges_fc,
             _width_to_charge=width_to_charge,
+            _near_zero_to_charge=near_zero_to_charge,
             _charge_to_width=charge_to_width,
         )
 
@@ -64,14 +83,19 @@ class TotChargeCalibration:
         values = np.asarray(width_ns, dtype=float)
         # A pedestal-subtracted ToT width can be negative from fluctuations,
         # but negative pulse width has no physical charge interpretation.
-        # Keep missing values missing, map finite non-positive widths to zero,
-        # and interpolate only measured positive widths.
+        # Use a smooth Hermite segment from (0, 0) to the first LUT point,
+        # rather than extrapolating a finite charge to zero width. Its slope
+        # is zero at the origin and matches the LUT spline at the first knot.
         result = np.full_like(values, np.nan, dtype=float)
         finite = np.isfinite(values)
         result[finite] = 0.0
-        mask = finite & (values > 0)
-        if np.any(mask):
-            result[mask] = self._width_to_charge(values[mask])
+        first_width = float(self.widths_ns[0])
+        bridge = finite & (values > 0) & (values < first_width)
+        if np.any(bridge):
+            result[bridge] = self._near_zero_to_charge(values[bridge])
+        spline_region = finite & (values >= first_width)
+        if np.any(spline_region):
+            result[spline_region] = self._width_to_charge(values[spline_region])
         return result
 
     def charge_fc_to_width_ns(self, charge_fc: np.ndarray | float) -> np.ndarray:

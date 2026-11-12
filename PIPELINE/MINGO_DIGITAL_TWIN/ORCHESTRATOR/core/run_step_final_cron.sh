@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Purpose: Run standalone STEP_FINAL without starving a pending interstep reset.
 
 # Resolve the checkout from this script's location when the caller did not provide it.
 if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
@@ -15,20 +16,6 @@ if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
   fi
 fi
 unset _repo_probe
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/core/run_step_final_cron.sh
-# Purpose: Run standalone STEP_FINAL without starving a pending interstep reset.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-07-28
-# Runtime: bash
-# Usage: bash PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/core/run_step_final_cron.sh
-# Inputs: STEP_10 intersteps, STEP_FINAL configuration, and runtime reset state.
-# Outputs: STEP_FINAL products and logs from the invoked Python process.
-# Notes: A pending reset owns priority over standalone STEP_FINAL.
-# =============================================================================
-
 set -euo pipefail
 
 ROOT_DIR="${DATAFLOW_ROOT}"

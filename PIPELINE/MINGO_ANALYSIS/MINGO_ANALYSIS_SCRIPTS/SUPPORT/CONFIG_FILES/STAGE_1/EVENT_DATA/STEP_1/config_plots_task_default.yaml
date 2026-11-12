@@ -1,0 +1,3 @@
+# Shared runtime plot catalog for tasks without a task-specific catalog.
+-plot: []
+-not_plot: []

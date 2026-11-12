@@ -1,3 +1,5 @@
+"""Simulate muon and electron energy deposition in scintillator material."""
+
 #%%
 
 import numpy as np

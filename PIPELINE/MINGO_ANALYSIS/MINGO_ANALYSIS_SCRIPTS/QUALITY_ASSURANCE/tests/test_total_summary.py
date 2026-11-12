@@ -1,3 +1,5 @@
+"""Test aggregation of quality-assurance results into the summary."""
+
 from __future__ import annotations
 
 from pathlib import Path

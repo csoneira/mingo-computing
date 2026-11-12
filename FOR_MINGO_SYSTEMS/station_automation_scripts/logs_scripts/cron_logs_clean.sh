@@ -1,17 +1,5 @@
 #!/bin/bash
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: FOR_MINGO_SYSTEMS/station_automation_scripts/logs_scripts/cron_logs_clean.sh
-# Purpose: Cron logs clean.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash FOR_MINGO_SYSTEMS/station_automation_scripts/logs_scripts/cron_logs_clean.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
+# Purpose: Clean station cron logs according to the configured retention policy.
 
 cd /home/rpcuser/logs/
 

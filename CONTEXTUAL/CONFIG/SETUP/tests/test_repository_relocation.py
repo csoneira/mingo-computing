@@ -1,3 +1,5 @@
+"""Test repository relocation behavior."""
+
 from __future__ import annotations
 
 import re

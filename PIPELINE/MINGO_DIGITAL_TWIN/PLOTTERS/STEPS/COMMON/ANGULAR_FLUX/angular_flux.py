@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/PLOTTERS/STEPS/COMMON/ANGULAR_FLUX/angular_flux.py
-Purpose: Compare angular flux (Theta/Phi) across STEP 1, 2, 9 and 10 for the same sim-run.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/PLOTTERS/STEPS/COMMON/ANGULAR_FLUX/angular_flux.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Compare angular flux (Theta/Phi) across STEP 1, 2, 9 and 10 for the same sim-run."""
 
 from __future__ import annotations
 

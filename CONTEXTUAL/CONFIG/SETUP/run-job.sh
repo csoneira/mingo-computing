@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Purpose: Gate scheduled commands while production setup is paused.
+
 set -euo pipefail
 source "$(dirname -- "${BASH_SOURCE[0]}")/../CONTENTS/environment/dataflow.sh"
 # Fail closed during setup and after a failed prerequisite check.

@@ -32,26 +32,6 @@ event_data_resource_limits:
   cpu_used_pct_max: 95
   resource_backoff_seconds: 20
 
-step_1_overrides:
-  # Non-empty values override lower-level STEP_1 task configs.
-  # Leave a value blank to defer to each TASK_*/config_task_*.yaml.
-  # Periodic plotting enables the explicitly listed aliases on schedule.
-  # Set the interval to null to disable periodic plotting; each task's
-  # create_plots boolean remains the global on/off switch.
-  # Blank defers completed-file reanalysis to each task's own config.
-  complete_reanalysis:
-  create_plots:
-  # Generate each task's configured QA plots at most once per interval (hours).
-  # Alias selections remain controlled by TASK_*/config_plots_task_*.yaml.
-  periodic_plotting_interval_hours: null
-  keep_all_columns_output: true
-  save_removed_channel_values: false
-  save_time_slewing_pair_residuals: false
-  joined_analysis_files: 3
-  joined_analysis_time_tolerance_hours: 24
-  # File choice: qa (QA first, then newest fallback), new (newest available), random (any available).
-  file_selection_mode: random
-
 metadata_outputs:
   activation: true
   calibration: true

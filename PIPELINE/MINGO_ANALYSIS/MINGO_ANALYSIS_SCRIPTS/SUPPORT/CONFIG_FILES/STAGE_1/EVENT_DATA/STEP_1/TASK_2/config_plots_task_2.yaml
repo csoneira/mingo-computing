@@ -1,12 +1,15 @@
 # Runtime plot allowlist. Unlisted aliases are disabled.
 -plot:
-  []
+  # Keep only these diagnostics active to reduce Task 2 memory pressure.
+  - tdif_calibration_input_4x4
+  - tdif_calibration_offset_diagnostic_4x4
+  - tdif_cdf_top_hat_diagnostic_4x4
+  - tdif_softplus_cdf_diagnostic_4x4
 -not_plot:
   - calibration_df_one_strip_charge_by_tt
   - grand_figure_q_pedestal_zoom
   - calibration_subsample_charge_front_back
   - calibrated_charge_overview
-  - calibrated_filtered
   - cumulative_distribution_q_ch_before_calibration
   - charge_pedestal_method_example
   - charge_pedestal_gamma_cdf_comparison
@@ -36,7 +39,6 @@
   - grand_figure_q_pedestal_st
   - grand_figure_q_pedestal_zoom_st
   - grand_figure_q_pedestal_less_zoom_st
-  - grand_figure_t_dif_cal
   - grand_figure_t_dif_cal_st
   - uncalibrated
   - uncalibrated_per_plane_combination
@@ -46,7 +48,6 @@
   - uncalibrated_filtered
   - calibrated_filtered_before_fb_corr
   - calibration_subsample_uncalibrated_removed_zeroes
-  - calibration_subsample_calibrated_removed_zeroes
   - calibrated_filtered_removed_zeroes
   - calibrated_filtered_removed_zeroes_per_plane_combination
   - calibrated_filtered_removed_zeroes_st
@@ -81,4 +82,10 @@
   - rejected_histograms_tt_task1_clean
   - rejected_histograms_q_sum_zero
   - rejected_histograms_tt_task2_cal
-  - calibration_charge_gates
+  - adjacent_strip_charge_ratio
+  - calibration_df_one_strip_charge_all_tt
+  - charge_pedestal_crosstalk_center_example
+  - charge_pedestal_crosstalk_minima_shapes_4x8
+  - charge_pedestal_gamma_shared_plane_shapes_4x8
+  - charge_pedestal_minimum_strip_3_4_topology_comparison_4x8
+  - plane_total_charge_vs_adjacent_asymmetry

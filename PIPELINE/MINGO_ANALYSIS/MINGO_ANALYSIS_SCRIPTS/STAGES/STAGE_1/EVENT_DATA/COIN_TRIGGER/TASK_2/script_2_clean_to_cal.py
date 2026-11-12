@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_2/script_2_clean_to_cal.py
-Purpose: !/usr/bin/env python3.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_2/script_2_clean_to_cal.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Run Task 2, calibrating cleaned event data."""
 
 #%%
 
@@ -45,6 +34,7 @@ import ast
 import builtins
 from collections import defaultdict
 from datetime import datetime
+import fcntl
 import math
 import os
 from pathlib import Path
@@ -56,6 +46,43 @@ import time
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Iterable, Optional
+
+# Resolve the repository before importing the large scientific stack, then
+# serialize coincidence Task-2 workers across stations. Each Task-2 run can
+# hold a multi-file joined dataframe in memory; parallel stations were causing
+# the OS to kill workers with exit 137. The lock is released automatically
+# when this process exits, including on exceptions or SIGKILL.
+CURRENT_PATH = Path(__file__).resolve()
+_SCRIPTS_ROOT = next(parent for parent in CURRENT_PATH.parents if parent.name == "MINGO_ANALYSIS_SCRIPTS")
+_REPO_IMPORT_ROOT = _SCRIPTS_ROOT.parents[2]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+
+REPO_ROOT = get_repo_root()
+_task2_serial_lock_path = (
+    REPO_ROOT
+    / "CONTEXTUAL"
+    / "OPERATIONS"
+    / "OPERATIONS_RUNTIME"
+    / "LOCKS"
+    / "STEP1"
+    / "coincidence_task2_global.lock"
+)
+_task2_serial_lock_path.parent.mkdir(parents=True, exist_ok=True)
+_task2_serial_lock_handle = _task2_serial_lock_path.open("a+")
+try:
+    fcntl.flock(_task2_serial_lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+except BlockingIOError:
+    builtins.print(
+        "[TASK2_SERIAL_LOCK] Another coincidence Task-2 worker is active; waiting before loading data.",
+        flush=True,
+    )
+    fcntl.flock(_task2_serial_lock_handle.fileno(), fcntl.LOCK_EX)
+builtins.print(
+    f"[TASK2_SERIAL_LOCK] Acquired for station worker; lock={_task2_serial_lock_path}",
+    flush=True,
+)
 
 # Scientific Computing
 import numpy as np
@@ -84,18 +111,9 @@ import seaborn as sns
 
 # Image Processing
 
-# Resolve repo root for local imports
-CURRENT_PATH = Path(__file__).resolve()
-REPO_ROOT = None
-for parent in CURRENT_PATH.parents:
-    if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parents[2]
-        break
-if REPO_ROOT is None:
-    REPO_ROOT = CURRENT_PATH.parents[-1]
+# Resolve repository imports after acquiring the serialization lock.
 if str(REPO_ROOT) not in sys.path:
-    sys.path.append(str(REPO_ROOT))
-
+    sys.path.insert(0, str(REPO_ROOT))
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.debug_plots import plot_debug_histograms
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import set_station, start_timer
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_selection import (
@@ -111,7 +129,6 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.input_fi
     select_input_file_configuration,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import (
-    get_repo_root,
     resolve_home_path_from_config,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.plot_utils import ensure_plot_state
@@ -143,6 +160,9 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_ac
     store_activation_matrix_metadata,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_shared import (
+    resolve_reprocessing_options,
+    filter_unprocessed_with_existing_outputs,
+    atomic_write_parquet,
     add_normalized_count_metadata,
     add_topology_task1_channel,
     add_topology_task2_strip,
@@ -213,6 +233,8 @@ TASK2_PLOT_ALIASES: tuple[str, ...] = (
     "charge_pedestal_single_strip_topology_comparison_4x8",
     "charge_pedestal_single_strip_topology_comparison_fraction_4x8",
     "charge_pedestal_minimum_strip_3_4_topology_comparison_4x8",
+    "adjacent_strip_charge_ratio",
+    "plane_total_charge_vs_adjacent_asymmetry",
     "new_calibration",
     "scatter_new_calibration",
     "new_calibration_calibrated_charge",
@@ -228,6 +250,10 @@ TASK2_PLOT_ALIASES: tuple[str, ...] = (
     "grand_figure_q_pedestal_zoom_st",
     "grand_figure_q_pedestal_less_zoom_st",
     "grand_figure_t_dif_cal",
+    "tdif_calibration_input_4x4",
+    "tdif_calibration_offset_diagnostic_4x4",
+    "tdif_cdf_top_hat_diagnostic_4x4",
+    "tdif_softplus_cdf_diagnostic_4x4",
     "grand_figure_t_dif_cal_st",
     "uncalibrated",
     "uncalibrated_per_plane_combination",
@@ -242,6 +268,10 @@ TASK2_PLOT_ALIASES: tuple[str, ...] = (
     "uncalibrated_filtered",
     "calibrated_filtered_before_fb_corr",
     "calibrated_filtered",
+    "task2_filter_input_output",
+    "strip_combination_filter_cut_limits",
+    "calibration_river_filter_limits",
+    "main_subsample_filter_stages",
     "calibration_subsample_uncalibrated_removed_zeroes",
     "calibration_subsample_calibrated_removed_zeroes",
     "calibrated_filtered_removed_zeroes",
@@ -524,7 +554,7 @@ def should_drop_calibration_metadata_field(column_name: str) -> bool:
       - filename_base
       - execution_timestamp
       - param_hash
-      - P*_s*_{Q_B,Q_F,Q_crosstalk_*,Q_derivative_*,Q_gamma_*,Q_offset_*,Q_width_*,Q_FB_coeffs(__N),Q_TDIF_coeffs(__N),Q_sum,T_sum,T_dif,T_slew_*}
+      - P*_s*_{Q_B,Q_F,Q_crosstalk_*,Q_derivative_*,Q_gamma_*,Q_offset_*,Q_width_*,Q_FB_coeffs(__N),Q_TDIF_coeffs(__N),Q_sum,T_sum,T_dif,T_dif_FWHM_*,T_dif_softplus_*,T_slew_*}
     """
     if column_name in ("filename_base", "execution_timestamp", "param_hash"):
         return False
@@ -667,7 +697,7 @@ def _debug_plot_filter_group(
 ) -> None:
     """Emit debug histograms for a filter group with threshold lines."""
     global debug_fig_idx
-    if not create_debug_plots:
+    if not create_debug_plots and not task2_plot_requested("calibration_river_filter_limits"):
         return
 
     cols = [col for col in columns if col in df.columns]
@@ -1138,14 +1168,22 @@ def apply_task2_final_calibrated_strip_gate(
     df: pd.DataFrame,
     gate_config: dict[str, object],
 ) -> dict[str, int]:
-    """Zero only the four final calibrated values when one fails its strip limit."""
+    """Create Task-2 accepted copies while preserving the calibrated inputs."""
     summary = {
         "strip_blocks_tested": 0,
         "strip_blocks_zeroed": 0,
         "rows_affected": 0,
         "values_zeroed": 0,
     }
-    if not _coerce_config_bool(gate_config.get("enabled"), default=True):
+    enabled = _coerce_config_bool(gate_config.get("enabled"), default=True)
+    if not enabled:
+        for plane in range(1, 5):
+            for strip in range(1, 5):
+                for variable in ("qsum", "qdif", "tsum", "tdif"):
+                    source = f"p{plane}_s{strip}_{variable}_cal"
+                    if source in df.columns:
+                        df.loc[:, f"p{plane}_s{strip}_{variable}_task2"] = df[source]
+                df.loc[:, f"filter_task2_calibrated_strip_P{plane}_s{strip}_pass"] = True
         return summary
 
     variables = ("qsum", "qdif", "tsum", "tdif")
@@ -1196,9 +1234,15 @@ def apply_task2_final_calibrated_strip_gate(
 
             summary["strip_blocks_tested"] += int(np.count_nonzero(~all_zero))
             failed_count = int(np.count_nonzero(failed))
+            strip_pass = ~failed
+            for variable_index, variable in enumerate(variables):
+                source_column = columns[variable_index]
+                output_column = f"p{plane}_s{strip}_{variable}_task2"
+                source_values = pd.to_numeric(df[source_column], errors="coerce")
+                df.loc[:, output_column] = source_values.where(strip_pass, 0)
+            df.loc[:, f"filter_task2_calibrated_strip_P{plane}_s{strip}_pass"] = strip_pass
             if failed_count:
                 nonzero_before = np.count_nonzero(values[failed] != 0)
-                df.loc[failed, columns] = 0
                 summary["strip_blocks_zeroed"] += failed_count
                 summary["values_zeroed"] += int(nonzero_before)
                 affected_rows |= failed
@@ -3357,50 +3401,31 @@ def _zpos_from_conf(row):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-def calibrate_strip_T_diff(T_F, T_B, self_trigger_mode = False):
-    _ = self_trigger_mode
-
+def _calibrate_strip_tdiff_details(T_F, T_B):
+    """Return the existing Tdif offset and the histogram details that define it."""
     t_front = np.asarray(T_F, dtype=float)
     t_back = np.asarray(T_B, dtype=float)
 
-    # The calibration sample is defined upstream. Do not trim it again here
-    # with extra time windows, quantiles, or T_dif pre-cal thresholds.
     valid_mask = np.isfinite(t_front) & np.isfinite(t_back) & (t_front != 0) & (t_back != 0)
     t_front = t_front[valid_mask]
     t_back = t_back[valid_mask]
-
     if t_front.size == 0 or t_back.size == 0:
-        return np.nan
+        return np.nan, {"values": np.array([], dtype=float), "status": "empty"}
 
-    # T_diff = ( T_F - T_B ) / 2
-    T_diff = (t_back - t_front) / 2
+    values = (t_back - t_front) / 2.0
+    if values.size == 0:
+        return np.nan, {"values": values, "status": "empty"}
 
-    if T_diff.size == 0:
-        return np.nan
+    robust_center = float(np.median(values))
+    counts, bin_edges = np.histogram(values, bins="auto")
+    max_counts = int(np.max(counts))
+    threshold = max(calibrate_strip_T_dif_T_rel_th * max_counts,
+                    calibrate_strip_T_dif_T_abs_th)
+    non_empty_bins = counts >= threshold
 
-    T_rel_th = calibrate_strip_T_dif_T_rel_th
-    abs_th = calibrate_strip_T_dif_T_abs_th
-
-    robust_center = float(np.median(T_diff))
-
-    # Calculate histogram
-    counts, bin_edges = np.histogram(T_diff, bins='auto')
-
-    # Calculate the nunber of counts of the bin that has the most counts
-    max_counts = np.max(counts)
-
-    # Find bins with at least one count
-    th = T_rel_th * max_counts
-    if th < abs_th:
-        th = abs_th
-    non_empty_bins = counts >= th
-
-    # Find the longest contiguous subset of non-empty bins
-    max_length = 0
-    current_length = 0
-    start_index = 0
+    max_length = current_length = 0
+    start_index = end_index = 0
     temp_start = 0
-
     for i, is_non_empty in enumerate(non_empty_bins):
         if is_non_empty:
             if current_length == 0:
@@ -3413,22 +3438,422 @@ def calibrate_strip_T_diff(T_F, T_B, self_trigger_mode = False):
         else:
             current_length = 0
 
-    if max_length == 0:
-        return robust_center
+    plateau = None
+    if max_length >= 2 and start_index != 0 and end_index != len(non_empty_bins) - 1:
+        plateau = (float(bin_edges[start_index]), float(bin_edges[end_index + 1]))
+        offset = (plateau[0] + plateau[1]) / 2.0
+        if not np.isfinite(offset):
+            offset = robust_center
+            status = "median_fallback_nonfinite"
+        else:
+            status = "plateau_midpoint"
+    else:
+        offset = robust_center
+        status = "median_fallback_unstable_plateau"
 
-    # Reject edge-only/single-bin plateaus: they are unstable calibration anchors.
-    if max_length < 2 or start_index == 0 or end_index == (len(non_empty_bins) - 1):
-        return robust_center
+    return float(offset), {
+        "values": values,
+        "counts": counts,
+        "bin_edges": bin_edges,
+        "threshold": float(threshold),
+        "plateau": plateau,
+        "offset": float(offset),
+        "median": robust_center,
+        "status": status,
+    }
 
-    plateau_left = bin_edges[start_index]
-    plateau_right = bin_edges[end_index + 1]
 
-    # Calculate the offset using the mean of the filtered values
-    offset = ( plateau_left + plateau_right ) / 2
-    if not np.isfinite(offset):
-        return robust_center
-
+def calibrate_strip_T_diff(T_F, T_B, self_trigger_mode = False):
+    _ = self_trigger_mode
+    # Keep the historical selection and estimator unchanged; share its exact
+    # histogram calculation with the diagnostic plotter.
+    offset, _details = _calibrate_strip_tdiff_details(T_F, T_B)
     return offset
+
+
+def _fit_tdif_top_hat_cdf(values):
+    """Fit a piecewise-linear top-hat CDF to unbinned observations."""
+    sample = np.asarray(values, dtype=float)
+    sample = np.sort(sample[np.isfinite(sample)])
+    empirical_cdf = (np.arange(sample.size, dtype=float) + 0.5) / sample.size
+    if sample.size < 5:
+        return {
+            "status": "insufficient_sample", "values": sample,
+            "empirical_cdf": empirical_cdf, "n": int(sample.size),
+        }
+
+    x_min, x_max = float(sample[0]), float(sample[-1])
+    value_range = x_max - x_min
+    if not np.isfinite(value_range) or value_range <= np.finfo(float).eps:
+        return {
+            "status": "degenerate_sample", "values": sample,
+            "empirical_cdf": empirical_cdf, "n": int(sample.size),
+        }
+
+    # Midpoint empirical ranks use every observation without choosing bins.
+
+    def interval(parameters):
+        # This parameterization guarantees x_min <= a < b <= x_max.
+        a = x_min + float(parameters[0]) * value_range
+        b = a + float(parameters[1]) * (x_max - a)
+        return a, b
+
+    def residual(parameters):
+        a, b = interval(parameters)
+        width = max(b - a, np.finfo(float).eps * value_range)
+        return np.clip((sample - a) / width, 0.0, 1.0) - empirical_cdf
+
+    q05, q95 = np.quantile(sample, [0.05, 0.95])
+    initial_a = float(np.clip((q05 - x_min) / value_range, 1e-4, 0.999))
+    remaining = max(x_max - (x_min + initial_a * value_range), np.finfo(float).eps)
+    initial_span = float(np.clip((q95 - q05) / remaining, 1e-4, 0.999))
+    from scipy.optimize import least_squares
+
+    fit = least_squares(
+        residual,
+        x0=np.array([initial_a, initial_span]),
+        bounds=(np.zeros(2), np.ones(2)),
+        max_nfev=500,
+    )
+    a, b = interval(fit.x)
+    fitted_cdf = np.clip((sample - a) / max(b - a, np.finfo(float).eps), 0.0, 1.0)
+    residuals = fitted_cdf - empirical_cdf
+    return {
+        "status": "fit_succeeded" if fit.success else "fit_failed",
+        "values": sample,
+        "empirical_cdf": empirical_cdf,
+        "fitted_cdf": fitted_cdf,
+        "a": float(a),
+        "b": float(b),
+        "center": float((a + b) / 2.0),
+        "width": float(b - a),
+        "rmse": float(np.sqrt(np.mean(residuals**2))),
+        "max_abs_residual": float(np.max(np.abs(residuals))),
+        "n": int(sample.size),
+    }
+
+
+def _fit_tdif_softplus_cdf(values):
+    """Fit an unbinned softplus top-hat CDF; diagnostic only."""
+    from scipy.optimize import least_squares
+
+    sample = np.sort(np.asarray(values, dtype=float))
+    sample = sample[np.isfinite(sample)]
+    n = int(sample.size)
+    result = {"status": "insufficient_sample", "values": sample, "n": n}
+    if n < 30:
+        return result
+    x_min, x_max = float(sample[0]), float(sample[-1])
+    span = x_max - x_min
+    if not np.isfinite(span) or span <= np.finfo(float).eps:
+        result["status"] = "degenerate_sample"
+        return result
+
+    # Evenly spaced empirical ranks give the fit the full distribution shape
+    # without allowing dense regions to dominate solely through point count.
+    indices = np.unique(np.linspace(0, n - 1, min(n, 12000), dtype=np.int64))
+    fit_x = sample[indices]
+    empirical = (indices + 0.5) / n
+    q10, q50, q90 = np.quantile(sample, [0.10, 0.50, 0.90])
+    width0 = max(float(q90 - q10), span * 0.02)
+    center0 = float((q10 + q90) / 2)
+    lower = np.array([x_min - span, math.log(span * 1e-4), math.log(1e-4 / span)])
+    upper = np.array([x_max + span, math.log(span * 10), math.log(1e4 / span)])
+    initial = np.array([
+        np.clip(center0, lower[0] + 1e-9 * span, upper[0] - 1e-9 * span),
+        np.clip(math.log(width0), lower[1] + 1e-8, upper[1] - 1e-8),
+        np.clip(math.log(max(4 / width0, 1 / span)), lower[2] + 1e-8, upper[2] - 1e-8),
+    ])
+
+    def decode(parameters):
+        center = float(parameters[0])
+        width = float(np.exp(parameters[1]))
+        sharpness = float(np.exp(parameters[2]))
+        return center - width / 2, center + width / 2, sharpness
+
+    def model_cdf(x, a, b, sharpness):
+        numerator = np.logaddexp(0.0, sharpness * (x - a)) - np.logaddexp(
+            0.0, sharpness * (x - b)
+        )
+        return np.clip(numerator / (sharpness * (b - a)), 0.0, 1.0)
+
+    def residual(parameters):
+        return model_cdf(fit_x, *decode(parameters)) - empirical
+
+    try:
+        fit = least_squares(
+            residual, initial, bounds=(lower, upper), method="trf",
+            max_nfev=3000, x_scale="jac",
+        )
+    except Exception as exc:
+        result.update(status="optimizer_error", optimizer_message=str(exc))
+        return result
+
+    a, b, sharpness = decode(fit.x)
+    empirical_full = (np.arange(n, dtype=float) + 1.0) / n
+    errors = model_cdf(sample, a, b, sharpness) - empirical_full
+    try:
+        singular = np.linalg.svd(fit.jac, compute_uv=False)
+        condition = float(singular[0] / singular[-1]) if singular[-1] > 0 else float("inf")
+        covariance = np.linalg.pinv(fit.jac.T @ fit.jac)
+        residual_variance = float(np.sum(fit.fun**2) / max(fit.fun.size - 3, 1))
+        log_k_se = float(np.sqrt(max(covariance[2, 2] * residual_variance, 0.0)))
+    except Exception:
+        condition, log_k_se = float("inf"), float("nan")
+    status = "fit_succeeded" if fit.success else "optimizer_failed"
+    if not np.isfinite(condition) or condition > 1e8:
+        status += ";poorly_conditioned"
+    if not np.isfinite(log_k_se) or log_k_se > 1.0:
+        status += ";k_weakly_constrained"
+    result.update(
+        status=status,
+        optimizer_success=bool(fit.success),
+        optimizer_message=str(fit.message),
+        a_ns=float(a),
+        b_ns=float(b),
+        offset_ns=float((a + b) / 2.0),
+        width_ns=float(b - a),
+        k_per_ns=float(sharpness),
+        ks_statistic=float(np.max(np.abs(errors))),
+        cdf_rmse=float(np.sqrt(np.mean(errors**2))),
+        jacobian_condition=condition,
+        log_k_se_approx=log_k_se,
+    )
+    return result
+
+
+def _save_tdif_softplus_cdf_diagnostic(results, *, plane_combinations):
+    """Save independent per-strip softplus CDF fit diagnostics as a PNG."""
+    global index_of_cal_plot
+    alias = "tdif_softplus_cdf_diagnostic_4x4"
+    if not task2_plot_requested(alias, essential=True):
+        return
+    fig, axes = plt.subplots(4, 4, figsize=(20, 14), sharey=True)
+    for plane in range(1, 5):
+        for strip in range(1, 5):
+            ax = axes[plane - 1, strip - 1]
+            result = results.get((plane, strip), {})
+            sample = np.asarray(result.get("values", []), dtype=float)
+            sample = np.sort(sample[np.isfinite(sample)])
+            status = str(result.get("status", "fit unavailable"))
+            if sample.size:
+                ax.step(sample, (np.arange(sample.size) + 1) / sample.size,
+                        where="post", color="steelblue", lw=0.9, label="Empirical CDF")
+            if result.get("optimizer_success"):
+                a, b = float(result["a_ns"]), float(result["b_ns"])
+                k, center = float(result["k_per_ns"]), float(result["offset_ns"])
+                xx = np.linspace(float(sample[0]), float(sample[-1]), 600)
+                numerator = np.logaddexp(0.0, k * (xx - a)) - np.logaddexp(0.0, k * (xx - b))
+                fitted = np.clip(numerator / (k * (b - a)), 0.0, 1.0)
+                ax.plot(xx, fitted, color="darkorange", lw=1.6, label="Softplus CDF fit")
+                ax.axvline(a, color="green", ls="--", lw=0.9, label=f"a={a:.3g}")
+                ax.axvline(b, color="purple", ls="--", lw=0.9, label=f"b={b:.3g}")
+                ax.axvline(center, color="crimson", lw=1.1, label=f"midpoint={center:.3g} ns")
+                ax.set_title(
+                    f"P{plane} s{strip}: n={sample.size}, KS={result['ks_statistic']:.3g}\n"
+                    f"offset={center:.4g} ns; k={k:.4g} ns⁻¹"
+                )
+            else:
+                ax.set_title(f"P{plane} s{strip}: {status}, n={sample.size}")
+            ax.set_xlabel("Raw Tdif [ns]")
+            ax.set_ylabel("Empirical CDF")
+            ax.set_ylim(0, 1)
+            if ax.has_data():
+                ax.legend(fontsize=5.5, loc="best")
+            ax.grid(alpha=0.2)
+    combinations = ", ".join(str(value) for value in plane_combinations)
+    fig.suptitle(
+        "Exploratory per-strip softplus top-hat CDF fit — real Task-2 calibration sample\n"
+        f"Plane combinations: {combinations}; diagnostic midpoint=(a+b)/2; production offsets unchanged",
+        fontsize=13,
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    filename = f"{index_of_cal_plot}_{alias}.png"
+    index_of_cal_plot += 1
+    save_path = os.path.join(base_directories["figure_directory"], filename)
+    save_plot_figure(save_path, fig=fig, alias=alias, format="png", dpi=150)
+    plt.close(fig)
+
+
+def _save_tdif_cdf_top_hat_diagnostic(results, *, plane_combinations):
+    """Plot empirical/fitted CDFs and compare experimental and current offsets."""
+    global index_of_cal_plot
+    alias = "tdif_cdf_top_hat_diagnostic_4x4"
+    if not task2_plot_requested(alias, essential=True):
+        return
+
+    fig, axes = plt.subplots(4, 4, figsize=(20, 13), sharey=True)
+    for plane in range(1, 5):
+        for strip in range(1, 5):
+            ax = axes[plane - 1, strip - 1]
+            result = results.get((plane, strip), {})
+            fit = result.get("fit", {})
+            reference = np.asarray(result.get("reference_values", []), dtype=float)
+            reference = np.sort(reference[np.isfinite(reference)])
+            if reference.size:
+                ax.step(reference, np.arange(1, reference.size + 1) / reference.size,
+                        where="post", color="0.65", lw=0.8, label="current-sample CDF")
+
+            values = np.asarray(fit.get("values", []), dtype=float)
+            if values.size:
+                empirical = np.asarray(fit.get("empirical_cdf", []), dtype=float)
+                if empirical.size == values.size:
+                    ax.step(values, empirical, where="post", color="steelblue", lw=1.0,
+                            label="candidate empirical CDF")
+                if fit.get("status") == "fit_succeeded":
+                    ax.plot(values, fit["fitted_cdf"], color="darkorange", lw=1.5,
+                            label="fitted top-hat CDF")
+                    a, b, center = fit["a"], fit["b"], fit["center"]
+                    ax.axvline(a, color="darkorange", ls=":", lw=1.0, label=f"a={a:.3g}")
+                    ax.axvline(b, color="darkorange", ls=":", lw=1.0, label=f"b={b:.3g}")
+                    ax.axvline(center, color="green", lw=1.2,
+                               label=f"candidate center={center:.3g}")
+                    delta = center - float(result["current_offset"])
+                    ax.set_title(
+                        f"P{plane} s{strip}: N={fit['n']}  RMSE={fit['rmse']:.4f}\n"
+                        f"candidate − current={delta:+.4g} ns"
+                    )
+                else:
+                    ax.set_title(f"P{plane} s{strip}: {fit.get('status', 'fit unavailable')}")
+            else:
+                ax.set_title(f"P{plane} s{strip}: no valid samples")
+
+            current = result.get("current_offset")
+            if current is not None and np.isfinite(current):
+                ax.axvline(current, color="crimson", ls="--", lw=1.0,
+                           label=f"current offset={current:.3g}")
+            same_sample = result.get("same_sample_offset")
+            if same_sample is not None and np.isfinite(same_sample):
+                ax.axvline(same_sample, color="purple", ls="-.", lw=1.0,
+                           label=f"current estimator on candidate={same_sample:.3g}")
+            ax.set_xlabel("Raw Tdif [ns]")
+            ax.set_ylabel("Empirical CDF")
+            ax.set_ylim(0.0, 1.0)
+            if ax.has_data():
+                ax.legend(fontsize=5.5, loc="best")
+
+    combinations = ", ".join(str(value) for value in plane_combinations)
+    fig.suptitle(
+        "Exploratory unbinned Tdif CDF fit — piecewise top-hat model\n"
+        f"Candidate plane combinations: {combinations}; a and b are fitted edges, "
+        "F(x)=0 below a, linear from a to b, and 1 above b; "
+        "candidate offset=(a+b)/2. Production offsets are unchanged.",
+        fontsize=13,
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    filename = f"{index_of_cal_plot}_{alias}.png"
+    index_of_cal_plot += 1
+    save_path = os.path.join(base_directories["figure_directory"], filename)
+    save_plot_figure(save_path, fig=fig, alias=alias, format="png", dpi=150)
+    plt.close(fig)
+
+
+def _save_tdiff_calibration_diagnostics(samples, details, *, sample_label: str, only_alias: str | None = None) -> None:
+    """Plot the exact per-strip Tdif fit inputs and the offset estimator."""
+    global index_of_cal_plot
+    requested = (
+        task2_plot_requested("tdif_calibration_input_4x4", essential=True),
+        task2_plot_requested("tdif_calibration_offset_diagnostic_4x4", essential=True),
+    )
+    if not any(requested):
+        return
+
+    for make_input_plot, alias, suffix in (
+        (True, "tdif_calibration_input_4x4", "tdif_calibration_input_4x4"),
+        (False, "tdif_calibration_offset_diagnostic_4x4", "tdif_calibration_offset_diagnostic_4x4"),
+    ):
+        if only_alias is not None and alias != only_alias:
+            continue
+        if not task2_plot_requested(alias, essential=True):
+            continue
+        fig, axes = plt.subplots(4, 4, figsize=(20, 13), sharex=False, sharey=False)
+        for plane in range(1, 5):
+            for strip in range(1, 5):
+                ax = axes[plane - 1, strip - 1]
+                key = (plane, strip)
+                values = np.asarray(samples.get(key, np.array([], dtype=float)), dtype=float)
+                values = values[np.isfinite(values)]
+                info = details.get(key, {})
+                fit_rows = info.get("fit_mask_rows")
+                n_label = f"N={values.size}" if fit_rows is None else f"fit rows={fit_rows}, used={values.size}"
+                status_label = f"\n{info['status']}" if not make_input_plot and info.get("status") else ""
+                ax.set_title(f"P{plane} s{strip}: {n_label}{status_label}")
+                if values.size:
+                    if make_input_plot:
+                        ax.hist(values, bins="auto", color="steelblue", alpha=0.82)
+                        ax.set_ylabel("Counts")
+                    elif info.get("counts") is not None:
+                        counts = np.asarray(info["counts"])
+                        edges = np.asarray(info["bin_edges"])
+                        centers = (edges[:-1] + edges[1:]) / 2
+                        ax.stairs(counts, edges, color="black", linewidth=1.1, fill=True, alpha=0.25)
+                        ax.plot(centers, counts, color="steelblue", marker=".", linewidth=1)
+                        threshold = info.get("threshold")
+                        if threshold is not None:
+                            ax.axhline(threshold, color="darkorange", linestyle="--", label=f"occupancy threshold {threshold:.1f}")
+                        plateau = info.get("plateau")
+                        if plateau is not None:
+                            ax.axvspan(*plateau, color="orange", alpha=0.22, label="selected plateau")
+                        offset = info.get("offset")
+                        if offset is not None and np.isfinite(offset):
+                            ax.axvline(offset, color="crimson", linestyle="-", label=f"offset {offset:.3g} ns")
+                        if info.get("median") is not None:
+                            ax.axvline(info["median"], color="green", linestyle=":", label=f"median {info['median']:.3g} ns")
+                        ax.set_ylabel("Counts / estimator bin")
+                        ax.legend(fontsize=6, loc="best")
+                else:
+                    ax.text(0.5, 0.5, "No valid fit samples", ha="center", va="center", transform=ax.transAxes)
+                ax.set_xlabel("Raw Tdif [ns]" if make_input_plot else "Raw Tdif bin center [ns]")
+
+        title = ("Exact raw Tdif samples entering the offset estimator" if make_input_plot
+                 else "Tdif offset estimator: auto-bins, occupancy threshold, plateau and chosen offset")
+        fit_rule = (
+            f"Threshold=max({calibrate_strip_T_dif_T_rel_th:g} × peak-bin count, "
+            f"{calibrate_strip_T_dif_T_abs_th:g} counts); longest interior run of qualifying bins"
+        )
+        subtitle = (
+            "Configured Tdif fit mask applied per strip; zero/non-finite endpoint pairs are excluded by the estimator"
+            if make_input_plot else fit_rule
+        )
+        fig.suptitle(f"{title} — {sample_label}\n{subtitle}", fontsize=14)
+        fig.tight_layout(rect=(0, 0, 1, 0.94))
+        filename = f"{index_of_cal_plot}_{suffix}.png"
+        index_of_cal_plot += 1
+        save_path = os.path.join(base_directories["figure_directory"], filename)
+        save_plot_figure(save_path, fig=fig, alias=alias, format="png", dpi=150)
+        plt.close(fig)
+
+def measure_tdif_fwhm(values, bin_width_ns: float = 0.05) -> tuple[float, int, str]:
+    """Measure the central peak FWHM of calibrated Tdif values in nanoseconds."""
+    sample = np.asarray(values, dtype=float)
+    sample = sample[np.isfinite(sample)]
+    n = int(sample.size)
+    if n < 20:
+        return np.nan, n, "insufficient_sample"
+    lo, hi = np.quantile(sample, [0.005, 0.995])
+    if not np.isfinite(lo + hi) or hi <= lo:
+        return np.nan, n, "degenerate_distribution"
+    bin_count = max(20, int(np.ceil((hi - lo) / bin_width_ns)))
+    edges = lo + np.arange(bin_count + 1, dtype=float) * bin_width_ns
+    counts, edges = np.histogram(sample, bins=edges)
+    peak = int(np.argmax(counts))
+    half = counts[peak] / 2.0
+    left = right = peak
+    while left > 0 and counts[left - 1] >= half:
+        left -= 1
+    while right < len(counts) - 1 and counts[right + 1] >= half:
+        right += 1
+    if counts[peak] <= 0 or left == 0 or right == len(counts) - 1:
+        return np.nan, n, "peak_unbounded"
+    centers = (edges[:-1] + edges[1:]) / 2.0
+    left_x = centers[left]
+    if left > 0 and counts[left] != counts[left - 1]:
+        left_x = centers[left - 1] + (half - counts[left - 1]) * (centers[left] - centers[left - 1]) / (counts[left] - counts[left - 1])
+    right_x = centers[right]
+    if right < len(counts) - 1 and counts[right] != counts[right + 1]:
+        right_x = centers[right] + (counts[right] - half) * (centers[right + 1] - centers[right]) / (counts[right] - counts[right + 1])
+    return float(max(0.0, right_x - left_x)), n, "ok"
+
 
 def sanitize_tdiff_offsets_matrix(offset_matrix: np.ndarray, *, label: str) -> np.ndarray:
     """Replace non-finite T_dif offsets with zero and report affected strips."""
@@ -4009,6 +4434,217 @@ def _fit_logistic_cdf_to_crosstalk_sample(Q_values: np.ndarray) -> dict[str, obj
         }
     except (FloatingPointError, ValueError, RuntimeError, OverflowError) as exc:
         return {"status": f"fit_failed: {exc}", "sample_count": n}
+
+
+def _task2_crosstalk_topology_thresholds(
+    crosstalk_fits: dict[tuple[int, int, str], dict[str, object]],
+) -> tuple[dict[tuple[int, int], float], list[tuple[int, int]]]:
+    """Get each strip's calibrated right-hand x90 crosstalk edge."""
+    thresholds: dict[tuple[int, int], float] = {}
+    missing: list[tuple[int, int]] = []
+    for plane in range(1, 5):
+        for strip in range(1, 5):
+            side_widths = []
+            for side in ("F", "B"):
+                fit = crosstalk_fits.get((plane, strip, side), {}).get("three_strip", {})
+                width = fit.get("width_10_90")
+                try:
+                    width = float(width)
+                except (TypeError, ValueError):
+                    continue
+                if fit.get("status") == "fit_succeeded" and np.isfinite(width) and width > 0:
+                    side_widths.append(width)
+            if side_widths:
+                # x90 = center + width_10_90/2; the pedestal offset centers
+                # each side at zero, and qsum is the front/back mean.
+                thresholds[(plane, strip)] = float(np.mean(side_widths) / 2.0)
+            else:
+                thresholds[(plane, strip)] = 0.0
+                missing.append((plane, strip))
+    return thresholds, missing
+
+
+def _plot_adjacent_strip_charge_ratios(
+    df: pd.DataFrame,
+    *,
+    ratio_cut: float = 0.1,
+) -> mpl.figure.Figure:
+    """Plot smaller/larger charge-magnitude ratios for nonzero adjacent strips."""
+    fig, axes = plt.subplots(2, 2, figsize=(11, 8), sharex=True, sharey=True)
+    bins = np.linspace(0.0, 1.0, 121)
+    pair_colors = ("tab:blue", "tab:orange", "tab:green")
+
+    for plane, ax in enumerate(axes.flat, start=1):
+        plotted = False
+        for strip in range(1, 4):
+            columns = []
+            for candidate in (
+                f"p{plane}_s{strip}_qsum_cal",
+                f"p{plane}_s{strip}_qsum",
+                f"p{plane}_s{strip + 1}_qsum_cal",
+                f"p{plane}_s{strip + 1}_qsum",
+            ):
+                if candidate in df.columns:
+                    columns.append(candidate)
+            left_column = next(
+                (column for column in columns if column.startswith(f"p{plane}_s{strip}_")),
+                None,
+            )
+            right_column = next(
+                (column for column in columns if column.startswith(f"p{plane}_s{strip + 1}_")),
+                None,
+            )
+            if left_column is None or right_column is None:
+                continue
+
+            left = pd.to_numeric(df[left_column], errors="coerce").to_numpy(dtype=float)
+            right = pd.to_numeric(df[right_column], errors="coerce").to_numpy(dtype=float)
+            valid = np.isfinite(left) & np.isfinite(right) & (left != 0) & (right != 0)
+            denominator = np.maximum(np.abs(left[valid]), np.abs(right[valid]))
+            ratios = np.minimum(np.abs(left[valid]), np.abs(right[valid])) / denominator
+            ratios = ratios[np.isfinite(ratios)]
+            if ratios.size:
+                ax.hist(
+                    ratios,
+                    bins=bins,
+                    histtype="step",
+                    linewidth=1.2,
+                    color=pair_colors[strip - 1],
+                    label=f"S{strip}–S{strip + 1} (n={ratios.size:,})",
+                )
+                plotted = True
+
+        ax.set_title(f"Plane {plane}")
+        ax.grid(True, alpha=0.2)
+        ax.set_yscale("log")
+        ax.axvspan(0.0, ratio_cut, color="gray", alpha=0.10, zorder=0)
+        ax.axvline(ratio_cut, color="black", linestyle="--", linewidth=0.9)
+        if plotted:
+            ax.legend(fontsize=8)
+        else:
+            ax.text(0.5, 0.5, "No adjacent nonzero charge pairs", ha="center", va="center", transform=ax.transAxes)
+        if plane in (3, 4):
+            ax.set_xlabel(r"min(|Q₁|, |Q₂|) / max(|Q₁|, |Q₂|)")
+        if plane in (1, 3):
+            ax.set_ylabel("Adjacent strip pairs (counts)")
+
+    fig.suptitle(
+        "Adjacent-strip charge-magnitude ratios after pedestal calibration\n"
+        f"The shaded region below {ratio_cut:g} fails the ratio cut used in the 2D plot"
+    )
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    return fig
+
+
+def _plot_plane_total_charge_vs_adjacent_asymmetry(
+    df: pd.DataFrame,
+    crosstalk_thresholds: dict[tuple[int, int], float],
+    *,
+    ratio_cut: float = 0.1,
+) -> mpl.figure.Figure:
+    """Map plane charge against signed asymmetry for accepted adjacent pairs."""
+    plane_samples: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+    all_plane_charges: list[np.ndarray] = []
+    for plane in range(1, 5):
+        charge_columns = []
+        for strip in range(1, 5):
+            calibrated = f"p{plane}_s{strip}_qsum_cal"
+            raw = f"p{plane}_s{strip}_qsum"
+            charge_columns.append(calibrated if calibrated in df.columns else raw)
+        if not all(column in df.columns for column in charge_columns):
+            plane_samples[plane] = (np.asarray([], dtype=float), np.asarray([], dtype=float))
+            continue
+
+        charge = df.loc[:, charge_columns].apply(pd.to_numeric, errors="coerce").to_numpy(dtype=float)
+        thresholds = np.asarray(
+            [crosstalk_thresholds.get((plane, strip), 0.0) for strip in range(1, 5)],
+            dtype=float,
+        )
+        active_charge = np.where(np.isfinite(charge) & (charge > thresholds), charge, 0.0)
+        plane_total = np.sum(active_charge, axis=1)
+        pair_plane_charge: list[np.ndarray] = []
+        pair_asymmetry: list[np.ndarray] = []
+        for left_strip in range(1, 4):
+            left = charge[:, left_strip - 1]
+            right = charge[:, left_strip]
+            left_threshold = thresholds[left_strip - 1]
+            right_threshold = thresholds[left_strip]
+            pair_sum = left + right
+            larger_charge = np.maximum(left, right)
+            ratio = np.divide(
+                np.minimum(left, right),
+                larger_charge,
+                out=np.zeros_like(left),
+                where=larger_charge > 0,
+            )
+            valid = (
+                np.isfinite(left)
+                & np.isfinite(right)
+                & (left > left_threshold)
+                & (right > right_threshold)
+                & (ratio >= ratio_cut)
+                & np.isfinite(pair_sum)
+                & (pair_sum > 0)
+            )
+            if not valid.any():
+                continue
+            pair_plane_charge.append(plane_total[valid])
+            pair_asymmetry.append(2.0 * (left[valid] - right[valid]) / pair_sum[valid])
+
+        if pair_plane_charge:
+            x_values = np.concatenate(pair_plane_charge)
+            y_values = np.concatenate(pair_asymmetry)
+        else:
+            x_values = np.asarray([], dtype=float)
+            y_values = np.asarray([], dtype=float)
+        plane_samples[plane] = (x_values, y_values)
+        if x_values.size:
+            all_plane_charges.append(x_values)
+
+    if all_plane_charges:
+        xmax = float(np.quantile(np.concatenate(all_plane_charges), 0.995))
+        xmax = max(xmax, np.finfo(float).eps)
+    else:
+        xmax = 1.0
+    x_edges = np.linspace(0.0, xmax, 81)
+    y_edges = np.linspace(-2.0, 2.0, 81)
+    histograms = {
+        plane: np.histogram2d(x, y, bins=(x_edges, y_edges))[0]
+        for plane, (x, y) in plane_samples.items()
+    }
+    vmax = max(2.0, max((float(hist.max()) for hist in histograms.values()), default=1.0))
+    norm = mpl.colors.LogNorm(vmin=1.0, vmax=vmax)
+    fig, axes = plt.subplots(2, 2, figsize=(12, 9), sharex=True, sharey=True)
+    mesh = None
+    for plane, ax in enumerate(axes.flat, start=1):
+        counts = histograms[plane]
+        mesh = ax.pcolormesh(
+            x_edges,
+            y_edges,
+            np.ma.masked_less(counts.T, 1),
+            cmap="viridis",
+            norm=norm,
+            shading="auto",
+        )
+        ax.axhline(0.0, color="white", linestyle="--", linewidth=0.8, alpha=0.8)
+        x_values, _ = plane_samples[plane]
+        ax.set_title(f"Plane {plane} (accepted pairs={x_values.size:,})")
+        ax.grid(True, alpha=0.15)
+        if plane in (3, 4):
+            ax.set_xlabel("Total plane charge above strip x90 thresholds (ADC)")
+        if plane in (1, 3):
+            ax.set_ylabel(r"Adjacent-pair asymmetry: 2(Q₁−Q₂)/(Q₁+Q₂)")
+    fig.suptitle(
+        "Plane charge versus adjacent-strip charge asymmetry\n"
+        f"Both strips exceed their Task-2 x90 thresholds; min(Q₁,Q₂)/max(Q₁,Q₂) ≥ {ratio_cut:g}"
+    )
+    if mesh is not None:
+        fig.subplots_adjust(left=0.09, right=0.88, bottom=0.10, top=0.86, wspace=0.12, hspace=0.18)
+        colorbar_ax = fig.add_axes([0.91, 0.18, 0.018, 0.62])
+        fig.colorbar(mesh, cax=colorbar_ax, label="Adjacent pairs per bin (log scale)")
+    else:
+        fig.tight_layout(rect=[0, 0, 1, 0.93])
+    return fig
 
 
 def _compute_charge_pedestal_crosstalk_fits(
@@ -6919,7 +7555,7 @@ def _save_tsum_pair_residuals(pair_residuals_df: pd.DataFrame) -> str | None:
         output_dir,
         f"{basename_no_ext}_time_slewing_pair_residuals.parquet",
     )
-    pair_residuals_df.to_parquet(output_path, index=False)
+    atomic_write_parquet(pair_residuals_df, output_path, index=False)
     print(f"Saved T_sum pair residual table: {output_path}")
     return output_path
 
@@ -9800,7 +10436,7 @@ plt.close = _guarded_close
 # Runtime figures are PNG-only; FINAL reporting is standalone.
 
 CALIBRATION_METADATA_PATTERN = re.compile(
-    r"^P[1-4]_s[1-4]_((?:Q_FB|Q_TDIF)_coeffs(?:__[0-9]+)?|Q_sum|Q_F|Q_B|Q_crosstalk_[A-Za-z0-9_]+|Q_derivative_[A-Za-z0-9_]+|Q_gamma_[A-Za-z0-9_]+|Q_offset_[A-Za-z0-9_]+|Q_width_[A-Za-z0-9_]+|T_sum|T_dif|T_slew_[A-Za-z0-9_]+)$"
+    r"^P[1-4]_s[1-4]_((?:Q_FB|Q_TDIF)_coeffs(?:__[0-9]+)?|Q_sum|Q_F|Q_B|Q_crosstalk_[A-Za-z0-9_]+|Q_derivative_[A-Za-z0-9_]+|Q_gamma_[A-Za-z0-9_]+|Q_offset_[A-Za-z0-9_]+|Q_width_[A-Za-z0-9_]+|T_sum|T_dif|T_dif_FWHM_(?:ns|sample_count|status)|T_dif_softplus_[A-Za-z0-9_]+|T_slew_[A-Za-z0-9_]+)$"
 )
 # Warning Filters
 warnings.filterwarnings("ignore", message=".*Data has no positive values, and therefore cannot be log-scaled.*")
@@ -10344,7 +10980,8 @@ old_timing_method = config["old_timing_method"]
 # Validation
 validate_charge_pedestal_calibration = config["validate_charge_pedestal_calibration"]
 
-complete_reanalysis = config["complete_reanalysis"]
+reprocess_from_completed, reprocess_from_unprocessed = resolve_reprocessing_options(config)
+complete_reanalysis = reprocess_from_completed
 
 # Pre-cal Front & Back
 T_side_left_pre_cal_debug = config["T_side_left_pre_cal_debug"]
@@ -11358,6 +11995,18 @@ selected_file_source = "user" if user_file_selection else ""
 selected_source_candidates: list[str] = []
 joined_input_records: list[dict[str, str]] = []
 
+if not user_file_selection and not reprocess_from_unprocessed:
+    _unprocessed_before_duplicate_guard = len(unprocessed_files)
+    unprocessed_files = filter_unprocessed_with_existing_outputs(
+        unprocessed_files,
+        base_directories["output_directory"],
+        input_prefix="cleaned_",
+        output_prefix="calibrated_",
+        force_reprocess=reprocess_from_unprocessed,
+    )
+    if len(unprocessed_files) != _unprocessed_before_duplicate_guard:
+        print(f"[FILE_SELECTION] skipped {_unprocessed_before_duplicate_guard - len(unprocessed_files)} UNPROCESSED input(s) with existing outputs")
+
 if user_file_selection:
     processing_file_path = user_file_path
     file_name = os.path.basename(user_file_path)
@@ -11401,7 +12050,7 @@ else:
                 processing_file_path = error_file_path
                 print(f"File moved to ERROR: {processing_file_path}")
 
-            elif complete_reanalysis and completed_files:
+            elif reprocess_from_completed and completed_files:
                 latest_completed = select_latest_candidate(completed_files, station)
                 if latest_completed:
                     file_name = latest_completed
@@ -11451,7 +12100,7 @@ else:
             print(f"File moved to ERROR: {processing_file_path}")
 
         elif completed_files:
-            if complete_reanalysis:
+            if reprocess_from_completed:
                 print("Selecting a random file in COMPLETED...")
                 file_name = random.choice(completed_files)
                 selected_file_source = "completed"
@@ -11661,7 +12310,6 @@ for joined_record in joined_input_records:
     joined_frame = joined_frame.rename(columns=lambda col: col.replace("_diff_", "_dif_"))
     joined_frame = canonicalize_step1_columns(joined_frame)
     joined_frame = add_topology_task1_channel(joined_frame)
-    joined_frame = add_topology_task2_strip(joined_frame)
     if "event_id" not in joined_frame.columns:
         print(
             "Warning: 'event_id' missing in Task 2 input; reconstructing from "
@@ -11675,6 +12323,35 @@ for joined_record in joined_input_records:
 if not joined_frames:
     sys.exit("No Task 2 input dataframes were loaded.")
 working_df = pd.concat(joined_frames, ignore_index=True, sort=False)
+
+# Task 2 consumes Task-1 accepted endpoint values. Preserve the incoming raw
+# endpoints under an explicit name and retain Task-1's own accepted columns.
+for bit_index, (plane, side, strip) in enumerate(TASK2_TASK1_CHANNEL_KEYS):
+    side_code = "ef" if side == "F" else "eb"
+    task1_pass = np.ones(len(working_df), dtype=bool)
+    paired_task1_pass = np.ones(len(working_df), dtype=bool)
+    if "passes_task_1" in working_df.columns:
+        pass_bits = pd.to_numeric(working_df["passes_task_1"], errors="coerce").fillna(0).to_numpy(dtype=np.uint64)
+        task1_pass = ((pass_bits >> np.uint64(bit_index)) & np.uint64(1)).astype(bool)
+        other_side = "B" if side == "F" else "F"
+        other_bit_index = TASK2_TASK1_CHANNEL_BIT_BY_KEY[(plane, other_side, strip)]
+        other_pass = ((pass_bits >> np.uint64(other_bit_index)) & np.uint64(1)).astype(bool)
+        paired_task1_pass = task1_pass & other_pass
+    for component in ("q", "t"):
+        source_column = f"p{plane}_s{strip}_{side_code}_{component}"
+        task1_column = f"{source_column}_task1"
+        if source_column not in working_df.columns:
+            continue
+        original_column = f"{source_column}_task1_input"
+        if original_column not in working_df.columns:
+            working_df.loc[:, original_column] = working_df[source_column].copy()
+        if task1_column not in working_df.columns:
+            values = pd.to_numeric(working_df[source_column], errors="coerce")
+            working_df.loc[:, task1_column] = values.where(task1_pass, 0)
+        paired_values = pd.to_numeric(working_df[task1_column], errors="coerce")
+        working_df.loc[:, source_column] = paired_values.where(paired_task1_pass, 0)
+working_df = add_topology_task1_channel(working_df)
+
 joined_analysis_active = len(joined_input_records) > 1
 if joined_analysis_active:
     print(
@@ -12239,6 +12916,7 @@ charge_side_applied_to_calibration_df = False
 QF_pedestal = np.zeros((4, 4), dtype=float)
 QB_pedestal = np.zeros((4, 4), dtype=float)
 Tdiff_cal = np.zeros((4, 4), dtype=float)
+tdif_softplus_results = {}
 Tsum_cal = [[0.0 for _strip in range(4)] for _plane in range(4)]
 
 # --- Pre-populate matrices for `file` mode calibrations ---
@@ -13704,7 +14382,11 @@ if apply_T_dif_calibration:
                 pos_test[f'p{plane}_s{strip}_tdif'] = ( pos_test[f'p{plane}_s{strip}_eb_t'] - pos_test[f'p{plane}_s{strip}_ef_t'] ) / 2
 
     if calculate_T_dif_calibration:
-        Tdiff_cal = []
+        # Build the exact endpoint pairs selected by the configured river fit
+        # mask first. Plot these samples immediately before deriving offsets.
+        tdiff_fit_pairs = {}
+        tdiff_fit_samples = {}
+        tdiff_fit_input_info = {}
         for key in ['1', '2', '3', '4']:
             T_F_cols = [f'p{key}_s{i+1}_ef_t' for i in range(4)]
             T_F = calibration_df[T_F_cols].values
@@ -13721,20 +14403,201 @@ if apply_T_dif_calibration:
                     target_plane=int(key),
                     target_strip=i + 1,
                 )
-                Tdiff_cal_component.append(
-                    calibrate_strip_T_diff(
-                        T_F[fit_mask, i],
-                        T_B[fit_mask, i],
+                front_fit = np.asarray(T_F[fit_mask, i], dtype=float)
+                back_fit = np.asarray(T_B[fit_mask, i], dtype=float)
+                pair = (front_fit, back_fit)
+                tdiff_fit_pairs[(int(key), i + 1)] = pair
+                valid = np.isfinite(front_fit) & np.isfinite(back_fit) & (front_fit != 0) & (back_fit != 0)
+                tdiff_fit_samples[(int(key), i + 1)] = (back_fit[valid] - front_fit[valid]) / 2.0
+                tdiff_fit_input_info[(int(key), i + 1)] = {
+                    "fit_mask_rows": int(np.count_nonzero(fit_mask)),
+                }
+
+        # Exploratory alternative: fit the empirical CDF with a uniform/top-hat
+        # CDF, using only the configured candidate plane combinations. This is
+        # diagnostic-only; it does not replace the production Tdif estimator.
+        tdif_cdf_config = tdif_river_config.get("cdf_top_hat_diagnostic", {})
+        tdif_cdf_results = {}
+        tdif_cdf_combinations = tdif_cdf_config.get(
+            "plane_combination", [1234, 124, 134]
+        )
+        if (
+            _coerce_config_bool(tdif_cdf_config.get("enabled", True), default=True)
+            and task2_plot_requested("tdif_cdf_top_hat_diagnostic_4x4", essential=True)
+        ):
+            cdf_fit_config = dict(tdif_river_config["fit_mask"])
+            cdf_fit_config["plane_combination"] = tdif_cdf_combinations
+            for plane in range(1, 5):
+                for strip in range(1, 5):
+                    candidate_mask = build_task2_fit_mask(
+                        calibration_df,
+                        cdf_fit_config,
+                        component_source="raw",
+                        target_plane=plane,
+                        target_strip=strip,
                     )
+                    front = pd.to_numeric(
+                        calibration_df[f"p{plane}_s{strip}_ef_t"], errors="coerce"
+                    ).to_numpy(dtype=float)[candidate_mask]
+                    back = pd.to_numeric(
+                        calibration_df[f"p{plane}_s{strip}_eb_t"], errors="coerce"
+                    ).to_numpy(dtype=float)[candidate_mask]
+                    valid = np.isfinite(front) & np.isfinite(back) & (front != 0) & (back != 0)
+                    candidate_values = (back[valid] - front[valid]) / 2.0
+                    same_sample_offset, _ = _calibrate_strip_tdiff_details(
+                        front[valid], back[valid]
+                    )
+                    tdif_cdf_results[(plane, strip)] = {
+                        "fit": _fit_tdif_top_hat_cdf(candidate_values),
+                        "reference_values": tdiff_fit_samples[(plane, strip)],
+                        "same_sample_offset": same_sample_offset,
+                        "candidate_rows": int(np.count_nonzero(candidate_mask)),
+                    }
+
+        # Smoothed top-hat fit is a separate diagnostic and metadata result.
+        # It never supplies Tdiff_cal or changes the values applied below.
+        tdif_softplus_config = tdif_river_config.get("softplus_cdf_diagnostic", {})
+        tdif_softplus_combinations = tdif_softplus_config.get(
+            "plane_combination", [1234, 124, 134]
+        )
+        tdif_softplus_results = {}
+        if _coerce_config_bool(tdif_softplus_config.get("enabled", True), default=True):
+            softplus_fit_config = dict(tdif_river_config["fit_mask"])
+            softplus_fit_config["plane_combination"] = tdif_softplus_combinations
+            for plane in range(1, 5):
+                for strip in range(1, 5):
+                    candidate_mask = build_task2_fit_mask(
+                        calibration_df,
+                        softplus_fit_config,
+                        component_source="raw",
+                        target_plane=plane,
+                        target_strip=strip,
+                    )
+                    front = pd.to_numeric(
+                        calibration_df[f"p{plane}_s{strip}_ef_t"], errors="coerce"
+                    ).to_numpy(dtype=float)[candidate_mask]
+                    back = pd.to_numeric(
+                        calibration_df[f"p{plane}_s{strip}_eb_t"], errors="coerce"
+                    ).to_numpy(dtype=float)[candidate_mask]
+                    valid = np.isfinite(front) & np.isfinite(back) & (front != 0) & (back != 0)
+                    raw_tdif = (back[valid] - front[valid]) / 2.0
+                    fit = _fit_tdif_softplus_cdf(raw_tdif)
+                    tdif_softplus_results[(plane, strip)] = fit
+                    successful = bool(fit.get("optimizer_success"))
+                    prefix = f"P{plane}_s{strip}_T_dif_softplus_"
+                    for suffix, fit_key in (
+                        ("offset_ns", "offset_ns"),
+                        ("a_ns", "a_ns"),
+                        ("b_ns", "b_ns"),
+                        ("width_ns", "width_ns"),
+                        ("k_per_ns", "k_per_ns"),
+                        ("ks_statistic", "ks_statistic"),
+                        ("cdf_rmse", "cdf_rmse"),
+                    ):
+                        global_variables[prefix + suffix] = fit.get(fit_key) if successful else None
+                    # `sample_count` is transformed into a rate by the generic
+                    # metadata normalizer; keep the actual fit population under
+                    # a distinct name so it remains an event count in metadata.
+                    global_variables[prefix + "fit_n"] = int(fit.get("n", 0))
+                    global_variables[prefix + "status"] = str(fit.get("status", "fit_unavailable"))
+                    print(
+                        f"[tdif-softplus-cdf] P{plane}s{strip} n={fit.get('n', 0)} "
+                        f"status={fit.get('status')} offset={fit.get('offset_ns', float('nan')):.6g} ns "
+                        f"a={fit.get('a_ns', float('nan')):.6g} b={fit.get('b_ns', float('nan')):.6g} "
+                        f"k={fit.get('k_per_ns', float('nan')):.6g} ns^-1 "
+                        f"KS={fit.get('ks_statistic', float('nan')):.4g}",
+                        flush=True,
+                    )
+            if task2_plot_requested("tdif_softplus_cdf_diagnostic_4x4", essential=True):
+                _save_tdif_softplus_cdf_diagnostic(
+                    tdif_softplus_results,
+                    plane_combinations=tdif_softplus_combinations,
                 )
+
+        # The input plot is generated before any offset is calculated, and uses
+        # precisely the non-zero finite endpoint pairs consumed by the fitter.
+        if task2_plot_requested("tdif_calibration_input_4x4", essential=True):
+            _save_tdiff_calibration_diagnostics(
+                tdiff_fit_samples, tdiff_fit_input_info,
+                sample_label="offset fit input (raw, before calibration)",
+                only_alias="tdif_calibration_input_4x4",
+            )
+
+        Tdiff_cal = []
+        tdiff_fit_details = {}
+        for plane in range(1, 5):
+            Tdiff_cal_component = []
+            for strip in range(1, 5):
+                offset, details = _calibrate_strip_tdiff_details(*tdiff_fit_pairs[(plane, strip)])
+                Tdiff_cal_component.append(offset)
+                details["fit_mask_rows"] = tdiff_fit_input_info[(plane, strip)]["fit_mask_rows"]
+                tdiff_fit_details[(plane, strip)] = details
             Tdiff_cal.append(Tdiff_cal_component)
         Tdiff_cal = np.array(Tdiff_cal)
+        if tdif_cdf_results:
+            for plane in range(1, 5):
+                for strip in range(1, 5):
+                    result = tdif_cdf_results[(plane, strip)]
+                    result["current_offset"] = float(Tdiff_cal[plane - 1, strip - 1])
+                    fit = result["fit"]
+                    if fit.get("status") == "fit_succeeded":
+                        print(
+                            "[tdif-cdf-top-hat] "
+                            f"P{plane}s{strip} n={fit['n']} a={fit['a']:.6g} "
+                            f"b={fit['b']:.6g} center={fit['center']:.6g} "
+                            f"current={result['current_offset']:.6g} "
+                            f"delta={fit['center'] - result['current_offset']:+.6g} ns "
+                            f"same_sample_current={result['same_sample_offset']:.6g} "
+                            f"CDF_RMSE={fit['rmse']:.6g}"
+                        )
+                    else:
+                        print(
+                            f"[tdif-cdf-top-hat] P{plane}s{strip} "
+                            f"status={fit.get('status', 'fit unavailable')}"
+                        )
+            _save_tdif_cdf_top_hat_diagnostic(
+                tdif_cdf_results,
+                plane_combinations=tdif_cdf_combinations,
+            )
+        if task2_plot_requested("tdif_calibration_offset_diagnostic_4x4", essential=True):
+            _save_tdiff_calibration_diagnostics(
+                tdiff_fit_samples,
+                tdiff_fit_details,
+                sample_label="same raw samples used for offset calculation",
+                only_alias="tdif_calibration_offset_diagnostic_4x4",
+            )
     # else: Tdiff_cal pre-populated from calibration CSV (file mode)
 
     Tdiff_cal = sanitize_tdiff_offsets_matrix(
         Tdiff_cal,
         label="main",
     )
+
+    # Track the calibrated Tdif peak width from the same per-strip fit mask
+    # used above. The fixed 0.05 ns binning makes widths comparable between files.
+    Tdiff_fwhm_ns = np.full((4, 4), np.nan, dtype=float)
+    Tdiff_fwhm_sample_count = np.zeros((4, 4), dtype=int)
+    Tdiff_fwhm_status = np.full((4, 4), "missing_columns", dtype=object)
+    for _plane in range(1, 5):
+        for _strip in range(1, 5):
+            _front_col = f"p{_plane}_s{_strip}_ef_t"
+            _back_col = f"p{_plane}_s{_strip}_eb_t"
+            if _front_col not in calibration_df or _back_col not in calibration_df:
+                continue
+            _fit_mask = build_task2_fit_mask(
+                calibration_df, tdif_river_config["fit_mask"],
+                component_source="raw", target_plane=_plane, target_strip=_strip,
+            )
+            _front = pd.to_numeric(calibration_df[_front_col], errors="coerce").to_numpy(float)
+            _back = pd.to_numeric(calibration_df[_back_col], errors="coerce").to_numpy(float)
+            _valid = _fit_mask & np.isfinite(_front) & np.isfinite(_back) & (_front != 0) & (_back != 0)
+            _calibrated_tdif = (_back[_valid] - _front[_valid]) / 2.0 - Tdiff_cal[_plane - 1, _strip - 1]
+            _width, _count, _status = measure_tdif_fwhm(_calibrated_tdif)
+            Tdiff_fwhm_ns[_plane - 1, _strip - 1] = _width
+            Tdiff_fwhm_sample_count[_plane - 1, _strip - 1] = _count
+            Tdiff_fwhm_status[_plane - 1, _strip - 1] = _status
+    print("Calibrated Tdif FWHM (ns), 0.05 ns bins:")
+    print(Tdiff_fwhm_ns)
 
     print(f"\nTime diff. offset (mode={time_dif_calibration_mode}):")
     print(Tdiff_cal, "\n")
@@ -13748,8 +14611,8 @@ if apply_T_dif_calibration:
                 pos_test.loc[mask, tdif_col] -= Tdiff_cal[plane - 1][strip - 1]
 
 
-        if create_plots:
-            # Create the grand figure for Q values
+        if task2_plot_requested("grand_figure_t_dif_cal", essential=True):
+            # Create the calibrated T_dif validation figure.
             fig_Q, axes_Q = plt.subplots(4, 4, figsize=(20, 10))  # Adjust the layout as necessary
             axes_Q = axes_Q.flatten()
 
@@ -13856,6 +14719,12 @@ else:
     print("Charge-pedestal branch disabled or mode=null; using +0 identity offsets.")
 
 if task2_post_charge_side_qsum_filter_enabled:
+    _debug_plot_filter_group(
+        calibration_df,
+        collect_strip_family_columns(calibration_df.columns, "Q_sum"),
+        [task2_calibration_strip_q_sum_left, task2_calibration_strip_q_sum_right],
+        "calibrated_Q_sum_post_pedestal_filter",
+    )
     filter_strip_family_inplace(
         calibration_df,
         "Q_sum",
@@ -13923,9 +14792,12 @@ def _select_task2_qt_sum_dif_columns(df: pd.DataFrame) -> list[str]:
 
 def _task2_qt_histogram_column_kind(column_name: str) -> str | None:
     lower_name = str(column_name).lower()
-    canonical_match = re.fullmatch(r"p[1-4]_s[1-4]_(tsum|tdif|qsum|qdif)(?:_cal)?", lower_name)
+    canonical_match = re.fullmatch(r"p[1-4]_s[1-4]_(tsum|tdif|qsum|qdif)(?:_cal|_task2)?", lower_name)
     if canonical_match:
         return canonical_match.group(1)
+    suffix_match = re.search(r"(?:^|_)(tsum|tdif|qsum|qdif)(?:_(?:cal|task2))?$", lower_name)
+    if suffix_match:
+        return suffix_match.group(1)
     if "t_sum" in lower_name or lower_name.endswith("_tsum"):
         return "tsum"
     if "t_dif" in lower_name or lower_name.endswith("_tdif"):
@@ -13955,7 +14827,7 @@ def _task2_qt_histogram_column_key(column_name: str) -> tuple[int, int, str] | N
     if lower_name.endswith("_qsum_uncalibrated"):
         return None
 
-    canonical_match = re.fullmatch(r"p([1-4])_s([1-4])_(tsum|tdif|qsum|qdif)(?:_cal)?", lower_name)
+    canonical_match = re.fullmatch(r"p([1-4])_s([1-4])_(tsum|tdif|qsum|qdif)(?:_cal|_task2)?", lower_name)
     if canonical_match:
         plane, strip, kind = canonical_match.groups()
         return int(plane), int(strip), kind
@@ -14091,6 +14963,262 @@ def _plot_task2_qt_sum_dif_histograms(
         plt.show()
     plt.close(fig)
     del plot_df
+
+
+def _plot_task2_filter_input_output_comparison(df: pd.DataFrame) -> None:
+    """Overlay calibrated Task-2 inputs and accepted outputs strip by strip."""
+    global fig_idx
+    variables = ("qsum", "qdif", "tsum", "tdif")
+    fig, axes = plt.subplots(4, 16, figsize=(32, 10), squeeze=False)
+    plotted = 0
+    for row_index, variable in enumerate(variables):
+        for plane in range(1, 5):
+            for strip in range(1, 5):
+                column_index = (plane - 1) * 4 + strip - 1
+                ax = axes[row_index, column_index]
+                input_column = f"p{plane}_s{strip}_{variable}_cal"
+                output_column = f"p{plane}_s{strip}_{variable}_task2"
+                if input_column not in df.columns or output_column not in df.columns:
+                    ax.text(0.5, 0.5, "missing", ha="center", va="center", transform=ax.transAxes)
+                    continue
+                before = pd.to_numeric(df[input_column], errors="coerce").to_numpy(dtype=float)
+                after = pd.to_numeric(df[output_column], errors="coerce").to_numpy(dtype=float)
+                input_qsum = pd.to_numeric(
+                    df.get(f"p{plane}_s{strip}_qsum_cal", pd.Series(np.nan, index=df.index)),
+                    errors="coerce",
+                ).to_numpy(dtype=float)
+                accepted_qsum = pd.to_numeric(
+                    df.get(f"p{plane}_s{strip}_qsum_task2", pd.Series(np.nan, index=df.index)),
+                    errors="coerce",
+                ).to_numpy(dtype=float)
+                input_active = np.isfinite(input_qsum) & (input_qsum != 0)
+                accepted_active = np.isfinite(accepted_qsum) & (accepted_qsum != 0)
+                before = before[input_active & np.isfinite(before)]
+                after = after[accepted_active & np.isfinite(after)]
+                if after.size == 0:
+                    ax.text(0.5, 0.5, "no nonzero data", ha="center", va="center", transform=ax.transAxes)
+                    continue
+                # The accepted distribution alone sets the visible range and
+                # binning; input outliers outside it are omitted from the view.
+                lo, hi = (float(value) for value in np.quantile(after, [0.005, 0.995]))
+                if lo == hi:
+                    padding = max(abs(lo) * 0.05, 0.5)
+                    lo, hi = lo - padding, hi + padding
+                bins = np.linspace(lo, hi, 61)
+                ax.hist(before, bins=bins, histtype="step", linewidth=0.9, color="0.45", label="calibrated input")
+                ax.hist(after, bins=bins, histtype="step", linewidth=1.0, color="tab:blue", label="Task-2 accepted")
+                limits = task2_strip_combination_limits_by_relation["same_strip"]
+                if variable == "qsum":
+                    cut_bounds = (limits["q_sum_sum_left"], limits["q_sum_sum_right"])
+                elif variable == "qdif":
+                    cut = abs(float(limits["q_dif_sum_threshold"]))
+                    cut_bounds = (-cut, cut)
+                elif variable == "tsum":
+                    cut_bounds = (limits["t_sum_sum_left"], limits["t_sum_sum_right"])
+                else:
+                    cut = abs(float(limits["t_dif_sum_threshold"]))
+                    cut_bounds = (-cut, cut)
+                for cut_index, cut_bound in enumerate(cut_bounds):
+                    if cut_bound is not None and np.isfinite(float(cut_bound)):
+                        ax.axvline(
+                            float(cut_bound),
+                            color="tab:red",
+                            linestyle="--",
+                            linewidth=0.9,
+                            alpha=0.9,
+                            label="same-strip limit" if plotted == 0 and cut_index == 0 else None,
+                        )
+                ax.set_yscale("log")
+                if row_index == 0:
+                    ax.set_title(f"P{plane} S{strip}", fontsize=8)
+                if column_index == 0:
+                    ax.set_ylabel(f"{variable}\ncounts", fontsize=8)
+                if row_index == 3:
+                    ax.set_xlabel(variable, fontsize=7)
+                if plotted == 0:
+                    ax.legend(fontsize=6)
+                plotted += 1
+    fig.suptitle("Task 2 calibrated strip inputs and accepted outputs (nonzero values)")
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    if save_plots:
+        filename = f"{fig_idx}_task2_filter_input_output.png"
+        fig_idx += 1
+        path = os.path.join(base_directories["figure_directory"], filename)
+        plot_list.append(path)
+        save_plot_figure(path, fig=fig, alias="task2_filter_input_output", format="png")
+    if show_plots:
+        plt.show()
+    plt.close(fig)
+
+
+def _plot_task2_main_subsample_filter_stages(df: pd.DataFrame) -> None:
+    """Show the calibration-sample topology and raw-T_sum row-selection stages."""
+    global fig_idx
+    if df.empty:
+        print("Skipping Task-2 main-subsample filter plot: calibration sample is empty.")
+        return
+
+    stride = max(1, int(math.ceil(len(df) / 5000)))
+    sample = build_task2_strip_component_columns(df.iloc[::stride].copy())
+    topology_mask = build_task2_exact_topology_mask(
+        sample,
+        plane_combinations=task2_calibration_plane_topologies,
+        strip_topologies=task2_calibration_allowed_active_strip_topologies,
+        component_source="raw",
+    ) if _coerce_config_bool(main_topology_config.get("enabled"), default=True) else np.ones(len(sample), dtype=bool)
+    after_topology = sample.loc[topology_mask]
+    after_tsum, _ = filter_task2_calibration_rows_by_strip_t_sum_window(
+        after_topology,
+        left=task2_calibration_initial_t_sum_left if _coerce_config_bool(main_raw_tsum_config.get("enabled"), default=True) else None,
+        right=task2_calibration_initial_t_sum_right if _coerce_config_bool(main_raw_tsum_config.get("enabled"), default=True) else None,
+    )
+
+    fig, axes = plt.subplots(4, 4, figsize=(18, 13), squeeze=False)
+    active_by_sample = _task2_active_strip_matrix_from_raw(sample)
+    active_by_topology = _task2_active_strip_matrix_from_raw(after_topology)
+    active_by_tsum = _task2_active_strip_matrix_from_raw(after_tsum)
+    for plane in range(1, 5):
+        for strip in range(1, 5):
+            ax = axes[plane - 1, strip - 1]
+            column = f"p{plane}_s{strip}_tsum"
+            if column not in sample.columns:
+                ax.text(0.5, 0.5, "T_sum unavailable", ha="center", va="center", transform=ax.transAxes)
+                continue
+            curves = []
+            for frame, active_map, color, label in (
+                (sample, active_by_sample, "0.45", "before topology"),
+                (after_topology, active_by_topology, "tab:orange", "after topology"),
+                (after_tsum, active_by_tsum, "tab:blue", "after raw T_sum"),
+            ):
+                values = pd.to_numeric(frame[column], errors="coerce").to_numpy(dtype=float)
+                active = active_map.get(plane)
+                if active is not None and len(active) == len(values):
+                    values = values[active[:, strip - 1]]
+                values = values[np.isfinite(values) & (values != 0)]
+                curves.append((values, color, label))
+            final_values = curves[-1][0]
+            range_source = final_values if final_values.size else curves[0][0]
+            if range_source.size:
+                lo, hi = np.quantile(range_source, [0.005, 0.995])
+                if lo == hi:
+                    pad = max(abs(float(lo)) * 0.05, 0.5)
+                    lo, hi = float(lo) - pad, float(hi) + pad
+                cut_bounds = (task2_calibration_initial_t_sum_left, task2_calibration_initial_t_sum_right)
+                finite_bounds = [float(value) for value in cut_bounds if value is not None and np.isfinite(float(value))]
+                lo = min(float(lo), *finite_bounds) if finite_bounds else float(lo)
+                hi = max(float(hi), *finite_bounds) if finite_bounds else float(hi)
+                for values, color, label in curves:
+                    if values.size:
+                        ax.hist(values, bins=60, range=(lo, hi), histtype="step", color=color, label=label)
+                for bound in cut_bounds:
+                    if bound is not None and np.isfinite(float(bound)):
+                        ax.axvline(float(bound), color="tab:red", linestyle="--", linewidth=0.9)
+                ax.set_xlim(lo, hi)
+                ax.set_yscale("log")
+            else:
+                ax.text(0.5, 0.5, "no active T_sum", ha="center", va="center", transform=ax.transAxes)
+            ax.set_title(f"P{plane} S{strip}", fontsize=8)
+            ax.grid(True, alpha=0.2)
+            if strip == 1:
+                ax.set_ylabel("counts")
+            if plane == 4:
+                ax.set_xlabel("raw T_sum")
+            if plane == 1 and strip == 1:
+                ax.legend(fontsize=7)
+
+    fig.suptitle(
+        "Task 2 calibration-sample row filters: exact topology, then raw T_sum window\n"
+        f"rows in deterministic sample: {len(sample)} → {len(after_topology)} → {len(after_tsum)}; "
+        f"raw T_sum limits [{task2_calibration_initial_t_sum_left:g}, {task2_calibration_initial_t_sum_right:g}]"
+    )
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    if save_plots:
+        filename = f"{fig_idx}_task2_main_subsample_filter_stages.png"
+        fig_idx += 1
+        path = os.path.join(base_directories["figure_directory"], filename)
+        plot_list.append(path)
+        save_plot_figure(path, fig=fig, format="png", alias="main_subsample_filter_stages")
+        print(f"Task-2 main-subsample filter-stage figure saved: {path}")
+    if show_plots:
+        plt.show()
+    plt.close(fig)
+
+
+def _plot_task2_strip_combination_cut_limits(payloads: dict[str, pd.DataFrame]) -> None:
+    """Show pairwise Task-2 filter observables with their configured limits."""
+    global fig_idx
+    metric_specs = (
+        ("q_sum_sum", "Q_sum mean", "q_sum_sum_left", "q_sum_sum_right"),
+        ("q_sum_dif", "Q_sum difference", "q_sum_dif_threshold", None),
+        ("q_dif_sum", "Q_dif mean", "q_dif_sum_threshold", None),
+        ("q_dif_dif", "Q_dif difference", "q_dif_dif_threshold", None),
+        ("t_sum_sum", "T_sum mean", "t_sum_sum_left", "t_sum_sum_right"),
+        ("t_sum_dif", "T_sum difference", "t_sum_dif_threshold", None),
+        ("t_dif_sum", "T_dif mean", "t_dif_sum_threshold", None),
+        ("t_dif_dif", "T_dif difference", "t_dif_dif_threshold", None),
+    )
+    relations = (("same_plane", "Same-plane strip pairs"), ("any", "Cross-plane strip pairs"))
+    fig, axes = plt.subplots(2, 8, figsize=(24, 7), squeeze=False)
+    plotted = 0
+    for row_index, (relation, relation_label) in enumerate(relations):
+        payload = payloads.get(relation, pd.DataFrame())
+        limits = task2_strip_combination_limits_by_relation[relation]
+        for col_index, (column, label, low_key, high_key) in enumerate(metric_specs):
+            ax = axes[row_index, col_index]
+            ax.set_title(label, fontsize=8)
+            if payload.empty or column not in payload.columns:
+                ax.text(0.5, 0.5, "no pair data", ha="center", va="center", transform=ax.transAxes)
+                continue
+            values = pd.to_numeric(payload[column], errors="coerce").to_numpy(dtype=float)
+            values = values[np.isfinite(values)]
+            if values.size == 0:
+                ax.text(0.5, 0.5, "no finite data", ha="center", va="center", transform=ax.transAxes)
+                continue
+            low = limits[low_key]
+            high = limits[high_key] if high_key else None
+            if high_key is None:
+                cut = abs(float(low))
+                low, high = -cut, cut
+            qlo, qhi = np.quantile(values, [0.005, 0.995])
+            if not np.isfinite(qlo) or not np.isfinite(qhi) or qlo >= qhi:
+                qlo, qhi = float(np.min(values)), float(np.max(values))
+            if qlo == qhi:
+                pad = max(abs(float(qlo)) * 0.05, 0.5)
+                qlo, qhi = qlo - pad, qhi + pad
+            finite_bounds = [float(bound) for bound in (low, high) if bound is not None and np.isfinite(float(bound))]
+            lo = min([float(qlo), *finite_bounds])
+            hi = max([float(qhi), *finite_bounds])
+            if lo == hi:
+                lo, hi = lo - 0.5, hi + 0.5
+            ax.hist(values, bins=60, range=(lo, hi), color="0.55", histtype="step", linewidth=1.0)
+            for bound_index, bound in enumerate((low, high)):
+                if bound is not None and np.isfinite(float(bound)):
+                    ax.axvline(
+                        float(bound), color="tab:red", linestyle="--", linewidth=1.0,
+                        label="configured cut" if plotted == 0 and bound_index == 0 else None,
+                    )
+            ax.set_xlim(lo, hi)
+            ax.set_yscale("log")
+            ax.grid(True, alpha=0.2)
+            if col_index == 0:
+                ax.set_ylabel(f"{relation_label}\ncounts", fontsize=8)
+            if row_index == 1:
+                ax.set_xlabel("pair observable", fontsize=7)
+            plotted += 1
+    if plotted:
+        axes[0, 0].legend(fontsize=7)
+    fig.suptitle("Task 2 pairwise strip-filter distributions and configured limits")
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    if save_plots:
+        filename = f"{fig_idx}_task2_strip_combination_filter_cut_limits.png"
+        fig_idx += 1
+        path = os.path.join(base_directories["figure_directory"], filename)
+        plot_list.append(path)
+        save_plot_figure(path, fig=fig, alias="strip_combination_filter_cut_limits", format="png")
+        print(f"Task-2 pairwise filter-limit figure saved: {path}")
+    if show_plots:
+        plt.show()
+    plt.close(fig)
 
 
 def _task2_uncalibrated_group_tt_column(df: pd.DataFrame) -> str | None:
@@ -14509,6 +15637,9 @@ if task2_plot_requested("calibration_charge_gates", essential=True):
         if show_plots:
             plt.show()
         plt.close(_fig)
+
+if task2_plot_requested("main_subsample_filter_stages", essential=True):
+    _plot_task2_main_subsample_filter_stages(calibration_charge_zeroed_plot_view)
 
 _prof["s_pos_offset_s"] = round(time.perf_counter() - _t_sec, 2)
 _t_sec = time.perf_counter()
@@ -15760,6 +16891,12 @@ if task2_slewing_enabled and (
 
 if slewing_applied_to_calibration_df:
     if task2_post_slewing_filter_enabled:
+        _debug_plot_filter_group(
+            calibration_df,
+            collect_strip_family_columns(calibration_df.columns, "T_sum"),
+            [task2_calibration_post_slewing_t_sum_left, task2_calibration_post_slewing_t_sum_right],
+            "T_sum_post_slewing_filter",
+        )
         filter_task2_calibration_after_slewing(
             calibration_df,
             t_sum_left=task2_calibration_post_slewing_t_sum_left,
@@ -15863,6 +17000,67 @@ for plane in range(1, 5):
 
 working_df = _append_or_replace_dataframe_columns(working_df, deferred_calibration_columns)
 
+adjacent_charge_ratio_cut = float(config.get("adjacent_strip_charge_ratio_cut", 0.1))
+if not np.isfinite(adjacent_charge_ratio_cut) or not 0.0 <= adjacent_charge_ratio_cut <= 1.0:
+    raise ValueError("adjacent_strip_charge_ratio_cut must be finite and within [0, 1].")
+task2_topology_crosstalk_thresholds, task2_topology_missing_widths = (
+    _task2_crosstalk_topology_thresholds(_charge_pedestal_crosstalk_fits)
+)
+if task2_topology_missing_widths:
+    _missing_topology_labels = ", ".join(
+        f"P{plane}s{strip}" for plane, strip in task2_topology_missing_widths
+    )
+    print(
+        "Warning: Task-2 crosstalk width unavailable for topology in "
+        f"{_missing_topology_labels}; using the legacy zero threshold there."
+    )
+else:
+    print(
+        "Task-2 strip topology uses calibrated qsum greater than the right "
+        "(90%) edge of the three-strip crosstalk sigmoid."
+    )
+
+if task2_plot_requested("adjacent_strip_charge_ratio"):
+    _ratio_figure = _plot_adjacent_strip_charge_ratios(
+        working_df,
+        ratio_cut=adjacent_charge_ratio_cut,
+    )
+    _ratio_path = os.path.join(
+        base_directories["figure_directory"],
+        f"{debug_fig_idx:02d}_adjacent_strip_charge_ratio_{basename_no_ext}.png",
+    )
+    save_plot_figure(
+        _ratio_path,
+        fig=_ratio_figure,
+        alias="adjacent_strip_charge_ratio",
+        format="png",
+        dpi=150,
+    )
+    print(f"Adjacent-strip charge-ratio histogram saved: {_ratio_path}")
+    debug_fig_idx += 1
+    plt.close(_ratio_figure)
+
+if task2_plot_requested("plane_total_charge_vs_adjacent_asymmetry"):
+    _asymmetry_figure = _plot_plane_total_charge_vs_adjacent_asymmetry(
+        working_df,
+        task2_topology_crosstalk_thresholds,
+        ratio_cut=adjacent_charge_ratio_cut,
+    )
+    _asymmetry_path = os.path.join(
+        base_directories["figure_directory"],
+        f"{debug_fig_idx:02d}_plane_total_charge_vs_adjacent_asymmetry_{basename_no_ext}.png",
+    )
+    save_plot_figure(
+        _asymmetry_path,
+        fig=_asymmetry_figure,
+        alias="plane_total_charge_vs_adjacent_asymmetry",
+        format="png",
+        dpi=150,
+    )
+    print(f"Plane charge versus adjacent-pair asymmetry saved: {_asymmetry_path}")
+    debug_fig_idx += 1
+    plt.close(_asymmetry_figure)
+
 if apply_Q_FB_calibration:
     apply_task2_qfb_correction(
         working_df,
@@ -15946,7 +17144,7 @@ print(
     f"strip_blocks_zeroed={final_calibrated_strip_gate_summary['strip_blocks_zeroed']} "
     f"rows_affected={final_calibrated_strip_gate_summary['rows_affected']} "
     f"values_zeroed={final_calibrated_strip_gate_summary['values_zeroed']} "
-    "modified_columns=qsum_cal,qdif_cal,tsum_cal,tdif_cal"
+        "created_columns=qsum_task2,qdif_task2,tsum_task2,tdif_task2"
 )
 
 plot_slewing_relative_tsum_vs_qsum_after_correction(
@@ -15995,20 +17193,29 @@ print(
     f"values_zeroed={task2_pre_strip_block_summary['values_zeroed']}"
 )
 _plot_strip_combination_filter_by_tt = task2_plot_requested("strip_combination_filter_by_tt", essential=True)
-if _plot_strip_combination_filter_by_tt:
-    strip_combination_tt_original = _task2_filter_tt_series(working_df).copy()
+_plot_strip_combination_cut_limits = task2_plot_requested("strip_combination_filter_cut_limits", essential=True)
+if _plot_strip_combination_filter_by_tt or _plot_strip_combination_cut_limits:
+    _strip_combination_diagnostic_df = working_df
+    if _plot_strip_combination_cut_limits and not _plot_strip_combination_filter_by_tt:
+        _row_stride = max(1, int(math.ceil(len(working_df) / 5000)))
+        _strip_combination_diagnostic_df = working_df.iloc[::_row_stride]
+        print(
+            "Task-2 cut-limit figure uses a deterministic row sample: "
+            f"{len(_strip_combination_diagnostic_df)} of {len(working_df)} rows."
+        )
+    strip_combination_tt_original = _task2_filter_tt_series(_strip_combination_diagnostic_df).copy()
     strip_combination_self_hist_original = collect_task2_strip_combination_histogram_payload(
-        working_df,
+        _strip_combination_diagnostic_df,
         strip_combination_tt_original,
         relation_type="strip",
     )
     strip_combination_same_plane_hist_original = collect_task2_strip_combination_histogram_payload(
-        working_df,
+        _strip_combination_diagnostic_df,
         strip_combination_tt_original,
         relation_type="plane",
     )
     strip_combination_any_hist_original = collect_task2_strip_combination_histogram_payload(
-        working_df,
+        _strip_combination_diagnostic_df,
         strip_combination_tt_original,
         relation_type="detector",
     )
@@ -16033,6 +17240,13 @@ if isinstance(strip_fail_masks, dict):
             continue
         fail_mask = fail_series.reindex(working_df.index, fill_value=False).to_numpy(dtype=bool)
         passes_task_2[fail_mask] &= np.uint16(~(1 << bit_idx) & 0xFFFF)
+if _plot_strip_combination_cut_limits:
+    _plot_task2_strip_combination_cut_limits(
+        {
+            "same_plane": strip_combination_same_plane_hist_original,
+            "any": strip_combination_any_hist_original,
+        }
+    )
 relation_stats = strip_combination_summary.get("relation_stats", {})
 _task2_empty_relation_summary = _task2_empty_strip_combination_relation_summary()
 _same_strip_relation_summary = relation_stats.get("same_strip", {})
@@ -16457,6 +17671,10 @@ for i, plane in enumerate(['P1', 'P2', 'P3', 'P4']):
                 ] = _candidate_metrics.get(_metric_name)
         global_variables[f'{plane}_s{strip}_T_sum'] = Tsum_cal[i][j] if calculate_T_sum_calibration else None
         global_variables[f'{plane}_s{strip}_T_dif'] = Tdiff_cal[i][j] if calculate_T_dif_calibration else None
+        if apply_T_dif_calibration:
+            global_variables[f'{plane}_s{strip}_T_dif_FWHM_ns'] = Tdiff_fwhm_ns[i][j]
+            global_variables[f'{plane}_s{strip}_T_dif_FWHM_sample_count'] = int(Tdiff_fwhm_sample_count[i][j])
+            global_variables[f'{plane}_s{strip}_T_dif_FWHM_status'] = str(Tdiff_fwhm_status[i][j])
         global_variables.setdefault(f'{plane}_s{strip}_T_slew_coeffs', None)
         global_variables.setdefault(f'{plane}_s{strip}_T_slew_basis_means', None)
         global_variables.setdefault(f'{plane}_s{strip}_T_slew_domain', None)
@@ -16542,17 +17760,20 @@ record_filter_metric(
 print(f"Original number of events in the dataframe: {original_number_of_events}")
 
 tt_task2_cal_columns: dict[int, list[str]] = {}
-working_df = add_topology_task2_strip(working_df)
+working_df = add_topology_task2_strip(working_df, task2_topology_crosstalk_thresholds)
 
 for plane in range(1, 5):
     tt_task2_cal_columns[plane] = [
         (
-            f"p{plane}_s{strip}_qsum_cal"
+            f"p{plane}_s{strip}_qsum_task2"
+            if f"p{plane}_s{strip}_qsum_task2" in working_df.columns
+            else f"p{plane}_s{strip}_qsum_cal"
             if f"p{plane}_s{strip}_qsum_cal" in working_df.columns
             else f"p{plane}_s{strip}_qsum"
         )
         for strip in range(1, 5)
-        if f"p{plane}_s{strip}_qsum_cal" in working_df.columns
+        if f"p{plane}_s{strip}_qsum_task2" in working_df.columns
+        or f"p{plane}_s{strip}_qsum_cal" in working_df.columns
         or f"p{plane}_s{strip}_qsum" in working_df.columns
     ]
 
@@ -16596,6 +17817,60 @@ if "passes_task_2" in working_df.columns:
     passes_task_2_after_tt[~tt_task2_cal_mask.to_numpy(dtype=bool)] = np.uint16(0)
     task2_tt_filter_columns["passes_task_2"] = passes_task_2_after_tt
 working_df = _append_or_replace_dataframe_columns(working_df, task2_tt_filter_columns)
+# Apply the finalized per-strip and event pass state only to Task-2-owned
+# outputs. The calibrated values remain available for input/output plots.
+_task2_pass_bits_final = pd.to_numeric(
+    working_df.get("passes_task_2", pd.Series(np.uint16(0xFFFF), index=working_df.index)),
+    errors="coerce",
+).fillna(0).to_numpy(dtype=np.uint16)
+for bit_index, (plane, strip) in enumerate(TASK2_STRIP_KEYS):
+    pass_mask = ((_task2_pass_bits_final >> np.uint16(bit_index)) & np.uint16(1)).astype(bool)
+    calibrated_pass_column = f"filter_task2_calibrated_strip_P{plane}_s{strip}_pass"
+    if calibrated_pass_column in working_df.columns:
+        pass_mask &= working_df[calibrated_pass_column].fillna(False).to_numpy(dtype=bool)
+    for variable in ("qsum", "qdif", "tsum", "tdif"):
+        output_column = f"p{plane}_s{strip}_{variable}_task2"
+        if output_column in working_df.columns:
+            values = pd.to_numeric(working_df[output_column], errors="coerce")
+            working_df.loc[:, output_column] = values.where(pass_mask, 0)
+    working_df.loc[:, calibrated_pass_column] = pass_mask
+# Recompute Task-2 TT from the accepted strip values so downstream TT and
+# trigger metadata describe the same data that Task 3 receives.
+_accepted_task2_qsum_columns = {
+    plane: [
+        f"p{plane}_s{strip}_qsum_task2"
+        for strip in range(1, 5)
+        if f"p{plane}_s{strip}_qsum_task2" in working_df.columns
+    ]
+    for plane in range(1, 5)
+}
+working_df = compute_tt(working_df, "tt_task2_cal", _accepted_task2_qsum_columns)
+_accepted_tt_mask = working_df["tt_task2_cal"].notna() & (working_df["tt_task2_cal"] >= 10)
+_pass_bits = pd.to_numeric(
+    working_df.get("passes_task_2", pd.Series(np.uint16(0xFFFF), index=working_df.index)),
+    errors="coerce",
+).fillna(0).to_numpy(dtype=np.uint16)
+_pass_bits[~_accepted_tt_mask.to_numpy(dtype=bool)] = np.uint16(0)
+working_df.loc[:, "passes_task_2"] = _pass_bits
+working_df.loc[:, "filter_task2_tt_task2_cal_pass"] = _accepted_tt_mask.to_numpy(dtype=bool)
+tt_task2_cal_mask = _accepted_tt_mask
+for bit_index, (plane, strip) in enumerate(TASK2_STRIP_KEYS):
+    pass_mask = ((_pass_bits >> np.uint16(bit_index)) & np.uint16(1)).astype(bool)
+    calibrated_pass_column = f"filter_task2_calibrated_strip_P{plane}_s{strip}_pass"
+    if calibrated_pass_column in working_df.columns:
+        pass_mask &= working_df[calibrated_pass_column].fillna(False).to_numpy(dtype=bool)
+    for variable in ("qsum", "qdif", "tsum", "tdif"):
+        output_column = f"p{plane}_s{strip}_{variable}_task2"
+        if output_column in working_df.columns:
+            values = pd.to_numeric(working_df[output_column], errors="coerce")
+            working_df.loc[:, output_column] = values.where(pass_mask, 0)
+    working_df.loc[:, calibrated_pass_column] = pass_mask
+working_df = add_topology_task2_strip(working_df, task2_topology_crosstalk_thresholds)
+working_df.loc[:, "transferred_task2_clean_to_cal"] = (
+    pd.to_numeric(working_df["tt_task1_clean"], errors="coerce").fillna(0).astype(int).astype(str)
+    + "_"
+    + pd.to_numeric(working_df["tt_task2_cal"], errors="coerce").fillna(0).astype(int).astype(str)
+)
 record_filter_metric(
     "tt_task2_cal_lt_10_rows_flagged_pct",
     tt_task2_cal_total - int(tt_task2_cal_mask.sum()),
@@ -16832,21 +18107,24 @@ if task2_plot_requested("calibrated_filtered", essential=True):
     calibrated_qt_columns = [
         str(col)
         for col in working_df.columns
-        if str(col).lower().endswith("_cal")
+        if str(col).lower().endswith("_task2")
         and _task2_qt_histogram_column_kind(str(col)) in {"qsum", "qdif", "tsum", "tdif"}
     ]
     if calibrated_qt_columns:
         _plot_task2_qt_sum_dif_histograms(
             working_df.loc[:, calibrated_qt_columns],
-            title="Calibrated filtered data",
+            title="Task-2 accepted calibrated data",
             filename_stem="calibrated_filtered",
             alias="calibrated_filtered",
         )
     else:
         print(
-            "Skipping calibrated_filtered: no calibrated Q/T sum/difference "
-            "columns ending in _cal are present."
+            "Skipping calibrated_filtered: no accepted Task-2 Q/T sum/difference "
+            "columns ending in _task2 are present."
         )
+
+if task2_plot_requested("task2_filter_input_output", essential=True):
+    _plot_task2_filter_input_output_comparison(working_df)
 
 if task2_plot_requested("calibrated_charge_overview", essential=True):
     _working_pass_mask = np.ones(len(working_df), dtype=bool)
@@ -17628,9 +18906,9 @@ calibration_variables = extract_calibration_metadata(
 )
 # Only write a calibration row if at least one calibration was freshly computed
 # (make mode). null and file modes produce no new information worth persisting.
-if any(m == "make" for m in [charge_side_mode, charge_front_back_mode,
-                               time_calibration_mode, time_dif_calibration_mode,
-                               q_dif_t_dif_correction_mode]):
+if apply_T_dif_calibration or any(m == "make" for m in [charge_side_mode, charge_front_back_mode,
+                                                          time_calibration_mode, time_dif_calibration_mode,
+                                                          q_dif_t_dif_correction_mode]):
     metadata_calibration_csv_path = save_metadata(
         csv_path_calibration,
         calibration_variables,
@@ -17639,7 +18917,7 @@ if any(m == "make" for m in [charge_side_mode, charge_front_back_mode,
     )
     print(f"Metadata (calibration) CSV updated at: {metadata_calibration_csv_path}")
 else:
-    print("Skipping calibration metadata CSV write (no make-mode calibrations in this run).")
+    print("Skipping calibration metadata CSV write (no make-mode calibration or Tdif FWHM measurement in this run).")
 
 print(f"Specific metadata keys to be saved: {len(global_variables)}")
 if VERBOSE:
@@ -17686,14 +18964,14 @@ if track_removed_rows_task2:
     )
     diagnostic_original_columns_df = build_original_columns_frame()
 
-    diagnostic_removed_rows_df.to_parquet(
+    atomic_write_parquet(diagnostic_removed_rows_df,
         f"{removed_rows_base}.parquet",
         engine="pyarrow",
         compression="zstd",
         index=True,
     )
     diagnostic_removed_rows_df.to_csv(f"{removed_rows_base}.csv", index=True)
-    diagnostic_original_columns_df.to_parquet(
+    atomic_write_parquet(diagnostic_original_columns_df,
         f"{original_cols_base}.parquet",
         engine="pyarrow",
         compression="zstd",
@@ -17723,7 +19001,7 @@ if joined_analysis_active and joined_source_file_column in working_df.columns:
             errors="ignore",
         )
         joined_output_df = canonicalize_step1_columns(joined_output_df)
-        joined_output_df.to_parquet(
+        atomic_write_parquet(joined_output_df,
             joined_out_path,
             engine="pyarrow",
             compression="zstd",
@@ -17739,7 +19017,7 @@ else:
         errors="ignore",
     )
     output_df = canonicalize_step1_columns(output_df)
-    output_df.to_parquet(OUT_PATH, engine="pyarrow", compression="zstd", index=False)
+    atomic_write_parquet(output_df, OUT_PATH, engine="pyarrow", compression="zstd", index=False)
     print(f"Calibrated dataframe saved to: {OUT_PATH}")
 _prof["s_output_write_s"] = round(time.perf_counter() - _t_sec, 2)
 _t_sec = time.perf_counter()

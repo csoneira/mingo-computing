@@ -1,3 +1,5 @@
+"""Test helpers that select and stage files for reprocessing."""
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,3 +1,5 @@
+"""Test runtime diagnostic-plot selection and output behavior."""
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,7 +1,7 @@
 # FINAL plots: standalone post-task analysis from the derived parquet only.
-plot_mode: all
-save_png: true
-save_pdf: true
+plot_mode: none
+save_png: false
+save_pdf: false
 plots:
   acquisition_rate_vs_time_by_task_tt_with_histograms: usual
   streamer_contagion_matrix_strip: usual

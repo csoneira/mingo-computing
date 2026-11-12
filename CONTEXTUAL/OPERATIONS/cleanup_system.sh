@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Purpose: Remove the temporary files selected by the system-cleanup configuration.
 
 set -u
 

@@ -27,23 +27,20 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-CURRENT_PATH = Path(__file__).resolve()
-SCRIPTS_ROOT = next(parent for parent in CURRENT_PATH.parents if parent.name == "MINGO_ANALYSIS_SCRIPTS")
-REPO_ROOT = next(
-    parent
-    for parent in SCRIPTS_ROOT.parents
-    if (parent / "CONTEXTUAL/CONFIG/CONTENTS/environment/dataflow.sh").is_file()
-)
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[8]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.debug_plots import plot_debug_histograms
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_selection import select_latest_candidate
-from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.plot_utils import runtime_plot_directory_name
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_shared import (
+    resolve_reprocessing_options,
     add_normalized_count_metadata,
-    apply_step1_master_overrides,
     build_events_per_second_metadata,
     canonicalize_step1_columns,
     prune_redundant_count_metadata,
@@ -275,10 +272,12 @@ def _stage_inputs(
     directories: dict[str, Path],
     explicit_input: str | None,
     *,
-    complete_reanalysis: bool,
+    reprocess_from_completed: bool,
+    reprocess_from_unprocessed: bool,
     selection_mode: str,
     station: int,
-) -> str | None:
+) -> tuple[str | None, bool]:
+    reprocessed_completed = False
     for name in ("unprocessed", "processing", "completed", "error", "output", "metadata", "plots"):
         directories[name].mkdir(parents=True, exist_ok=True)
 
@@ -294,7 +293,7 @@ def _stage_inputs(
                 shutil.copy2(source, target)
         elif unprocessed_root not in source.parents:
             raise ValueError(f"Input must come from self-trigger Task 1 OUTPUT_FILES or this task's UNPROCESSED_DIRECTORY: {source}")
-        return source.name
+        return source.name, False
 
     known_names = {
         path.name
@@ -310,20 +309,22 @@ def _stage_inputs(
             continue
         output_name = OUTPUT_PREFIX + source.name[len(INPUT_PREFIX):]
         output_exists = (directories["output"] / output_name).exists()
-        if complete_reanalysis or not output_exists:
+        if (reprocess_from_unprocessed and selection_mode != "qa") or not output_exists:
             shutil.copy2(source, directories["unprocessed"] / source.name)
 
     unprocessed = list(directories["unprocessed"].glob(f"{INPUT_PREFIX}*.parquet"))
     processing = list(directories["processing"].glob(f"{INPUT_PREFIX}*.parquet"))
-    if not unprocessed and not processing and complete_reanalysis and completed_outputs:
+    if not unprocessed and not processing and reprocess_from_completed and selection_mode != "qa" and completed_outputs:
         selected = (
             random.choice(list(completed_outputs))
             if selection_mode == "random"
             else select_latest_candidate(sorted(completed_outputs), station) or sorted(completed_outputs)[-1]
         )
         source = directories["completed"] / selected
+        print(f"[FILE_SELECTION] source_state=COMPLETED input={source.name}")
         _move(source, directories["unprocessed"] / source.name)
-    return None
+        reprocessed_completed = True
+    return None, reprocessed_completed
 
 
 def _load_plot_aliases(path: Path) -> set[str]:
@@ -568,8 +569,19 @@ def _trigger_metadata(frame: pd.DataFrame, basename: str, execution_id: str) -> 
 
 def process_one(station: int, explicit_input: str | None = None, *, verbose: bool = False) -> int:
     repo_root = get_repo_root()
-    config_root = SCRIPTS_ROOT / "SUPPORT/CONFIG_FILES/STAGE_1/EVENT_DATA/STEP_1/TASK_2_SELFTRIGGER"
-    config = apply_step1_master_overrides(_load_yaml(config_root / "config_task_2_selftrigger.yaml"))
+    config_root = (
+        repo_root
+        / "PIPELINE"
+        / "MINGO_ANALYSIS"
+        / "MINGO_ANALYSIS_SCRIPTS"
+        / "SUPPORT"
+        / "CONFIG_FILES"
+        / "STAGE_1"
+        / "EVENT_DATA"
+        / "STEP_1"
+        / "TASK_2_SELFTRIGGER"
+    )
+    config = _load_yaml(config_root / "config_task_2_selftrigger.yaml")
     if station not in {int(value) for value in config.get("selection", {}).get("stations", range(5))}:
         print(f"Station {station} is disabled by config_task_2_selftrigger.yaml")
         return 0
@@ -582,27 +594,31 @@ def process_one(station: int, explicit_input: str | None = None, *, verbose: boo
     selection_mode = str(config.get("file_selection_mode", "new")).strip().lower()
     if selection_mode not in {"qa", "new", "random"}:
         raise ValueError(f"Self-trigger Task 2 file_selection_mode must be qa, new, or random, got {selection_mode!r}")
-    complete_reanalysis = bool(config.get("complete_reanalysis", False))
+    reprocess_from_completed, reprocess_from_unprocessed = resolve_reprocessing_options(config)
     force_replacement = bool(config.get("force_replacement", False))
     print(
         "Self-trigger Task 2 effective settings: "
-        f"complete_reanalysis={complete_reanalysis}, file_selection_mode={selection_mode}, "
+        f"reprocess_from_completed={reprocess_from_completed}, reprocess_from_unprocessed={reprocess_from_unprocessed}, file_selection_mode={selection_mode}, "
         f"create_plots={bool(config.get('create_plots', True))}"
     )
     directories = _directories(station, repo_root)
-    explicit_name = _stage_inputs(
+    explicit_name, reprocessed_completed = _stage_inputs(
         directories,
         explicit_input,
-        complete_reanalysis=complete_reanalysis,
+        reprocess_from_completed=reprocess_from_completed,
+        reprocess_from_unprocessed=reprocess_from_unprocessed,
         selection_mode=selection_mode,
         station=station,
     )
-    candidates = list(directories["unprocessed"].glob(f"{INPUT_PREFIX}*.parquet"))
+    processing_candidates = list(directories["processing"].glob(f"{INPUT_PREFIX}*.parquet"))
+    candidates = processing_candidates or list(directories["unprocessed"].glob(f"{INPUT_PREFIX}*.parquet"))
+    source_state = "COMPLETED" if reprocessed_completed else ("PROCESSING" if processing_candidates else "UNPROCESSED")
     if not candidates:
         print(f"No {INPUT_PREFIX}*.parquet inputs are ready for MINGO{station:02d}.")
         return 0
     if explicit_name is not None:
         input_path = directories["unprocessed"] / explicit_name
+        source_state = "UNPROCESSED"
         if not input_path.is_file():
             raise FileNotFoundError(f"Explicit self-trigger Task 2 input was not staged: {input_path}")
     else:
@@ -612,12 +628,16 @@ def process_one(station: int, explicit_input: str | None = None, *, verbose: boo
             else Path(select_latest_candidate([path.name for path in candidates], station) or candidates[-1].name)
         )
     if not input_path.is_absolute():
-        input_path = directories["unprocessed"] / input_path
+        input_path = directories["unprocessed" if source_state == "COMPLETED" else source_state.lower()] / input_path
     processing_path = directories["processing"] / input_path.name
-    _move(input_path, processing_path)
+    print(f"[FILE_SELECTION] source_state={source_state} input={input_path.name}")
+    if source_state in {"UNPROCESSED", "COMPLETED"}:
+        _move(input_path, processing_path)
+    else:
+        processing_path = input_path
     basename = processing_path.name[len(INPUT_PREFIX):-len(processing_path.suffix)]
     output_path = directories["output"] / f"{OUTPUT_PREFIX}{basename}.parquet"
-    if output_path.exists() and not force_replacement and not complete_reanalysis:
+    if output_path.exists() and not force_replacement and not (reprocess_from_unprocessed and selection_mode != "qa" and source_state == "UNPROCESSED") and source_state != "COMPLETED":
         _move(processing_path, directories["completed"] / processing_path.name)
         print(f"Output already exists; archived duplicate input without replacement: {output_path}")
         return 0
@@ -737,7 +757,7 @@ def process_one(station: int, explicit_input: str | None = None, *, verbose: boo
             "station": station,
         }
         data_time = _data_time_metadata(working_df)
-        replacing = force_replacement or complete_reanalysis
+        replacing = force_replacement or (reprocess_from_unprocessed and selection_mode != "qa" and source_state == "UNPROCESSED") or source_state == "COMPLETED"
         save_metadata(
             directories["metadata"] / "task_2_metadata_execution.csv",
             {

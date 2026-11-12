@@ -1,17 +1,5 @@
 #!/bin/bash
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: FOR_MINGO_SYSTEMS/station_automation_scripts/bot_scripts/split_gas_logs.sh
 # Purpose: split_gas_logs.sh – demultiplex clean_gas_weight_measurements.log.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash FOR_MINGO_SYSTEMS/station_automation_scripts/bot_scripts/split_gas_logs.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
 
 # ------------------------------------------------------------------
 # split_gas_logs.sh – demultiplex clean_gas_weight_measurements.log

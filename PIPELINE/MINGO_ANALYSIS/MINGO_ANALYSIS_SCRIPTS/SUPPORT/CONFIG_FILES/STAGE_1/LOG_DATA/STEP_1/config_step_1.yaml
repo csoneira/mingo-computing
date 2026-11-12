@@ -1,5 +1,0 @@
-selection:
-  stations: [0, 1]
-  date_ranges:
-    - start: 2024-09-27
-      end: 2024-10-01

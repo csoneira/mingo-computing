@@ -4,14 +4,23 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
+
+_REPOSITORY_IMPORT_ROOT = Path(__file__).resolve().parents[4]
+if str(_REPOSITORY_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPOSITORY_IMPORT_ROOT))
+
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import (
+    get_repo_root,
+)
 
 
 def digital_twin_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    return get_repo_root() / "PIPELINE" / "MINGO_DIGITAL_TWIN"
 
 
 def repository_root() -> Path:
-    return digital_twin_root().parent
+    return get_repo_root()
 
 
 def orchestrator_root() -> Path:

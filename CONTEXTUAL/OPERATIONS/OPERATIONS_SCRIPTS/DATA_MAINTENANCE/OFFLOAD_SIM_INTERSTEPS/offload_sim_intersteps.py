@@ -12,7 +12,11 @@ import sys
 import tempfile
 import time
 
-ROOT = Path(__file__).resolve().parents[5]
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[5]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+ROOT = get_repo_root()
 CONFIG = ROOT / "CONTEXTUAL/CONFIG/CONTENTS/storage/external_storage.conf"
 
 
@@ -99,8 +103,10 @@ def main() -> int:
     settings = read_config(args.storage_config)
     if settings.get("USE_EXTERNAL_SIM_INTERSTEPS", "0") != "1":
         parser.error("External simulation INTERSTEPS are disabled in the storage config")
+    if not settings.get("EXTERNAL_STORAGE_ROOT", "").strip():
+        parser.error("EXTERNAL_STORAGE_ROOT is required in the storage config")
 
-    external_root = Path(settings.get("EXTERNAL_STORAGE_ROOT", "/home/data/mingo")).expanduser()
+    external_root = Path(settings["EXTERNAL_STORAGE_ROOT"]).expanduser()
     relative_destination = Path(settings.get("EXTERNAL_SIM_INTERSTEPS_DIR", "SIMULATION_INTERSTEPS"))
     if relative_destination.is_absolute() or ".." in relative_destination.parts:
         parser.error("EXTERNAL_SIM_INTERSTEPS_DIR must be a safe path relative to EXTERNAL_STORAGE_ROOT")

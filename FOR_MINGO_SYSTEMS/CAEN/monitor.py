@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Monitor CAEN high-voltage channels and report their status."""
+
 import socket
 import serial
 import time

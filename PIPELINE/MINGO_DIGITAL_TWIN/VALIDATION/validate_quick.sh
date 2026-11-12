@@ -1,17 +1,5 @@
 #!/usr/bin/env bash
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: PIPELINE/MINGO_DIGITAL_TWIN/VALIDATION/validate_quick.sh
-# Purpose: Validate quick.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash PIPELINE/MINGO_DIGITAL_TWIN/VALIDATION/validate_quick.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
+# Purpose: Run the non-destructive quick validation checks for the digital twin.
 
 set -euo pipefail
 

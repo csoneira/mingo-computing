@@ -1,3 +1,5 @@
+"""Test quality-assurance category selection and grouping."""
+
 from __future__ import annotations
 
 from pathlib import Path

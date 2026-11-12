@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: OUT_OF_PIPELINE/PHYSICAL_TESTS/MUON_TOF_ENERGY_RECONSTRUCTION/muon_tof_energy_reconstruction.py
-Purpose: Explore muon-energy reconstruction from time-of-flight measurements across equidistant detector planes.
-Owner: DATAFLOW_v3 contributors
-Sign-off: C. Soneira-Landín <cayesoneira@gmail.com>
-Last Updated: 2026-10-22
-Runtime: python3
-Usage: python3 muon_tof_energy_reconstruction.py [--full-grid] [--mode quadrature|monte-carlo] [--samples N] [--output-dir DIR] [--no-show]
-Inputs: Scan parameters defined in this script and optional CLI arguments.
-Outputs: Four contour plots and a compressed NumPy file containing the evaluated scan grids.
-Notes: Ancillary physics study; it is not part of the production MINGO analysis pipeline. Energies are total relativistic energies.
-"""
+
+"""Explore muon-energy reconstruction from time-of-flight measurements across equidistant detector planes."""
 
 from __future__ import annotations
 

@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_5/script_5_fit_to_post.py
-Purpose: !/usr/bin/env python3.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_5/script_5_fit_to_post.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Run Task 5, writing postprocessed event products."""
 
 #%%
 
@@ -63,17 +52,14 @@ import yaml
 
 # Resolve repo root for local imports
 CURRENT_PATH = Path(__file__).resolve()
-REPO_ROOT = None
-for parent in CURRENT_PATH.parents:
-    if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parents[2]
-        break
-if REPO_ROOT is None:
-    REPO_ROOT = CURRENT_PATH.parents[-1]
+_SCRIPTS_ROOT = next(parent for parent in CURRENT_PATH.parents if parent.name == "MINGO_ANALYSIS_SCRIPTS")
+_REPO_IMPORT_ROOT = _SCRIPTS_ROOT.parents[2]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
 if str(REPO_ROOT) not in sys.path:
-    sys.path.append(str(REPO_ROOT))
-
-from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.config_loader import update_config_with_parameters
+    sys.path.insert(0, str(REPO_ROOT))
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.debug_plots import plot_debug_histograms
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import set_station, start_timer
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_selection import (
@@ -85,7 +71,6 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_sel
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.input_file_config import select_input_file_configuration
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import (
-    get_repo_root,
     resolve_home_path_from_config,
     resolve_master_config_root_from_config,
 )
@@ -110,6 +95,9 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.reproces
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.simulated_data_utils import resolve_simulated_z_positions
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_shared import (
+    resolve_reprocessing_options,
+    filter_unprocessed_with_existing_outputs,
+    atomic_write_parquet,
     add_normalized_count_metadata,
     add_trigger_type_total_offender_threshold_metadata,
     apply_step1_task_parameter_overrides,
@@ -1325,7 +1313,8 @@ if not station_is_selected(station, selection_config.stations):
     sys.exit(0)
 
 # Cron job switch that decides if completed files can be revisited.
-complete_reanalysis = config.get("complete_reanalysis", False)
+reprocess_from_completed, reprocess_from_unprocessed = resolve_reprocessing_options(config)
+complete_reanalysis = reprocess_from_completed
 
 selected_input_file = CLI_ARGS.input_file_flag or CLI_ARGS.input_file
 if selected_input_file:
@@ -1726,6 +1715,18 @@ keep_all_columns_output = _coerce_config_bool(
     default=False,
 )
 
+if not user_file_selection and not reprocess_from_unprocessed:
+    _unprocessed_before_duplicate_guard = len(unprocessed_files)
+    unprocessed_files = filter_unprocessed_with_existing_outputs(
+        unprocessed_files,
+        base_directories["output_directory"],
+        input_prefix="fitted_",
+        output_prefix="postprocessed_",
+        force_reprocess=reprocess_from_unprocessed,
+    )
+    if len(unprocessed_files) != _unprocessed_before_duplicate_guard:
+        print(f"[FILE_SELECTION] skipped {_unprocessed_before_duplicate_guard - len(unprocessed_files)} UNPROCESSED input(s) with existing outputs")
+
 if user_file_selection:
     processing_file_path = user_file_path
     file_name = os.path.basename(user_file_path)
@@ -1769,7 +1770,7 @@ else:
                 processing_file_path = error_file_path
                 print(f"File moved to ERROR: {processing_file_path}")
 
-            elif complete_reanalysis and completed_files:
+            elif reprocess_from_completed and completed_files:
                 latest_completed = select_latest_candidate(completed_files, station)
                 if latest_completed:
                     file_name = latest_completed
@@ -1819,7 +1820,7 @@ else:
             print(f"File moved to ERROR: {processing_file_path}")
 
         elif completed_files:
-            if complete_reanalysis:
+            if reprocess_from_completed:
                 print("Selecting a random file in COMPLETED...")
                 file_name = random.choice(completed_files)
                 selected_file_source = "completed"
@@ -3419,7 +3420,7 @@ if joined_analysis_active and joined_source_file_column in working_df.columns:
             errors="ignore",
         )
         joined_output_df = canonicalize_step1_columns(joined_output_df)
-        joined_output_df.to_parquet(
+        atomic_write_parquet(joined_output_df,
             joined_out_path,
             engine="pyarrow",
             compression=_preferred_parquet_compression(),
@@ -3432,7 +3433,7 @@ else:
         errors="ignore",
     )
     output_df = canonicalize_step1_columns(output_df)
-    output_df.to_parquet(
+    atomic_write_parquet(output_df,
         OUT_PATH,
         engine="pyarrow",
         compression=_preferred_parquet_compression(),

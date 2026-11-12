@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/NOTIFICATIONS/STATUS_GUI/task2_calibration_timeline_gui.py
-Purpose: Real-time TASK_2 calibration metadata timeline viewer (Tkinter, X11-friendly).
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-04-22
-Runtime: python3
-Usage: python3 CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/NOTIFICATIONS/STATUS_GUI/task2_calibration_timeline_gui.py [options]
-Inputs: TASK_2 calibration metadata CSV files under PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_STATIONS/MINGO0*/...
-Outputs: GUI or terminal snapshot.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Real-time TASK_2 calibration metadata timeline viewer (Tkinter, X11-friendly)."""
 
 from __future__ import annotations
 
@@ -25,6 +14,12 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[5]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+
 from typing import Iterable, Optional
 
 
@@ -1099,7 +1094,7 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--repo-root",
         type=Path,
-        default=Path(__file__).resolve().parents[4],
+        default=get_repo_root(),
         help="Repository root (default: auto-detected).",
     )
     parser.add_argument(

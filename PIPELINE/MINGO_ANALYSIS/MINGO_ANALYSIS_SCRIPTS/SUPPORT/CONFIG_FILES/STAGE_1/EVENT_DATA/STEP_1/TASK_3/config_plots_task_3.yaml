@@ -1,7 +1,7 @@
-# Only the requested Task-3 ToT-to-fC calibration-order diagnostic is active.
+# Only the Task-3 prefilter/accepted input diagnostic is active.
 -plot:
-  - tot_charge_calibration_order_comparison
-  - tot_charge_calibration_order_scatter
+  - filter_input_output_histograms
+  - filter_cut_limits
 -not_plot:
   - acquisition_rate_vs_time_by_task_tt_with_histograms
   - incoming_parquet_main_columns_debug
@@ -65,3 +65,6 @@
   - plane_combination_filter_by_tt
   - charge_by_strip_multiplicity_adj
   - charge_by_strip_multiplicity_dis
+  - tot_charge_calibration_order_comparison
+  - tot_charge_calibration_order_scatter
+  - tot_charge_plane_charge_by_cluster_size

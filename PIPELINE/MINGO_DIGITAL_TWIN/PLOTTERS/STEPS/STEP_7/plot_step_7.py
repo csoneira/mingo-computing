@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/PLOTTERS/STEPS/STEP_7/plot_step_7.py
-Purpose: Plots for STEP 7 — adapted from MASTER_STEPS/STEP_7/step_7_timing_to_uncalibrated.py.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/PLOTTERS/STEPS/STEP_7/plot_step_7.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Plots for STEP 7 — adapted from MASTER_STEPS/STEP_7/step_7_timing_to_uncalibrated.py."""
 
 from __future__ import annotations
 

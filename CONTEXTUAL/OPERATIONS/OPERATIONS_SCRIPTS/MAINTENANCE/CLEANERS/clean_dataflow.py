@@ -15,6 +15,11 @@ import subprocess
 import sys
 import time
 
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[5]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+
 HERE = Path(__file__).resolve().parent
 CATEGORIES = {'plots', 'pdfs', 'pngs', 'temps', 'completed_data', 'error_data', 'unprocessed_data',
               'parquet_lake', 'simulation_intermediates', 'simulation_junk'}
@@ -248,7 +253,7 @@ def prune_empty_plot_directories(root, target_path=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--root', type=Path, default=HERE.parents[4])
+    parser.add_argument('--root', type=Path, default=get_repo_root())
     parser.add_argument('--config', type=Path, default=HERE/'cleaner_config.json')
     action = parser.add_mutually_exclusive_group()
     action.add_argument('--apply', action='store_true', help='Delete eligible files; default is dry-run')

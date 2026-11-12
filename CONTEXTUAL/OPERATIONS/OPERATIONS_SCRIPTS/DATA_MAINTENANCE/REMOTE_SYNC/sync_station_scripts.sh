@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Purpose: Deploy managed station scripts after validating the changes with a dry run.
+
 set -euo pipefail
 
 station="${1:?usage: sync_station_scripts.sh STATION_NUMBER}"

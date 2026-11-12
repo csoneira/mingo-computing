@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Purpose: Run the category-based dataflow cleaner using its configuration file.
+
 # Category-based cleaner; configuration and deletion logic live beside this launcher.
 set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"

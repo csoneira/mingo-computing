@@ -1,17 +1,5 @@
 #!/usr/bin/env bash
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: DOCUMENTATION/docs/assets/update_plots.sh
 # Purpose: update_plots.sh - synchronize selected plot images into the documentation.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash DOCUMENTATION/docs/assets/update_plots.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
 
 # update_plots.sh - synchronize selected plot images into the documentation
 # assets folder.

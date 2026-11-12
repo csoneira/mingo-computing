@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/prune_completed_param_mesh_rows.py
-Purpose: Prune completed rows from the simulation parameter mesh.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/prune_completed_param_mesh_rows.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Prune completed rows from the simulation parameter mesh."""
 
 from __future__ import annotations
 
@@ -21,12 +10,12 @@ from pathlib import Path
 
 import pandas as pd
 
-ROOT_DIR = next(
-    (parent for parent in Path(__file__).resolve().parents if (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file()),
-    None,
-)
-if ROOT_DIR is None:
-    raise RuntimeError(f"Could not locate repository root from {__file__}")
+_TWIN_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import repository_root
+
+ROOT_DIR = repository_root()
 sys.path.append(str(ROOT_DIR))
 sys.path.append(str(ROOT_DIR / "PIPELINE" / "MINGO_DIGITAL_TWIN" / "MASTER_STEPS"))
 

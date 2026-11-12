@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALIBRATIONS_AND_LUTS/TIME_CALIBRATION_ITINERARIES/itineraries_finder.py
-Purpose: Deterministic generation and validation of time-calibration itineraries.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-05
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/CALIBRATIONS_AND_LUTS/TIME_CALIBRATION_ITINERARIES/itineraries_finder.py [options]
-Inputs: Existing itineraries and generation parameters.
-Outputs: A validated `itineraries.csv` file and an example side-view itinerary plot.
-Notes: Keeps behavior reproducible with explicit random seed and graph validation.
-"""
+
+"""Deterministic generation and validation of time-calibration itineraries."""
 
 from __future__ import annotations
 

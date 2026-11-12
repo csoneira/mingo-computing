@@ -4,4 +4,4 @@ random_basenames_per_run_1: 3
 stations: [0, 1, 2, 3, 4]
 
 # Stations whose basenames may be processed again even when already completed.
-reprocess_completed_stations: [0, 1, 2, 3, 4]
+reprocess_completed_stations: [0, 2, 3, 4]

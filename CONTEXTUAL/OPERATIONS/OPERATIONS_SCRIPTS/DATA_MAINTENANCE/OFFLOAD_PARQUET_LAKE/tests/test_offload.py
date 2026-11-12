@@ -1,3 +1,5 @@
+"""Test parquet-lake offload path selection and copy behavior."""
+
 import unittest,tempfile,importlib.util,io
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('offload',Path(__file__).resolve().parents[1]/'offload_parquet_lake.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)

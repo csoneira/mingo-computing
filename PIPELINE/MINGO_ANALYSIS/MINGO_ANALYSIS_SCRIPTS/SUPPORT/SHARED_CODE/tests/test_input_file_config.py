@@ -1,3 +1,5 @@
+"""Test date-based selection of detector-position configurations."""
+
 from __future__ import annotations
 
 import unittest

@@ -1,3 +1,5 @@
+"""Plot Stage 1 trigger rates and their time evolution."""
+
 from __future__ import annotations
 
 import matplotlib

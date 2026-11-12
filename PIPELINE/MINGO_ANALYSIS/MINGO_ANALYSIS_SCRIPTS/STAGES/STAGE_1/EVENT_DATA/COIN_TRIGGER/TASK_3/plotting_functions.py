@@ -1,3 +1,5 @@
+"""Implement runtime diagnostic plots for coincidence Task 3."""
+
 from __future__ import annotations
 
 import matplotlib as mpl

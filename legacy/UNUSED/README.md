@@ -15,5 +15,5 @@ differ from their current counterparts, so they are retained here instead of
 deleted.
 
 No active `*_0.m` or `*_2.m` files were moved: Stage 0 dispatch code calls some
-of those explicitly. Task-level `task_N_legacy.py` files also remain in place
-as intentional scientific provenance.
+of those explicitly. Superseded coin-trigger Step 1 implementations are
+preserved in `MINGO_ANALYSIS/STEP_1_TASKS/` as scientific provenance.

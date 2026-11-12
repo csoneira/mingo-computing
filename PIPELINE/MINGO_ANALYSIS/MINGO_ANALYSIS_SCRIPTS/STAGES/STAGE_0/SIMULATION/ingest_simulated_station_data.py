@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/SIMULATION/ingest_simulated_station_data.py
-Purpose: !/usr/bin/env python3.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/SIMULATION/ingest_simulated_station_data.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Ingest simulated events into the station dataflow."""
 
 from __future__ import annotations
 
@@ -25,15 +14,12 @@ from datetime import datetime
 from pathlib import Path
 import sys
 
-REPO_ROOT = next(
-    (parent for parent in Path(__file__).resolve().parents if (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file()),
-    None,
-)
-if REPO_ROOT is None:
-    raise RuntimeError(f"Could not locate repository root from {__file__}")
-sys.path.insert(0, str(REPO_ROOT))
-
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[6]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
+sys.path.insert(0, str(REPO_ROOT))
 
 DEFAULT_SIM_SOURCE_DIR = get_repo_root() / "PIPELINE/MINGO_DIGITAL_TWIN/SIMULATION_OUTPUTS/SIMULATED_DATA/FILES"
 REGISTRY_FIELDS = ["basename", "execution_timestamp"]

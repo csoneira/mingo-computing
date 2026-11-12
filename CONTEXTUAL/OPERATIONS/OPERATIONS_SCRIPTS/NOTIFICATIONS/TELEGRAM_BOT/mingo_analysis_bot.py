@@ -8,6 +8,7 @@ import configparser
 import math
 import os
 import re
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timedelta
@@ -21,9 +22,14 @@ import pandas as pd
 import telebot
 
 
-BASE_DIR = Path(__file__).resolve().parents[5]
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[5]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+BASE_DIR = get_repo_root()
 BOT_DIR = Path(__file__).resolve().parent
 TOKEN_PATH = BOT_DIR / "API_TOKEN.txt"
+RESTART_SCRIPT = BOT_DIR / "kill_bot_and_restart.sh"
 PAGE_SIZE = 18
 MAX_DAYS = 3650.0
 REQUESTS: dict[int, dict[str, object]] = {}
@@ -334,9 +340,34 @@ def welcome(message):
         "/plot_metadata_gui - choose options with buttons.\n"
         "/plot_metadata_cli - choose options by replying with numbers.\n"
         "/round_in_the_chamber - send the newest file from GUN_CHAMBER.\n"
+        "/restart_bot - restart the Telegram bot.\n"
         "Use `cancel` at any prompt to stop.",
         parse_mode="Markdown",
     )
+
+
+@bot.message_handler(commands=["restart_bot"])
+def handle_restart_bot(message):
+    """Restart the polling process via the same watchdog used by cron."""
+    chat_id = message.chat.id
+    bot.send_message(chat_id, "Restart requested. The bot will reconnect shortly.")
+    if not RESTART_SCRIPT.is_file():
+        logging.error("Telegram restart script is missing: %s", RESTART_SCRIPT)
+        bot.send_message(chat_id, "Restart failed: restart helper is unavailable.")
+        return
+    try:
+        subprocess.Popen(
+            ["/bin/bash", str(RESTART_SCRIPT)],
+            cwd=str(BOT_DIR),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            close_fds=True,
+        )
+    except OSError:
+        logging.exception("Could not launch Telegram bot restart helper")
+        bot.send_message(chat_id, "Restart failed: could not launch the restart helper.")
 
 
 @bot.message_handler(commands=["round_in_the_chamber"])
@@ -586,7 +617,7 @@ def files_for_station(station: str) -> list[Path]:
 def unknown(message):
     bot.send_message(
         message.chat.id,
-        "Available commands: /plot_metadata_gui, /plot_metadata_cli, and /round_in_the_chamber. Use /help for instructions.",
+        "Available commands: /plot_metadata_gui, /plot_metadata_cli, /round_in_the_chamber, and /restart_bot. Use /help for instructions.",
     )
 
 

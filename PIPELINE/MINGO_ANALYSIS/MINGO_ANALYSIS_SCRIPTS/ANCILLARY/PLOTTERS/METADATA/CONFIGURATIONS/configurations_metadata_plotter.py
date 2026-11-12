@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Plot station configuration metadata over acquisition time."""
+
 from __future__ import annotations
 
 import logging
@@ -17,9 +19,12 @@ import numpy as np
 import pandas as pd
 
 ROOT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = ROOT_DIR.parents[4]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.append(str(REPO_ROOT))
+_REPO_IMPORT_ROOT = ROOT_DIR.parents[4]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+
+REPO_ROOT = get_repo_root()
 
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.plot_utils import pdf_save_rasterized_page
 

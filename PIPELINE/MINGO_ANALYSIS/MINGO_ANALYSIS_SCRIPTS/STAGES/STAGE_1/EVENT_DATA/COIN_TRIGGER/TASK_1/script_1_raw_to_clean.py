@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_1/script_1_raw_to_clean.py
-Purpose: !/usr/bin/env python3.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_1/script_1_raw_to_clean.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Run Task 1, converting raw events into cleaned events."""
 
 #%%
 
@@ -61,16 +50,14 @@ import seaborn as sns
 
 # Resolve repo root for local imports
 CURRENT_PATH = Path(__file__).resolve()
-REPO_ROOT = None
-for parent in CURRENT_PATH.parents:
-    if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parents[2]
-        break
-if REPO_ROOT is None:
-    REPO_ROOT = CURRENT_PATH.parents[-1]
+_SCRIPTS_ROOT = next(parent for parent in CURRENT_PATH.parents if parent.name == "MINGO_ANALYSIS_SCRIPTS")
+_REPO_IMPORT_ROOT = _SCRIPTS_ROOT.parents[2]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
 if str(REPO_ROOT) not in sys.path:
-    sys.path.append(str(REPO_ROOT))
-
+    sys.path.insert(0, str(REPO_ROOT))
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.debug_plots import plot_debug_histograms
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import set_station, start_timer
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_selection import (
@@ -85,7 +72,6 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.input_fi
     select_input_file_configuration,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import (
-    get_repo_root,
     resolve_home_path_from_config,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.plot_utils import ensure_plot_state
@@ -114,6 +100,9 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_ac
     store_activation_matrix_metadata,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_shared import (
+    resolve_reprocessing_options,
+    filter_unprocessed_with_existing_outputs,
+    atomic_write_parquet,
     add_normalized_count_metadata,
     add_topology_task1_channel,
     add_trigger_type_total_offender_threshold_metadata,
@@ -2932,7 +2921,8 @@ time_window_filtering = config["time_window_filtering"]
 
 EXPECTED_COLUMNS_config = config["EXPECTED_COLUMNS_config"]
 
-complete_reanalysis = config["complete_reanalysis"]
+reprocess_from_completed, reprocess_from_unprocessed = resolve_reprocessing_options(config)
+complete_reanalysis = reprocess_from_completed
 
 limit_number = config.get("limit_number", None)
 limit = last_file_test and limit_number is not None
@@ -3596,6 +3586,25 @@ if task_1_z_priority_settings.get("enabled", False):
         force=True,
     )
 
+if not user_file_selection and not reprocess_from_unprocessed:
+    _unprocessed_before_duplicate_guard = len(unprocessed_files)
+    unprocessed_files = filter_unprocessed_with_existing_outputs(
+        unprocessed_files,
+        base_directories["output_directory"],
+        input_prefix="raw_",
+        output_prefix="cleaned_",
+        force_reprocess=reprocess_from_unprocessed,
+    )
+    preferred_unprocessed_files = filter_unprocessed_with_existing_outputs(
+        preferred_unprocessed_files,
+        base_directories["output_directory"],
+        input_prefix="raw_",
+        output_prefix="cleaned_",
+        force_reprocess=reprocess_from_unprocessed,
+    )
+    if len(unprocessed_files) != _unprocessed_before_duplicate_guard:
+        print(f"[FILE_SELECTION] skipped {_unprocessed_before_duplicate_guard - len(unprocessed_files)} UNPROCESSED input(s) with existing outputs")
+
 if user_file_selection:
     processing_file_path = user_file_path
     file_name = os.path.basename(user_file_path)
@@ -3743,7 +3752,7 @@ else:
                 print(f"File moved to ERROR: {processing_file_path}")
 
         elif completed_files:
-            if complete_reanalysis:
+            if reprocess_from_completed:
                 priority_file = _select_latest_candidate_with_z_priority(
                     _preferred_non_qa_or_all(completed_files, preferred_completed_files),
                     station,
@@ -5313,6 +5322,21 @@ for bit_idx, channel_key in enumerate(TASK1_CHANNEL_KEYS):
     passes_task_1[fail_mask] &= np.uint32(~(1 << bit_idx) & 0xFFFFFFFF)
 working_df.loc[:, "passes_task_1"] = passes_task_1
 
+# Keep the input channel measurements intact and expose Task-1 accepted copies
+# for Task 2. Each pass bit corresponds to one plane/side/strip channel.
+for bit_idx, (plane, side, strip) in enumerate(TASK1_CHANNEL_KEYS):
+    side_code = "ef" if side == "F" else "eb"
+    channel_pass = (passes_task_1 & np.uint32(1 << bit_idx)) != 0
+    working_df.loc[:, f"filter_task1_P{plane}_s{strip}_{side}_pass"] = channel_pass
+    for component in ("q", "t"):
+        source_column = f"p{plane}_s{strip}_{side_code}_{component}"
+        if source_column not in working_df.columns:
+            continue
+        output_column = f"{source_column}_task1"
+        values = pd.to_numeric(working_df[source_column], errors="coerce")
+        working_df.loc[:, output_column] = values.where(channel_pass, 0)
+working_df = add_topology_task1_channel(working_df)
+
 # Compute clean trigger types after channel-only regularization. Keep every row
 # and record the final trigger-condition failure instead of removing events.
 working_df = compute_tt(working_df, "tt_task1_clean")
@@ -5815,7 +5839,7 @@ if save_removed_channel_values:
         task1_removed_channel_values_output_df = task1_removed_channel_values_df.assign(
             filename_base=filename_base
         )
-        task1_removed_channel_values_output_df.to_parquet(
+        atomic_write_parquet(task1_removed_channel_values_output_df,
             f"{channel_removed_values_base}.parquet",
             engine="pyarrow",
             compression="zstd",
@@ -5844,7 +5868,7 @@ if track_removed_rows and not diagnostic_removed_rows_df.empty:
         tracking_output_directory,
         f"original_cols_{basename_no_ext}",
     )
-    diagnostic_removed_rows_df.to_parquet(
+    atomic_write_parquet(diagnostic_removed_rows_df,
         f"{removed_rows_base}.parquet",
         engine="pyarrow",
         compression="zstd",
@@ -5855,7 +5879,7 @@ if track_removed_rows and not diagnostic_removed_rows_df.empty:
     print(f"Removed-row tracking CSV saved to: {removed_rows_base}.csv")
     if original_columns_store:
         diagnostic_original_columns_df = build_original_columns_frame()
-        diagnostic_original_columns_df.to_parquet(
+        atomic_write_parquet(diagnostic_original_columns_df,
             f"{original_cols_base}.parquet",
             engine="pyarrow",
             compression="zstd",
@@ -5890,7 +5914,7 @@ if joined_analysis_active and joined_source_file_column in working_df.columns:
             errors="ignore",
         )
         joined_output_df = canonicalize_step1_columns(joined_output_df)
-        joined_output_df.to_parquet(
+        atomic_write_parquet(joined_output_df,
             joined_out_path,
             engine="pyarrow",
             compression="zstd",
@@ -5903,7 +5927,7 @@ else:
         errors="ignore",
     )
     output_df = canonicalize_step1_columns(output_df)
-    output_df.to_parquet(OUT_PATH, engine="pyarrow", compression="zstd", index=False)
+    atomic_write_parquet(output_df, OUT_PATH, engine="pyarrow", compression="zstd", index=False)
     print(f"Cleaned dataframe saved to: {OUT_PATH}")
 _prof["s_output_write_s"] = round(time.perf_counter() - _t_sec, 2)
 _t_sec = time.perf_counter()

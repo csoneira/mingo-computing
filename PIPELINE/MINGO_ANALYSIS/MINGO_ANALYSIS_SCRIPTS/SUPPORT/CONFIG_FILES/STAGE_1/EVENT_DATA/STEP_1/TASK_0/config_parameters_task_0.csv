@@ -1,1 +1,2 @@
-parameter,default,station_1,station_2,station_3,station_4,source_task
+parameter,default,station_1,station_2,station_3,station_4,source_task,station_0
+joined_analysis_files,,,,,,,1

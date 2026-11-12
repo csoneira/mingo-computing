@@ -1,24 +1,3 @@
-selection:
-  stations: [0, 1, 2, 3, 4]
-  date_ranges:
-    - start: 2026-10-15
-      end: 2027-01-31
-      stations: [1]
-    - start: 2026-10-19
-      end: 2027-01-31
-      stations: [0, 2, 3, 4]
-
-# Optional per-step overrides. A list, including an empty list, takes priority
-# over the corresponding list in STEP_N/config_step_N.yaml. Use null to keep
-# the local step policy active.
-step_policies:
-  step_1:
-    stations: null
-    reprocess_completed_stations: null
-  step_2:
-    stations: null
-    reprocess_completed_stations: null
-
 qa_retry:
   enabled: true
   source_csv: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/QUALITY_ASSURANCE/TOTAL_SUMMARY/OUTPUTS/FILES/qa_all_stations_reprocessing_quality.csv

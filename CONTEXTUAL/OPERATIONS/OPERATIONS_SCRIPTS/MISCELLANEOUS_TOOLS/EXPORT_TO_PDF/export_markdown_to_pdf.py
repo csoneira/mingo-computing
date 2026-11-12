@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Convert a Markdown file to PDF and save it in DOCS/EXPORT_TO_PDF/EXPORTS."""
+
 from __future__ import annotations
 
 import argparse

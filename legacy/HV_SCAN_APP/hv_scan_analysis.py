@@ -1,3 +1,5 @@
+"""Analyze detector efficiency and operating conditions across an HV scan."""
+
 #%%
 
 #!/usr/bin/env python3

@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_2/EVENT_DATA/STEP_2_DAILY_EVENT_DATA/TASK_1/accumulated_distributor.py
-Purpose: !/usr/bin/env python3.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_2/EVENT_DATA/STEP_2_DAILY_EVENT_DATA/TASK_1/accumulated_distributor.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Distribute accumulated event files to the next processing step."""
 
 from __future__ import annotations
 
@@ -26,14 +15,13 @@ from typing import Dict, Iterable, List, Tuple
 
 import pandas as pd
 
-CURRENT_PATH = Path(__file__).resolve()
-REPO_ROOT = next(
-    (parent for parent in CURRENT_PATH.parents if (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file()),
-    None,
-)
-if REPO_ROOT is None:
-    raise RuntimeError(f"Could not locate repository root from {CURRENT_PATH}")
-
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[8]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(

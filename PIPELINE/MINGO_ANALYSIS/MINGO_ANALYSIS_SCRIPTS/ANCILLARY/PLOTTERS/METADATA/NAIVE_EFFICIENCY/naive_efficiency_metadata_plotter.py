@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/PLOTTERS/METADATA/NAIVE_EFFICIENCY/naive_efficiency_metadata_plotter.py
-Purpose: Plot Task 2 naive-efficiency metadata time series (counts and per-plane efficiencies).
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-04-16
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/PLOTTERS/METADATA/NAIVE_EFFICIENCY/naive_efficiency_metadata_plotter.py [options]
-Inputs: task_2_metadata_naive_efficiency.csv
-Outputs: PNG figures under PLOTS/.
-Notes: Plot time is extracted from filename_base (DAQ basename timestamp).
-"""
+
+"""Plot Task 2 naive-efficiency metadata time series (counts and per-plane efficiencies)."""
 
 from __future__ import annotations
 
@@ -19,6 +8,7 @@ import argparse
 from datetime import datetime, timedelta
 from pathlib import Path
 import re
+import sys
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -30,14 +20,12 @@ SCRIPT_PATH = Path(__file__).resolve()
 FILENAME_TIMESTAMP_PATTERN = re.compile(r"mi0\d(\d{11})$", re.IGNORECASE)
 
 
-def detect_repo_root() -> Path:
-    for parent in SCRIPT_PATH.parents:
-        if (parent / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_SCRIPTS").is_dir() and (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file():
-            return parent
-    raise RuntimeError(f"Could not locate repository root from {SCRIPT_PATH}")
+_REPO_IMPORT_ROOT = SCRIPT_PATH.parents[7]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
 
-
-REPO_ROOT = detect_repo_root()
+REPO_ROOT = get_repo_root()
 DEFAULT_INPUT_CSV = (
     REPO_ROOT
     / "PIPELINE" / "MINGO_ANALYSIS" / "MINGO_ANALYSIS_STATIONS"

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Purpose: Display the latest CAEN voltage-monitor readings by channel.
+
 # Display the latest CAEN VMON values as horizontal 0–6 kV bars.
 #
 # Channel/plane mapping:

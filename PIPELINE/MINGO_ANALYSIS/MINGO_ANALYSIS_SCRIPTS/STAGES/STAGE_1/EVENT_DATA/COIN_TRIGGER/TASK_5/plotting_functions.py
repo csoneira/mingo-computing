@@ -1,3 +1,5 @@
+"""Implement runtime diagnostic plots for coincidence Task 5."""
+
 from __future__ import annotations
 
 import numpy as np

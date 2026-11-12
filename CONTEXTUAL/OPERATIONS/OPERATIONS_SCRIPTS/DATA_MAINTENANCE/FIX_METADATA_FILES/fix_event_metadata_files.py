@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/DATA_MAINTENANCE/FIX_METADATA_FILES/fix_event_metadata_files.py
-Purpose: Repair Stage 1 event metadata CSVs by splitting embedded rows and removing malformed records.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-05-05
-Runtime: python3
-Usage: python3 CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/DATA_MAINTENANCE/FIX_METADATA_FILES/fix_event_metadata_files.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Repair Stage 1 event metadata CSVs by splitting embedded rows and removing malformed records."""
 
 from __future__ import annotations
 

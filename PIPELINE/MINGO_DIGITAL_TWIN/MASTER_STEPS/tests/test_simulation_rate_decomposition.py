@@ -1,3 +1,5 @@
+"""Test simulation rate decomposition behavior."""
+
 from __future__ import annotations
 
 import sys

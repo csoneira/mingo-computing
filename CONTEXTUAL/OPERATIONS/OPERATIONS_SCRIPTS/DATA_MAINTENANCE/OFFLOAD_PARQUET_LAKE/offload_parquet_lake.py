@@ -14,7 +14,11 @@ import sys
 import tempfile
 import time
 
-ROOT = Path(__file__).resolve().parents[5]
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[5]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+ROOT = get_repo_root()
 DEFAULT_STORAGE_CONFIG = ROOT / 'CONTEXTUAL/CONFIG/CONTENTS/storage/external_storage.conf'
 
 def read_storage_config(path):
@@ -112,7 +116,8 @@ def main():
     args=parser.parse_args();root=args.root.resolve()
     storage=read_storage_config(args.storage_config)
     if storage.get('USE_EXTERNAL_PARQUET_LAKES','0')!='1':parser.error('External parquet lake storage is disabled in the storage config')
-    configured_root=Path(storage.get('EXTERNAL_STORAGE_ROOT','/home/data/mingo')).expanduser()
+    if not storage.get('EXTERNAL_STORAGE_ROOT','').strip():parser.error('EXTERNAL_STORAGE_ROOT is required in the storage config')
+    configured_root=Path(storage['EXTERNAL_STORAGE_ROOT']).expanduser()
     configured_dir=Path(storage.get('EXTERNAL_PARQUET_LAKES_DIR','PARQUET_LAKES'))
     dest=(args.destination if args.destination is not None else configured_root/configured_dir).resolve()
     if args.activate and not args.apply:parser.error('--activate requires --apply')

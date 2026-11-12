@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Purpose: Run a command only when the configured CPU and memory limits permit it.
 
 # Resolve the checkout from this script's location when the caller did not provide it.
 if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
@@ -15,20 +16,6 @@ if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
   fi
 fi
 unset _repo_probe
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/ORCHESTRATION/RESOURCE_GATE/resource_gate.sh
-# Purpose: Resource gate.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/ORCHESTRATION/RESOURCE_GATE/resource_gate.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
-
 set -euo pipefail
 
 BASE_DIR="${BASE_DIR:-${DATAFLOW_ROOT}}"

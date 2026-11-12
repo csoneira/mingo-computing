@@ -109,6 +109,18 @@ calibration_flow:
   # 2. Fit/apply the T_dif offset, then filter complete strip blocks.
   t_dif:
     enabled: true
+    # Exploratory only: fit an unbinned empirical CDF with a top-hat CDF and
+    # compare its (a+b)/2 center with the production histogram estimator.
+    # This does not change the offset applied to event data.
+    cdf_top_hat_diagnostic:
+      enabled: true
+      plane_combination: [1234, 124, 134]
+    # Exploratory softplus-CDF top-hat fit, computed on the same raw per-strip
+    # fit sample and stored in calibration metadata. Its midpoint is not used
+    # to calibrate event data; only the existing T_dif offset remains active.
+    softplus_cdf_diagnostic:
+      enabled: true
+      plane_combination: [1234, 124, 134]
     fit_mask:
       # Applied to the current calibration_df after the initial topology row
       # selection above. Only those previously selected plane combinations

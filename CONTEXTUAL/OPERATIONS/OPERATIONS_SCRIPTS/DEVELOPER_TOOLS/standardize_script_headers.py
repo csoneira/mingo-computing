@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/DEVELOPER_TOOLS/standardize_script_headers.py
-Purpose: Apply standardized non-functional headers to tracked .py/.sh/.m/.html scripts.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/DEVELOPER_TOOLS/standardize_script_headers.py [--apply]
-Inputs: Tracked script files from git index.
-Outputs: Updated script headers (when --apply is used) and summary report.
-Notes: This tool modifies header/docstring comments only; no runtime logic changes.
-"""
+
+"""Apply standardized non-functional headers to tracked .py/.sh/.m/.html scripts."""
 
 from __future__ import annotations
 

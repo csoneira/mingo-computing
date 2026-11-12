@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/MASTER_STEPS/STEP_0/step_0_setup_to_blank.py
-Purpose: STEP_0: append one parameter row with sampled z positions.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/MASTER_STEPS/STEP_0/step_0_setup_to_blank.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""STEP_0: append one parameter row with sampled z positions."""
 
 from __future__ import annotations
 
@@ -26,8 +15,13 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 
-DIGITAL_TWIN_ROOT = Path(__file__).resolve().parents[2]
-REPO_ROOT = DIGITAL_TWIN_ROOT.parents[1]
+_TWIN_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import digital_twin_root, repository_root
+
+DIGITAL_TWIN_ROOT = digital_twin_root()
+REPO_ROOT = repository_root()
 MASTER_STEPS_ROOT = DIGITAL_TWIN_ROOT / "MASTER_STEPS"
 sys.path.append(str(DIGITAL_TWIN_ROOT))
 sys.path.append(str(MASTER_STEPS_ROOT))

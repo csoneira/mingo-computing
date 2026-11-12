@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Purpose: Render the file-flow tracker table and timeline views.
 
 set -euo pipefail
 

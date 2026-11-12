@@ -1,3 +1,5 @@
+"""Implement scientific calculations for coincidence Task 4."""
+
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping

@@ -1,17 +1,5 @@
 #!/usr/bin/env bash
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/TIMTRACK_QUALITY_SCAN/run_timtrack_quality_scan.sh
 # Purpose: Periodically scan TimTrack convergence settings and refresh plots.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-05
-# Runtime: bash
-# Usage: bash PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/TIMTRACK_QUALITY_SCAN/run_timtrack_quality_scan.sh [options]
-# Inputs: Config file + scan profiles CSV + Task 4 metadata files.
-# Outputs: Task 4 metadata appends + scan log CSV + scan plots.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
 
 set -euo pipefail
 

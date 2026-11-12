@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/notifications/notify_stuck_lines.py
-Purpose: Rate-limited alerting for persistent STEP_1 stuck-line and broken-run conditions.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/notifications/notify_stuck_lines.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Rate-limited alerting for persistent STEP_1 stuck-line and broken-run conditions."""
 
 from __future__ import annotations
 
@@ -20,13 +9,18 @@ import csv
 import json
 import os
 from pathlib import Path
+import sys
 import time
 from typing import Any
 from urllib import error, parse, request
 
+_TWIN_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import repository_root
 
 def _root_dir() -> Path:
-    return Path(__file__).resolve().parents[3]
+    return repository_root()
 
 
 def parse_args() -> argparse.Namespace:

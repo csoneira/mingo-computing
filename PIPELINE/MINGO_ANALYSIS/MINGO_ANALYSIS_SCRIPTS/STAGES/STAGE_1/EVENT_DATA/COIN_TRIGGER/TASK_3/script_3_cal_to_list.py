@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_3/script_3_cal_to_list.py
-Purpose: !/usr/bin/env python3.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_1/EVENT_DATA/COIN_TRIGGER/TASK_3/script_3_cal_to_list.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Run Task 3, deriving event lists from calibrated data."""
 
 #%%
 
@@ -64,16 +53,14 @@ import yaml
 
 # Resolve repo root for local imports
 CURRENT_PATH = Path(__file__).resolve()
-REPO_ROOT = None
-for parent in CURRENT_PATH.parents:
-    if parent.name == "MINGO_ANALYSIS_SCRIPTS":
-        REPO_ROOT = parent.parents[2]
-        break
-if REPO_ROOT is None:
-    REPO_ROOT = CURRENT_PATH.parents[-1]
+_SCRIPTS_ROOT = next(parent for parent in CURRENT_PATH.parents if parent.name == "MINGO_ANALYSIS_SCRIPTS")
+_REPO_IMPORT_ROOT = _SCRIPTS_ROOT.parents[2]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
 if str(REPO_ROOT) not in sys.path:
-    sys.path.append(str(REPO_ROOT))
-
+    sys.path.insert(0, str(REPO_ROOT))
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.debug_plots import plot_debug_histograms
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.execution_logger import set_station, start_timer
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.file_selection import (
@@ -88,7 +75,6 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.input_fi
     select_input_file_configuration,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import (
-    get_repo_root,
     resolve_home_path_from_config,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.plot_utils import ensure_plot_state
@@ -103,6 +89,7 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.tot_char
     calibration_order_arrays,
     plot_calibration_order_comparison,
     plot_calibration_order_scatter,
+    plot_plane_charge_by_cluster_size,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.status_csv import (
     delete_status_row,
@@ -129,8 +116,10 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_ac
     store_activation_matrix_metadata,
 )
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_shared import (
+    resolve_reprocessing_options,
+    filter_unprocessed_with_existing_outputs,
+    atomic_write_parquet,
     add_normalized_count_metadata,
-    add_topology_task2_strip,
     add_topology_task3_plane,
     add_trigger_type_total_offender_threshold_metadata,
     apply_step1_periodic_plot_gate,
@@ -335,6 +324,151 @@ def task3_any_plot_enabled(*aliases: str) -> bool:
 
 
 
+def plot_task3_filter_input_output_histograms(df: pd.DataFrame) -> None:
+    """Overlay prefilter and accepted Task-3 plane observables in one figure."""
+    variables = ("qsum", "qdif", "tsum", "tdif", "xpos", "ypos")
+    fig, axes = plt.subplots(len(variables), 4, figsize=(18, 20), squeeze=False)
+    for row_index, variable in enumerate(variables):
+        for plane in range(1, 5):
+            input_column = f"p{plane}_{variable}_task3_input"
+            output_column = f"p{plane}_{variable}_task3"
+            input_qsum_column = f"p{plane}_qsum_task3_input"
+            output_qsum_column = f"p{plane}_qsum_task3"
+            ax = axes[row_index, plane - 1]
+            required = (input_column, output_column, input_qsum_column, output_qsum_column)
+            if not all(column in df.columns for column in required):
+                ax.text(0.5, 0.5, "missing", ha="center", va="center", transform=ax.transAxes)
+                continue
+            before_all = pd.to_numeric(df[input_column], errors="coerce").to_numpy(dtype=float)
+            after_all = pd.to_numeric(df[output_column], errors="coerce").to_numpy(dtype=float)
+            input_qsum = pd.to_numeric(df[input_qsum_column], errors="coerce").to_numpy(dtype=float)
+            output_qsum = pd.to_numeric(df[output_qsum_column], errors="coerce").to_numpy(dtype=float)
+            before = before_all[np.isfinite(before_all) & np.isfinite(input_qsum) & (input_qsum != 0)]
+            after = after_all[np.isfinite(after_all) & np.isfinite(output_qsum) & (output_qsum != 0)]
+            if after.size == 0:
+                ax.text(0.5, 0.5, "no accepted data", ha="center", va="center", transform=ax.transAxes)
+                ax.set_title(f"P{plane}")
+                continue
+            lo, hi = (float(value) for value in np.quantile(after, [0.005, 0.995]))
+            if lo == hi:
+                padding = max(abs(lo) * 0.05, 0.5)
+                lo, hi = lo - padding, hi + padding
+            bins = np.linspace(lo, hi, 61)
+            ax.hist(before, bins=bins, histtype="step", linewidth=0.9, color="0.45", label="before filter")
+            ax.hist(after, bins=bins, histtype="step", linewidth=1.0, color="tab:blue", label="accepted")
+            plane_cut_bounds = {
+                "qsum": (plane_combination_plane_q_sum_sum_left, plane_combination_plane_q_sum_sum_right),
+                "qdif": (-abs(plane_combination_plane_q_dif_sum_threshold), abs(plane_combination_plane_q_dif_sum_threshold)),
+                "tsum": (plane_combination_plane_t_sum_sum_left, plane_combination_plane_t_sum_sum_right),
+                "tdif": (-abs(plane_combination_plane_t_dif_sum_threshold), abs(plane_combination_plane_t_dif_sum_threshold)),
+                "ypos": (plane_combination_plane_y_sum_left, plane_combination_plane_y_sum_right),
+            }
+            if variable in plane_cut_bounds:
+                for cut_index, cut_bound in enumerate(plane_cut_bounds[variable]):
+                    if cut_bound is not None and np.isfinite(float(cut_bound)):
+                        ax.axvline(
+                            float(cut_bound), color="tab:red", linestyle="--", linewidth=0.9,
+                            label="same-plane limit" if row_index == 0 and plane == 1 and cut_index == 0 else None,
+                        )
+            else:
+                ax.text(
+                    0.98, 0.96, "no direct Task-3 cut", ha="right", va="top",
+                    fontsize=6, color="0.35", transform=ax.transAxes,
+                )
+            if variable in plane_cut_bounds:
+                finite_bounds = [float(value) for value in plane_cut_bounds[variable] if value is not None and np.isfinite(float(value))]
+                ax.set_xlim(min(lo, *finite_bounds), max(hi, *finite_bounds)) if finite_bounds else ax.set_xlim(lo, hi)
+            else:
+                ax.set_xlim(lo, hi)
+            ax.set_yscale("log")
+            ax.set_title(f"P{plane}")
+            ax.grid(True, alpha=0.2)
+            if plane == 1:
+                ax.set_ylabel(f"{variable}\ncounts")
+            if row_index == len(variables) - 1:
+                ax.set_xlabel(variable)
+            if row_index == 0 and plane == 1:
+                ax.legend(fontsize=8)
+    fig.suptitle("Task 3 plane observables before filtering and accepted by Task 3")
+    fig.tight_layout(rect=[0, 0, 1, 0.98])
+    if save_plots:
+        global fig_idx, plot_list
+        filename = f"{fig_idx}_task3_filter_input_output_histograms.png"
+        fig_idx += 1
+        save_path = os.path.join(base_directories["figure_directory"], filename)
+        plot_list.append(save_path)
+        save_plot_figure(save_path, fig=fig, format="png", dpi=150)
+        print(f"Task-3 prefilter/accepted histogram figure saved: {save_path}")
+    if show_plots:
+        plt.show()
+    plt.close(fig)
+
+
+def plot_task3_detector_pair_cut_limits(
+    payload: pd.DataFrame,
+    limits_by_observable: dict[str, tuple[float | None, float | None]],
+) -> None:
+    """Plot detector-level plane-pair observables with their exact cut bounds."""
+    global fig_idx
+    observables = (
+        ("q_sum_sum", "Q_sum mean"), ("q_sum_dif", "Q_sum difference"),
+        ("q_dif_sum", "Q_dif mean"), ("q_dif_dif", "Q_dif difference"),
+        ("t_sum_sum", "T_sum mean"), ("t_sum_dif", "T_sum difference"),
+        ("t_dif_sum", "T_dif mean"), ("t_dif_dif", "T_dif difference"),
+        ("y_sum", "Y mean"), ("y_dif", "Y difference"),
+    )
+    fig, axes = plt.subplots(2, 5, figsize=(17, 7), squeeze=False)
+    for index, (column, label) in enumerate(observables):
+        ax = axes.flat[index]
+        ax.set_title(label, fontsize=9)
+        if payload.empty or column not in payload.columns:
+            ax.text(0.5, 0.5, "no detector-pair data", ha="center", va="center", transform=ax.transAxes)
+            continue
+        values = pd.to_numeric(payload[column], errors="coerce").to_numpy(dtype=float)
+        values = values[np.isfinite(values)]
+        if values.size == 0:
+            ax.text(0.5, 0.5, "no finite data", ha="center", va="center", transform=ax.transAxes)
+            continue
+        low, high = limits_by_observable[column]
+        qlo, qhi = np.quantile(values, [0.005, 0.995])
+        if qlo == qhi:
+            padding = max(abs(float(qlo)) * 0.05, 0.5)
+            qlo, qhi = qlo - padding, qhi + padding
+        xlo = min(float(qlo), float(low)) if low is not None else float(qlo)
+        xhi = max(float(qhi), float(high)) if high is not None else float(qhi)
+        if xlo == xhi:
+            xlo, xhi = xlo - 0.5, xhi + 0.5
+        ax.hist(values, bins=60, range=(xlo, xhi), histtype="step", color="0.45", linewidth=1.0)
+        for cut_index, bound in enumerate((low, high)):
+            if bound is not None and np.isfinite(float(bound)):
+                ax.axvline(
+                    float(bound), color="tab:red", linestyle="--", linewidth=1.0,
+                    label="configured detector-pair limit" if index == 0 and cut_index == 0 else None,
+                )
+        ax.set_xlim(xlo, xhi)
+        ax.set_yscale("log")
+        ax.grid(True, alpha=0.2)
+        ax.set_xlabel("plane-pair observable", fontsize=8)
+        if index % 5 == 0:
+            ax.set_ylabel("counts", fontsize=8)
+    axes.flat[0].legend(fontsize=7)
+    fig.suptitle("Task 3 detector plane-pair distributions and configured limits")
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    if save_plots:
+        filename = f"{fig_idx}_task3_detector_pair_filter_cut_limits.png"
+        fig_idx += 1
+        path = os.path.join(base_directories["figure_directory"], filename)
+        plot_list.append(path)
+        # `save_plot_figure` forwards keyword arguments to Matplotlib's
+        # savefig; the plot alias is already checked by the caller's config
+        # flag and is not a savefig option.
+        save_plot_figure(path, fig=fig, format="png")
+        print(f"Task-3 detector-pair filter-limit figure saved: {path}")
+    if show_plots:
+        plt.show()
+    plt.close(fig)
+
+
 def _track_figure(fig: mpl.figure.Figure) -> mpl.figure.Figure:
     fig_number = getattr(fig, "number", None)
     if fig_number is None:
@@ -493,6 +627,44 @@ def _task3_plane_charge_arrays(df: pd.DataFrame) -> tuple[list[str], list[np.nda
         labels.append(f"P{plane}")
         arrays.append(arr)
     return labels, arrays
+
+
+def _task3_charge_spectrum_fwhm(values: np.ndarray) -> tuple[float | str, int]:
+    """Estimate FWHM on a fixed 0–4000 fC axis for cross-file comparability."""
+    values = np.asarray(values, dtype=float)
+    values = values[np.isfinite(values) & (values > 0) & (values <= 4000)]
+    if values.size < 20 or np.ptp(values) <= 0:
+        return "", int(values.size)
+    counts, edges = np.histogram(values, bins=200, range=(0, 4000))
+    centers = (edges[:-1] + edges[1:]) / 2
+    peak = int(np.argmax(counts))
+    half = counts[peak] / 2
+    left = peak
+    while left > 0 and counts[left] >= half:
+        left -= 1
+    right = peak
+    while right < len(counts) - 1 and counts[right] >= half:
+        right += 1
+    if left == peak or right == peak:
+        return "", int(values.size)
+    return round(float(centers[right] - centers[left]), 6), int(values.size)
+
+
+def store_task3_charge_spectrum_fwhm(
+    metadata: dict[str, object],
+    spectra: dict[int, dict[str, np.ndarray]],
+) -> None:
+    """Store FWHM of the plotted per-plane fC spectra, grouped by active-strip count."""
+    for plane in range(1, 5):
+        series = spectra.get(plane)
+        if not series:
+            continue
+        plane_charge = np.asarray(series["calibrate_then_sum_fc"], dtype=float)
+        multiplicity = np.asarray(series["cluster_size"], dtype=int)
+        for size in range(1, 5):
+            fwhm, count = _task3_charge_spectrum_fwhm(plane_charge[multiplicity == size])
+            metadata[f"charge_plane_fc_fwhm_cluster_{size}_plane_{plane}"] = fwhm
+            metadata[f"charge_plane_fc_fwhm_cluster_{size}_plane_{plane}_entries"] = count
 
 def _format_activation_scalar(value: float | None) -> float | str:
     if value is None:
@@ -886,6 +1058,7 @@ def select_task3_streamer_threshold(
 def compute_task3_charge_topology_codes(
     df: pd.DataFrame,
     streamer_threshold: float,
+    active_strips_by_plane: dict[int, np.ndarray] | None = None,
 ) -> tuple[pd.Series, dict[int, np.ndarray]]:
     topology_digits_by_plane: dict[int, np.ndarray] = {}
     topology_code_arrays: list[np.ndarray] = []
@@ -897,7 +1070,10 @@ def compute_task3_charge_topology_codes(
         else:
             q_sum_values = np.full(len(df), np.nan, dtype=float)
 
-        plane_has_charge = np.isfinite(q_sum_values) & (q_sum_values > 0)
+        if active_strips_by_plane is not None and plane in active_strips_by_plane:
+            plane_has_charge = np.asarray(active_strips_by_plane[plane], dtype=bool)
+        else:
+            plane_has_charge = np.isfinite(q_sum_values) & (q_sum_values > 0)
         plane_is_streamer = plane_has_charge & (q_sum_values > float(streamer_threshold))
         plane_digits = np.where(plane_is_streamer, 2, np.where(plane_has_charge, 1, 0)).astype(np.int8)
 
@@ -912,6 +1088,76 @@ def compute_task3_charge_topology_codes(
         topology_code = np.char.add(topology_code, next_digits)
 
     return pd.Series(topology_code, index=df.index, dtype="object"), topology_digits_by_plane
+
+
+def load_task3_crosstalk_thresholds(
+    task2_metadata_path: Path,
+    filename_base: str,
+) -> tuple[dict[tuple[int, int], float], list[tuple[int, int]]]:
+    """Load per-strip 3-strip crosstalk widths for one Task-2 input file.
+
+    Task-2 qsum is the mean of the calibrated front/back charges. Since the
+    calibrated crosstalk peak is centered at zero and the stored logistic
+    width is x90 - x10, its right-hand x90 edge is half the mean side width.
+    Older metadata can fall back to the equivalent generic width columns.
+    """
+    widths = {(plane, strip): 0.0 for plane in range(1, 5) for strip in range(1, 5)}
+    missing: list[tuple[int, int]] = []
+    if not task2_metadata_path.is_file():
+        return widths, list(widths)
+
+    requested_columns = {"filename_base", "execution_timestamp"}
+    for plane in range(1, 5):
+        for strip in range(1, 5):
+            for side in ("front", "back"):
+                requested_columns.add(
+                    f"P{plane}_s{strip}_Q_width_crosstalk_sigmoid_3strip_10_90_{side}"
+                )
+                requested_columns.add(f"P{plane}_s{strip}_Q_crosstalk_width_10_90_{side}")
+
+    try:
+        metadata = pd.read_csv(
+            task2_metadata_path,
+            usecols=lambda column: column in requested_columns,
+            low_memory=False,
+        )
+    except (OSError, pd.errors.ParserError, ValueError) as exc:
+        print(f"Warning: cannot read Task-2 crosstalk widths from {task2_metadata_path}: {exc}")
+        return widths, list(widths)
+
+    if "filename_base" not in metadata.columns:
+        return widths, list(widths)
+    matching = metadata.loc[metadata["filename_base"].astype(str).eq(str(filename_base))].copy()
+    if matching.empty:
+        return widths, list(widths)
+    if "execution_timestamp" in matching.columns:
+        matching = matching.sort_values("execution_timestamp", kind="stable")
+    row = matching.iloc[-1]
+
+    for plane in range(1, 5):
+        for strip in range(1, 5):
+            side_widths: list[float] = []
+            for side in ("front", "back"):
+                candidates = (
+                    f"P{plane}_s{strip}_Q_width_crosstalk_sigmoid_3strip_10_90_{side}",
+                    f"P{plane}_s{strip}_Q_crosstalk_width_10_90_{side}",
+                )
+                for column in candidates:
+                    if column not in row.index:
+                        continue
+                    try:
+                        value = float(row[column])
+                    except (TypeError, ValueError):
+                        continue
+                    if np.isfinite(value) and value > 0:
+                        side_widths.append(value)
+                        break
+            if side_widths:
+                widths[(plane, strip)] = float(np.mean(side_widths) / 2.0)
+            else:
+                missing.append((plane, strip))
+
+    return widths, missing
 
 def compute_task3_tt_from_topology_codes(
     topology_digits_by_plane: dict[int, np.ndarray],
@@ -2581,6 +2827,8 @@ STATION_CHOICES = ("0", "1", "2", "3", "4")
 TASK3_PLOT_STATUSES: tuple[str, ...] = ("none", "debug", "usual", "essential")
 TASK3_PLOT_ALIASES: tuple[str, ...] = (
     "acquisition_rate_vs_time_by_task_tt_with_histograms",
+    "filter_input_output_histograms",
+    "filter_cut_limits",
     "incoming_parquet_main_columns_debug",
     "active_strip_patterns_overview",
     "multi_strip_pair_diagnostics",
@@ -2644,6 +2892,7 @@ TASK3_PLOT_ALIASES: tuple[str, ...] = (
     "charge_by_strip_multiplicity_dis",
     "tot_charge_calibration_order_comparison",
     "tot_charge_calibration_order_scatter",
+    "tot_charge_plane_charge_by_cluster_size",
 )
 
 TT_COUNT_VALUES: tuple[int, ...] = (
@@ -2846,7 +3095,8 @@ streamer_charge_sum_threshold = _task3_optional_float(
 
 # Validation
 
-complete_reanalysis = config["complete_reanalysis"]
+reprocess_from_completed, reprocess_from_unprocessed = resolve_reprocessing_options(config)
+complete_reanalysis = reprocess_from_completed
 
 limit_number = config.get("limit_number", None)
 limit = limit_number is not None
@@ -4585,6 +4835,18 @@ elif process_only_qa_retry_files:
         f"COMPLETED={len(completed_files)}"
     )
 
+if not user_file_selection and not reprocess_from_unprocessed:
+    _unprocessed_before_duplicate_guard = len(unprocessed_files)
+    unprocessed_files = filter_unprocessed_with_existing_outputs(
+        unprocessed_files,
+        base_directories["output_directory"],
+        input_prefix="calibrated_",
+        output_prefix="listed_",
+        force_reprocess=reprocess_from_unprocessed,
+    )
+    if len(unprocessed_files) != _unprocessed_before_duplicate_guard:
+        print(f"[FILE_SELECTION] skipped {_unprocessed_before_duplicate_guard - len(unprocessed_files)} UNPROCESSED input(s) with existing outputs")
+
 if user_file_selection:
     processing_file_path = user_file_path
     file_name = os.path.basename(user_file_path)
@@ -4628,7 +4890,7 @@ else:
                 processing_file_path = error_file_path
                 print(f"File moved to ERROR: {processing_file_path}")
 
-            elif complete_reanalysis and completed_files:
+            elif reprocess_from_completed and completed_files:
                 latest_completed = select_latest_candidate(completed_files, station)
                 if latest_completed:
                     file_name = latest_completed
@@ -4678,7 +4940,7 @@ else:
             print(f"File moved to ERROR: {processing_file_path}")
 
         elif completed_files:
-            if complete_reanalysis:
+            if reprocess_from_completed:
                 print("Selecting a random file in COMPLETED...")
                 file_name = random.choice(completed_files)
                 selected_file_source = "completed"
@@ -4890,13 +5152,35 @@ KEY = "df"
 # Load dataframe(s)
 joined_source_file_column = "__task3_joined_source_file__"
 joined_source_basename_column = "__task3_joined_source_basename__"
+task3_topology_threshold_columns = {
+    (plane, strip): f"__task3_topology_crosstalk_threshold_P{plane}_s{strip}__"
+    for plane in range(1, 5)
+    for strip in range(1, 5)
+}
+task2_metadata_path = (
+    early_metadata_directory.parents[1]
+    / "TASK_2"
+    / "METADATA"
+    / "task_2_metadata_calibration.csv"
+)
 joined_frames: list[pd.DataFrame] = []
 for joined_record in joined_input_records:
     joined_path = joined_record["processing_file_path"]
     joined_frame = pd.read_parquet(joined_path, engine="pyarrow")
     joined_frame = joined_frame.rename(columns=lambda col: col.replace("_diff_", "_dif_"))
     joined_frame = canonicalize_step1_columns(joined_frame)
-    joined_frame = add_topology_task2_strip(joined_frame)
+    crosstalk_thresholds, missing_crosstalk_widths = load_task3_crosstalk_thresholds(
+        task2_metadata_path,
+        joined_record["basename_no_ext"],
+    )
+    for (plane, strip), threshold_column in task3_topology_threshold_columns.items():
+        joined_frame.loc[:, threshold_column] = crosstalk_thresholds[(plane, strip)]
+    if missing_crosstalk_widths:
+        missing_labels = ", ".join(f"P{plane}s{strip}" for plane, strip in missing_crosstalk_widths)
+        print(
+            "Warning: Task-2 crosstalk width unavailable for "
+            f"{joined_record['basename_no_ext']} ({missing_labels}); using the legacy zero threshold there."
+        )
     if "event_id" not in joined_frame.columns:
         print(
             "Warning: 'event_id' missing in Task 3 input; reconstructing from "
@@ -4988,12 +5272,15 @@ tt_task2_cal_columns: dict[int, list[str]] = {}
 for plane in range(1, 5):
     tt_task2_cal_columns[plane] = [
         (
-            f"p{plane}_s{strip}_qsum_cal"
+            f"p{plane}_s{strip}_qsum_task2"
+            if f"p{plane}_s{strip}_qsum_task2" in working_df.columns
+            else f"p{plane}_s{strip}_qsum_cal"
             if f"p{plane}_s{strip}_qsum_cal" in working_df.columns
             else f"p{plane}_s{strip}_qsum"
         )
         for strip in range(1, 5)
-        if f"p{plane}_s{strip}_qsum_cal" in working_df.columns
+        if f"p{plane}_s{strip}_qsum_task2" in working_df.columns
+        or f"p{plane}_s{strip}_qsum_cal" in working_df.columns
         or f"p{plane}_s{strip}_qsum" in working_df.columns
     ]
 
@@ -5178,6 +5465,9 @@ print("---------------- Binary topology of active strips --------------------")
 print("----------------------------------------------------------------------")
 
 def _task3_prefer_calibrated_strip_column(column_name: str) -> str:
+    task2_column_name = f"{column_name}_task2"
+    if task2_column_name in working_df.columns:
+        return task2_column_name
     cal_column_name = f"{column_name}_cal"
     if cal_column_name in working_df.columns:
         return cal_column_name
@@ -5197,7 +5487,16 @@ for plane_id in range(1, 5):
         .fillna(0)
         .to_numpy(dtype=float)
     )  # shape (N, 4)
-    active_strips_binary = (Q_plane > 0).astype(int)
+    thresholds = np.column_stack(
+        [
+            pd.to_numeric(
+                working_df[task3_topology_threshold_columns[(plane_id, strip)]],
+                errors="coerce",
+            ).fillna(0).to_numpy(dtype=float)
+            for strip in range(1, 5)
+        ]
+    )
+    active_strips_binary = (Q_plane > thresholds).astype(int)
     binary_strings = [''.join(map(str, row)) for row in active_strips_binary]
     active_strip_cols[f'active_strips_P{plane_id}'] = binary_strings
 
@@ -6704,15 +7003,24 @@ print(
 record_filter6_counts(working_df, "before_filter6")
 
 _plot_plane_combination_filter_by_tt = task3_plot_enabled("plane_combination_filter_by_tt")
-if _plot_plane_combination_filter_by_tt:
-    plane_combination_tt_original = _task3_filter_tt_series(working_df).copy()
+_plot_filter_cut_limits = task3_plot_enabled("filter_cut_limits")
+if _plot_plane_combination_filter_by_tt or _plot_filter_cut_limits:
+    _plane_combination_diagnostic_df = working_df
+    if _plot_filter_cut_limits and not _plot_plane_combination_filter_by_tt:
+        _row_stride = max(1, int(np.ceil(len(working_df) / 5000)))
+        _plane_combination_diagnostic_df = working_df.iloc[::_row_stride]
+        print(
+            "Task-3 detector-pair cut-limit figure uses a deterministic row sample: "
+            f"{len(_plane_combination_diagnostic_df)} of {len(working_df)} rows."
+        )
+    plane_combination_tt_original = _task3_filter_tt_series(_plane_combination_diagnostic_df).copy()
     plane_combination_self_hist_original = collect_task3_plane_combination_histogram_payload(
-        working_df,
+        _plane_combination_diagnostic_df,
         plane_combination_tt_original,
         relation_type="plane",
     )
     plane_combination_any_hist_original = collect_task3_plane_combination_histogram_payload(
-        working_df,
+        _plane_combination_diagnostic_df,
         plane_combination_tt_original,
         relation_type="detector",
     )
@@ -7089,7 +7397,7 @@ for selected_count in TASK3_SELECTED_OFFENDER_CARDINALITY_VALUES:
     global_variables[_task3_selected_offender_cardinality_metric_key(selected_count)] = int(
         filter_total_problematic_offender_count_counts.get(selected_count, 0)
     )
-if _plot_plane_combination_filter_by_tt:
+if _plot_plane_combination_filter_by_tt or _plot_filter_cut_limits:
     plane_combination_same_plane_limits = {
         "q_sum_sum": (plane_combination_plane_q_sum_sum_left, plane_combination_plane_q_sum_sum_right),
         "q_dif_sum": (-abs(plane_combination_plane_q_dif_sum_threshold), abs(plane_combination_plane_q_dif_sum_threshold)),
@@ -7109,6 +7417,12 @@ if _plot_plane_combination_filter_by_tt:
         "y_sum": (plane_combination_detector_y_sum_left, plane_combination_detector_y_sum_right),
         "y_dif": (-abs(plane_combination_detector_y_dif_threshold), abs(plane_combination_detector_y_dif_threshold)),
     }
+    if _plot_filter_cut_limits:
+        plot_task3_detector_pair_cut_limits(
+            plane_combination_any_hist_original,
+            plane_combination_any_limits,
+        )
+if _plot_plane_combination_filter_by_tt:
     fig_idx = plot_task3_plane_combination_filter_by_tt(
         plane_combination_self_hist_original,
         plane_combination_self_hist_original,
@@ -7273,6 +7587,26 @@ if "tt_task3_list" in working_df.columns and task3_plot_enabled("prefilter_tt_ta
 tt_task3_list_mask = working_df["tt_task3_list"].notna() & (working_df["tt_task3_list"] >= 10)
 working_df.loc[:, "filter_task3_tt_task3_list_pass"] = tt_task3_list_mask.to_numpy(dtype=bool)
 working_df.loc[~tt_task3_list_mask, "passes_task_3"] = np.uint8(0)
+# Materialize accepted plane-level values without changing the values that
+# entered the Task-3 filter. Task 4 consumes only these accepted columns.
+_task3_pass_bits_final = pd.to_numeric(
+    working_df["passes_task_3"], errors="coerce"
+).fillna(0).to_numpy(dtype=np.uint8)
+for bit_index, plane in enumerate(TASK3_PLANE_KEYS):
+    plane_pass = ((_task3_pass_bits_final >> np.uint8(bit_index)) & np.uint8(1)).astype(bool)
+    working_df.loc[:, f"filter_task3_plane_P{plane}_pass"] = plane_pass
+    for variable in ("qsum", "qdif", "tsum", "tdif", "xpos", "ypos"):
+        source_column = f"p{plane}_{variable}"
+        if source_column not in working_df.columns:
+            continue
+        input_column = f"{source_column}_task3_input"
+        if input_column not in working_df.columns:
+            working_df.loc[:, input_column] = working_df[source_column].copy()
+        output_column = f"{source_column}_task3"
+        values = pd.to_numeric(working_df[source_column], errors="coerce")
+        working_df.loc[:, output_column] = values.where(plane_pass, 0)
+if task3_plot_enabled("filter_input_output_histograms"):
+    plot_task3_filter_input_output_histograms(working_df)
 record_filter_metric(
     "tt_task3_list_lt_10_rows_flagged_pct",
     tt_task3_list_total - int(tt_task3_list_mask.sum()),
@@ -7365,6 +7699,16 @@ task3_streamer_threshold, task3_streamer_threshold_source = select_task3_streame
     task3_q_sum_final_cols,
     streamer_charge_sum_threshold,
 )
+task3_active_plane_by_plane = {
+    plane: (
+        working_df[f"active_strips_P{plane}"]
+        .fillna("0000")
+        .astype(str)
+        .str.contains("1", regex=False)
+        .to_numpy(dtype=bool)
+    )
+    for plane in range(1, 5)
+}
 task3_topology_digits_by_plane: dict[int, np.ndarray] = {
     plane: np.zeros(len(working_df), dtype=np.int8) for plane in range(1, 5)
 }
@@ -7378,6 +7722,7 @@ if task3_streamer_threshold is not None:
     ) = compute_task3_charge_topology_codes(
         working_df,
         task3_streamer_threshold,
+        active_strips_by_plane=task3_active_plane_by_plane,
     )
     task3_topology_tt_streamer_as_avalanche = compute_task3_tt_from_topology_codes(
         task3_topology_digits_by_plane,
@@ -7651,8 +7996,17 @@ print(f"Metadata (pattern) CSV updated at: {metadata_pattern_csv_path}")
 # -------------------------------------------------------------------------------
 
 global_variables.update(build_events_per_second_metadata(working_df))
+tot_charge_calibration = TotChargeCalibration.from_csv(
+    default_tot_charge_calibration_path(get_repo_root())
+)
+task3_metadata_spectra = calibration_order_arrays(working_df, tot_charge_calibration)
+store_task3_charge_spectrum_fwhm(global_variables, task3_metadata_spectra)
 global_variables["charge_topology_code_column"] = "topology_task2_strip"
 global_variables["charge_topology_streamer_threshold_source"] = task3_streamer_threshold_source
+global_variables["charge_topology_activity_rule"] = (
+    "a plane is active when any calibrated strip qsum is above the Task-2 "
+    "three-strip crosstalk sigmoid right-hand x90 edge"
+)
 store_task3_charge_topology_metadata(
     global_variables,
     working_df,
@@ -7748,9 +8102,6 @@ _t_sec = time.perf_counter()
 
 # Add charge-calibrated strip and plane sums only after every Task-3 filter and
 # metadata calculation has finished. These columns cannot influence selection.
-tot_charge_calibration = TotChargeCalibration.from_csv(
-    default_tot_charge_calibration_path(get_repo_root())
-)
 task3_fc_strip_columns, task3_fc_plane_columns, task3_fc_source_columns = (
     add_task3_charge_fc_columns(working_df, tot_charge_calibration)
 )
@@ -7778,6 +8129,7 @@ print(
 if task3_any_plot_enabled(
     "tot_charge_calibration_order_comparison",
     "tot_charge_calibration_order_scatter",
+    "tot_charge_plane_charge_by_cluster_size",
 ):
     task3_spectra = calibration_order_arrays(working_df, tot_charge_calibration)
     data_dates = pd.to_datetime(working_df.get("datetime"), errors="coerce").dropna()
@@ -7823,6 +8175,21 @@ if task3_any_plot_enabled(
         debug_fig_idx += 1
         plt.close(scatter_figure)
 
+    if task3_plot_enabled("tot_charge_plane_charge_by_cluster_size"):
+        cluster_figure = plot_plane_charge_by_cluster_size(
+            task3_spectra,
+            station=int(station),
+            file_count=len(joined_input_records),
+        )
+        cluster_path = os.path.join(
+            task3_plot_directory,
+            f"{debug_fig_idx:02d}_task3_total_plane_charge_by_cluster_size_{basename_no_ext}.png",
+        )
+        save_plot_figure(cluster_path, fig=cluster_figure, format="png", dpi=150)
+        print(f"Task-3 plane charge by cluster size saved: {cluster_path}")
+        debug_fig_idx += 1
+        plt.close(cluster_figure)
+
 # Ensure no figure handles remain open before persistence/final move.
 plt.close("all")
 
@@ -7833,11 +8200,15 @@ if joined_analysis_active and joined_source_file_column in working_df.columns:
         joined_out_path = os.path.join(output_directory, f"listed_{joined_basename}.parquet")
         joined_mask = working_df[joined_source_file_column].astype(str).eq(joined_file_name)
         joined_output_df = working_df.loc[joined_mask].drop(
-            columns=[joined_source_file_column, joined_source_basename_column],
+            columns=[
+                joined_source_file_column,
+                joined_source_basename_column,
+                *task3_topology_threshold_columns.values(),
+            ],
             errors="ignore",
         )
         joined_output_df = canonicalize_step1_columns(joined_output_df)
-        joined_output_df.to_parquet(
+        atomic_write_parquet(joined_output_df,
             joined_out_path,
             engine="pyarrow",
             compression=_preferred_parquet_compression(),
@@ -7846,11 +8217,15 @@ if joined_analysis_active and joined_source_file_column in working_df.columns:
         print(f"Listed joined-analysis dataframe saved to: {joined_out_path} rows={len(joined_output_df)}")
 else:
     output_df = working_df.drop(
-        columns=[joined_source_file_column, joined_source_basename_column],
+        columns=[
+            joined_source_file_column,
+            joined_source_basename_column,
+            *task3_topology_threshold_columns.values(),
+        ],
         errors="ignore",
     )
     output_df = canonicalize_step1_columns(output_df)
-    output_df.to_parquet(
+    atomic_write_parquet(output_df,
         OUT_PATH,
         engine="pyarrow",
         compression=_preferred_parquet_compression(),

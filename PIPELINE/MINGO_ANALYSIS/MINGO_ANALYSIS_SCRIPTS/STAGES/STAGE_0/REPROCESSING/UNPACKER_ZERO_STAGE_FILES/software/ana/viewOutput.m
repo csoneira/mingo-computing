@@ -1,16 +1,4 @@
-% =============================================================================
-% DATAFLOW_v3 Script Header v1
-% Script: MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/UNPACKER_ZERO_STAGE_FILES/software/ana/viewOutput.m
-% Purpose: ViewOutput.
-% Owner: DATAFLOW_v3 contributors
-% Sign-off: csoneira <csoneira@ucm.es>
-% Last Updated: 2026-03-02
-% Runtime: octave/matlab
-% Usage: Run from MATLAB/Octave entrypoint with expected args/context.
-% Inputs: Variables, config files, environment, and/or upstream files.
-% Outputs: Variables, files, plots, or logs.
-% Notes: Keep behavior configuration-driven and reproducible.
-% =============================================================================
+% Purpose: Define viewoutput values for the legacy Stage-0 unpacker.
 
 plane = 4;
 
@@ -78,7 +66,3 @@ for i=1:length(s)
     Y1 = [Y1; OutputVars{1}{8}];Y2 = [Y2; OutputVars{2}{8}];Y3 = [Y3; OutputVars{3}{8}];Y4 = [Y4; OutputVars{4}{8}];
 end
 save([inPath 'out.mat'],'X1','X2','X3','X4','Y1','Y2','Y3','Y4','Q1','Q2','Q3','Q4');
-
-
-
-

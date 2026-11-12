@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/PLOTTERS/EXECUTION/EFFICIENCY_PROXY_AUDIT/reproduce_suspicious_efficiency_cases.py
-Purpose: Reproduce suspicious efficiency cases with the current STEP 1-9 code path, without modifying the simulator.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-27
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/PLOTTERS/EXECUTION/EFFICIENCY_PROXY_AUDIT/reproduce_suspicious_efficiency_cases.py [options]
-Inputs: Current digital-twin physics configs plus the step_final_simulation_params catalog and dictionary outputs.
-Outputs: CSV, JSON, and PDF diagnostic files in this directory.
-Notes: Read-only reproduction using imported step functions.
-"""
+
+"""Reproduce suspicious efficiency cases with the current STEP 1-9 code path, without modifying the simulator."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-parameter,default,station_1,station_2,station_3,station_4,source_task
+parameter,default,station_1,station_2,station_3,station_4,source_task,station_0
 charge_plot_limit_left,0,0,0,0,0,
 charge_plot_limit_right,110,110,110,110,110,
 T_sum_RPC_left,,,,,,task_3_filter
@@ -47,3 +47,4 @@ fiducial_theta_left,0,0,0,0,0,
 fiducial_theta_right,15,15,15,15,15,
 event_s_err_left,-0.0003,-0.0003,-0.0003,-0.0003,-0.0003,
 event_s_err_right,0.0003,0.0003,0.0003,0.0003,0.0003,
+joined_analysis_files,,,,,,,1

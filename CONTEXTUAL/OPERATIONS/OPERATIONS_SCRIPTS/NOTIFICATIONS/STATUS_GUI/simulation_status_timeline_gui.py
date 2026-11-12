@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/NOTIFICATIONS/STATUS_GUI/simulation_status_timeline_gui.py
-Purpose: Real-time simulation execution-time timeline viewer (Tkinter, X11-friendly).
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-03
-Runtime: python3
-Usage: python3 CONTEXTUAL/OPERATIONS/OPERATIONS_SCRIPTS/NOTIFICATIONS/STATUS_GUI/simulation_status_timeline_gui.py [options]
-Inputs: PIPELINE/MINGO_DIGITAL_TWIN/PLOTTERS/EXECUTION/SIMULATION_TIME/simulation_execution_times.csv
-Outputs: GUI or terminal snapshot.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Real-time simulation execution-time timeline viewer (Tkinter, X11-friendly)."""
 
 from __future__ import annotations
 
@@ -22,6 +11,12 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
+
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[5]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+
 from typing import Optional
 
 CSV_DEFAULT_REL = (
@@ -429,7 +424,7 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Real-time simulation execution-time timeline GUI."
     )
-    repo_root_default = Path(__file__).resolve().parents[4]
+    repo_root_default = get_repo_root()
     parser.add_argument(
         "--repo-root",
         type=Path,

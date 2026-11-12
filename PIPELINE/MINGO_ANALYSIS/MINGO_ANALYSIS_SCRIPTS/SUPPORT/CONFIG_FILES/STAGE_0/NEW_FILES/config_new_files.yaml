@@ -9,8 +9,3 @@ logbook:
 new_files_run_matrix:
   enabled: true
 
-selection:
-  stations: [0, 1, 2, 3, 4]
-  date_ranges:
-    - start: 2024-09-27
-      end: 2027-10-01

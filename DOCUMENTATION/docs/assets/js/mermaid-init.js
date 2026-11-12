@@ -1,3 +1,5 @@
+// Purpose: Configure Mermaid rendering for documentation diagrams.
+
 window.addEventListener('load', () => {
   if (typeof mermaid === 'undefined') return;
   mermaid.initialize({

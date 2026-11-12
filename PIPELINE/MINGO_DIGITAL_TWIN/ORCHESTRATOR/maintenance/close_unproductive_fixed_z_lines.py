@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/close_unproductive_fixed_z_lines.py
-Purpose: Mark open STEP_1 mesh lines done when they cannot satisfy fixed STEP_2 z positions.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/close_unproductive_fixed_z_lines.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Mark open STEP_1 mesh lines done when they cannot satisfy fixed STEP_2 z positions."""
 
 from __future__ import annotations
 
@@ -19,10 +8,16 @@ import fcntl
 import os
 import tempfile
 from pathlib import Path
+import sys
 
 import numpy as np
 import pandas as pd
 import yaml
+
+_TWIN_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import digital_twin_root
 
 
 def normalize_id(value: object) -> str:
@@ -75,7 +70,7 @@ def main() -> int:
     p.add_argument("--apply", action="store_true", help="Actually mark rows done in param_mesh.csv (destructive).")
     args = p.parse_args()
 
-    dt = Path(__file__).resolve().parents[2]
+    dt = digital_twin_root()
     mesh_path = dt / "SIMULATION_OUTPUTS/INTERSTEPS/STEP_0_TO_1/param_mesh.csv"
     step2_cfg_path = dt / "MASTER_STEPS/STEP_2/config_step_2_physics.yaml"
     step1_to_2_dir = dt / "SIMULATION_OUTPUTS/INTERSTEPS/STEP_1_TO_2"

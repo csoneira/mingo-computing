@@ -1,8 +1,7 @@
 # Parallel Task 1 for Task-0 self-trigger events.
-selection:
-  stations: [0, 1, 2, 3, 4]
-
 # This starter task preserves the Task-0 event rows and columns unchanged.
 create_plots: false
 force_replacement: false
-complete_reanalysis: false
+reprocess_from_completed: false
+reprocess_from_unprocessed: false
+file_selection_mode: random

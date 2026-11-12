@@ -1,29 +1,25 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/diagnostics/size_and_expected_report.py
-Purpose: Report expected simulation combinations and current INTERSTEPS storage usage.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/diagnostics/size_and_expected_report.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Report expected simulation combinations and current INTERSTEPS storage usage."""
 
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from pathlib import Path
+import sys
 from typing import Iterable
 import time
 import subprocess
 
 import numpy as np
 import pandas as pd
+
+_TWIN_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import digital_twin_root
+
+DIGITAL_TWIN_ROOT = digital_twin_root()
 
 
 def load_mesh(mesh_path: Path, include_done: bool) -> pd.DataFrame:
@@ -278,12 +274,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Combined size/expected SIM_RUN report.")
     parser.add_argument(
         "--intersteps-dir",
-        default=str(next(parent for parent in Path(__file__).resolve().parents if (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file()) / "PIPELINE/MINGO_DIGITAL_TWIN/SIMULATION_OUTPUTS/INTERSTEPS"),
+        default=str(DIGITAL_TWIN_ROOT / "SIMULATION_OUTPUTS/INTERSTEPS"),
         help="INTERSTEPS base directory.",
     )
     parser.add_argument(
         "--param-mesh",
-        default=str(next(parent for parent in Path(__file__).resolve().parents if (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file()) / "PIPELINE/MINGO_DIGITAL_TWIN/SIMULATION_OUTPUTS/INTERSTEPS/STEP_0_TO_1/param_mesh.csv"),
+        default=str(DIGITAL_TWIN_ROOT / "SIMULATION_OUTPUTS/INTERSTEPS/STEP_0_TO_1/param_mesh.csv"),
         help="Path to param_mesh.csv.",
     )
     parser.add_argument(

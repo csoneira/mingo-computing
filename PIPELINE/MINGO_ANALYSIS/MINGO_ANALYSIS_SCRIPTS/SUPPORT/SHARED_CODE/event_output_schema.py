@@ -1,3 +1,5 @@
+"""Define the event columns retained in task output parquets."""
+
 from __future__ import annotations
 
 from ast import literal_eval

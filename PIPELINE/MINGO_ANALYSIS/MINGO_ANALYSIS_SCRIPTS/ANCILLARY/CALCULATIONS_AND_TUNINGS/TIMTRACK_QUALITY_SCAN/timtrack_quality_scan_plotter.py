@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/TIMTRACK_QUALITY_SCAN/timtrack_quality_scan_plotter.py
-Purpose: Plot Task 4 metadata during TimTrack convergence scans.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-05
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/ANCILLARY/TIMTRACK_QUALITY_SCAN/timtrack_quality_scan_plotter.py [options]
-Inputs: Task 4 specific/profiling metadata CSV files.
-Outputs: PNG summary plot + CSV grouped summary.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Plot Task 4 metadata during TimTrack convergence scans."""
 
 from __future__ import annotations
 

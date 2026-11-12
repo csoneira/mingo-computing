@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/ANCILLARY/TESTS/TRIGGER_RATE_VALUES/plot_trigger_rate_factors.py
-Purpose: Plot simulated trigger-rate factors versus detector efficiencies.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-07-28
-Runtime: python3
-Usage: python3 plot_trigger_rate_factors.py [options]
-Inputs: STEP_FINAL simulation parameter CSV with decomposed trigger rates.
-Outputs: Multipage PDF and flattened CSV of the plotted values.
-Notes: One page is produced per trigger configuration and detector geometry.
-"""
+
+"""Plot simulated trigger-rate factors versus detector efficiencies."""
 
 from __future__ import annotations
 

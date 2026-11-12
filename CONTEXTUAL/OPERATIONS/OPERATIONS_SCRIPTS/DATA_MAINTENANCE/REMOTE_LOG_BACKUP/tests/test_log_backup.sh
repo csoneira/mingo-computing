@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
+# Purpose: Test remote-log backup behavior with isolated local fixtures.
 
 set -euo pipefail
+
+# Keep dated fixture files during tests; production retention is time-dependent.
+export LOG_BACKUP_HISTORY_RETENTION_ENABLED=0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNNER_PATH="$(cd "$SCRIPT_DIR/.." && pwd)/run_log_backup.sh"

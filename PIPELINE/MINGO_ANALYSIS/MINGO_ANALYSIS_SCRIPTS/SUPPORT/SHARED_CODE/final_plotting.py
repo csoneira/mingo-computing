@@ -1,3 +1,5 @@
+"""Load final-plot settings and render configured plots from a task parquet."""
+
 from __future__ import annotations
 
 from pathlib import Path

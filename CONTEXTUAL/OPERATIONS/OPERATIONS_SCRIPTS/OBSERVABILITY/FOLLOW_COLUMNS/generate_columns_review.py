@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Create a review of metadata columns found in the available CSV files."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -10,12 +12,11 @@ import sys
 import pandas as pd
 import pyarrow.parquet as pq
 
-REPO_ROOT = next(
-    (parent for parent in Path(__file__).resolve().parents if (parent / "CONTEXTUAL" / "CONFIG" / "config_paths.yaml").is_file()),
-    None,
-)
-if REPO_ROOT is None:
-    raise RuntimeError(f"Could not locate repository root from {__file__}")
+_REPO_IMPORT_ROOT = Path(__file__).resolve().parents[5]
+if str(_REPO_IMPORT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_IMPORT_ROOT))
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_config import get_repo_root
+REPO_ROOT = get_repo_root()
 if str(REPO_ROOT) not in sys.path:
     sys.path.append(str(REPO_ROOT))
 

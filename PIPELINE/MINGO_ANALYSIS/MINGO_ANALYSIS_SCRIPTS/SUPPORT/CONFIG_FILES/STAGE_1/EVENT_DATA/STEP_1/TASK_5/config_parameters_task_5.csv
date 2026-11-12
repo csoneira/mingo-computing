@@ -1,4 +1,4 @@
-parameter,default,station_1,station_2,station_3,station_4,source_task
+parameter,default,station_1,station_2,station_3,station_4,source_task,station_0
 T_sum_RPC_left,,,,,,task_3_filter
 T_sum_RPC_right,,,,,,task_3_filter
 det_pos_filter,,,,,,task_4
@@ -7,3 +7,4 @@ det_theta_right_filter,,,,,,task_4
 det_phi_filter_abs,,,,,,task_4
 det_slowness_filter_left,,,,,,task_4
 det_slowness_filter_right,,,,,,task_4
+joined_analysis_files,,,,,,,1

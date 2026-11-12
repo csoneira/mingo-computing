@@ -1,3 +1,5 @@
+# Purpose: Load the repository shell environment and define the file-flow tracker command.
+
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../environment" && pwd)/dataflow.sh"
 # Use Codex's standard user directory unless explicitly overridden.
 export CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"

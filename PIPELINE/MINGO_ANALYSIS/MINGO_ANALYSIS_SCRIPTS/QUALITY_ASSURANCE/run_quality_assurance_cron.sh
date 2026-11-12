@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Purpose: Run the selected quality-assurance mode from cron.
+
 set -euo pipefail
 
 MODE="often"

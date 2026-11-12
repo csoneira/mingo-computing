@@ -1,3 +1,53 @@
-# Runtime plots disabled; no aliases selected.
--plot: []
--not_plot: []
+# Runtime plot allowlist. Only the final filter input/output diagnostic is active.
+-plot:
+  - usual_suite
+  - filter_input_output_histograms
+  - filter_cut_details
+-not_plot:
+  - debug_suite
+  - essential_suite
+  - acquisition_rate_vs_time_by_task_tt_with_histograms
+  - flat_values_histogram
+  - detached_timeseries_combo
+  - detached_residuals_combo
+  - timtrack_timeseries_combo
+  - timtrack_residuals_combo
+  - combined_timeseries_combo
+  - combined_residuals_combo
+  - hist_core_errs_combined
+  - hist_core_errs_combined_with_fits
+  - stat_window_accumulation
+  - trigger_types_raw_and_list
+  - trigger_types_tracking_and_list
+  - trigger_types_tracking_and_raw
+  - trigger_types_definitive_tt_and_raw
+  - timtrack_results_hexbin_combination_projections
+  - timtrack_results_scatter_combination_projections
+  - theta_det_theta_zoom_tt_task4_fit
+  - polar_theta_phi_definitive_tt_2d
+  - polar_theta_phi_tt_task4_fit_2d
+  - events_per_second_by_plane_cardinality_double_row
+  - timtrack_residuals_gaussian
+  - tim_th_chi_sigmafit_1234_histogram
+  - external_residuals_gaussian
+  - all_channels_charge
+  - event_display_sample
+  - track_consistency_loo_residuals
+  - strip_hit_occupancy
+  - track_based_efficiency
+  - total_event_charge_histogram
+  - track_based_efficiency_tt_stability
+  - track_based_efficiency_vs_theta
+  - track_efficiency_large_plot
+  - timtrack_projection_ellipse_contours
+  - timtrack_projection_scaled_angle_comparison
+  - chi2_offender_populations
+  - offender_angle_populations
+  - offender_kinematics_populations
+  - offender_tt_balance
+  - offender_zigzag_populations
+  - chi2_charge_populations
+  - chi2_residuals_populations
+  - event_display_sample_3fold
+  - chi2_charge_populations_3fold
+  - chi2_residuals_populations_3fold

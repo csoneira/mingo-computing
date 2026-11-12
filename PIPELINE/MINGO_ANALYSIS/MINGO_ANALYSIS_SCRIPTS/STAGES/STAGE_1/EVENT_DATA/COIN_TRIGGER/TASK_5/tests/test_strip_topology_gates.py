@@ -1,3 +1,5 @@
+"""Test strip topology gates behavior."""
+
 from pathlib import Path
 import importlib.util
 import unittest

@@ -49,10 +49,9 @@ python3 PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/sim_maintenance.py 
 The individual Python files under `maintenance/` are implementation modules and
 temporary compatibility entrypoints. New callers must use `sim_maintenance.py`.
 
-The symlinks currently under `helpers/` for moved diagnostics, notifications,
-and maintenance tools are temporary compatibility shims for simulation
-processes started before this reorganization. New callers must not use them;
-they can be removed after all long-running scheduler processes have restarted.
+`helpers/` contains regular scheduler helper scripts. Temporary compatibility
+symlinks for moved diagnostics, notifications, and maintenance tools are no
+longer present in this checkout.
 
 ## Runtime State
 

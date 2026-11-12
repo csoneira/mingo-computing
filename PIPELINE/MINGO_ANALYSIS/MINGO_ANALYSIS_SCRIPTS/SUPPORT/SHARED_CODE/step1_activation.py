@@ -1,3 +1,5 @@
+"""Resolve the configuration that enables or disables Stage 1 processing."""
+
 from __future__ import annotations
 
 from typing import Iterable

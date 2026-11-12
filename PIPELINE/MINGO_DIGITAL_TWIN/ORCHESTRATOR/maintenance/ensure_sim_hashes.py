@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/ensure_sim_hashes.py
-Purpose: Ensure simulation metadata and outputs contain consistent parameter hashes.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/ensure_sim_hashes.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Ensure simulation metadata and outputs contain consistent parameter hashes."""
 
 from __future__ import annotations
 
@@ -21,10 +10,16 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+import sys
 from typing import Dict, Iterable, Optional, Tuple
 
 import pandas as pd
 import warnings
+
+_TWIN_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import repository_root
 
 # pyarrow is optional; many operations depend on it for parquet work
 try:
@@ -371,7 +366,7 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
-    repo_root = Path(__file__).resolve().parents[4]
+    repo_root = repository_root()
     default_params = (
         repo_root
         / "PIPELINE" / "MINGO_DIGITAL_TWIN"

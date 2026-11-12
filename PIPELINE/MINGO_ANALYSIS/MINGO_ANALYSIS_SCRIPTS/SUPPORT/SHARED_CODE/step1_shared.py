@@ -1,16 +1,5 @@
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/SHARED_CODE/step1_shared.py
-Purpose: Shared STEP_1 helpers for TASK_1..TASK_5 scripts.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-03-02
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/SHARED_CODE/step1_shared.py [options]
-Inputs: CLI args, config files, environment variables, and/or upstream files.
-Outputs: Files, logs, plots, or stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Shared STEP_1 helpers for TASK_1..TASK_5 scripts."""
 
 from __future__ import annotations
 
@@ -24,8 +13,11 @@ from datetime import datetime
 import fcntl
 from functools import lru_cache
 import math
+import os
 import re
 from pathlib import Path
+import stat
+import tempfile
 from typing import Callable, Dict, Iterable, List, Mapping, Sequence, Tuple, TypeVar
 
 import numpy as np
@@ -44,6 +36,56 @@ from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.path_con
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.reprocessing_utils import infer_station_number_from_processing_name
 from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.selection_config import load_yaml_mapping
 
+def atomic_write_parquet(frame, destination, **kwargs):
+    """Write a parquet beside its destination, then atomically replace it."""
+    destination = Path(destination)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    handle = tempfile.NamedTemporaryFile(
+        prefix=f".{destination.stem}.", suffix=destination.suffix or ".parquet",
+        dir=destination.parent, delete=False,
+    )
+    temporary = Path(handle.name)
+    handle.close()
+    try:
+        frame.to_parquet(temporary, **kwargs)
+        os.replace(temporary, destination)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+    return destination
+
+
+def filter_unprocessed_with_existing_outputs(
+    file_names: Iterable[str], output_directory: str | Path, *,
+    input_prefix: str, output_prefix: str, force_reprocess: bool,
+) -> list[str]:
+    """Keep unprocessed inputs unless their identity already has an output."""
+    names = list(file_names)
+    if force_reprocess:
+        return names
+    output_root = Path(output_directory)
+    eligible = []
+    for name in names:
+        if not name.startswith(input_prefix):
+            eligible.append(name)
+            continue
+        output_name = output_prefix + name[len(input_prefix):]
+        if not (output_root / output_name).exists():
+            eligible.append(name)
+    return eligible
+
+
+def resolve_reprocessing_options(config: Mapping[str, object], *, log_fn=print) -> tuple[bool, bool]:
+    """Resolve completed-input and forced-unprocessed modes independently."""
+    legacy_present = "complete_reanalysis" in config
+    completed = bool(config.get("reprocess_from_completed", config.get("complete_reanalysis", False)))
+    forced = bool(config.get("reprocess_from_unprocessed", False))
+    if legacy_present and "reprocess_from_completed" not in config:
+        log_fn("[DEPRECATED_CONFIG] complete_reanalysis is deprecated; use reprocess_from_completed. It does not enable reprocess_from_unprocessed.")
+    log_fn(f"[REPROCESSING_OPTIONS] reprocess_from_completed={completed}, reprocess_from_unprocessed={forced}")
+    return completed, forced
+
+
 DEFAULT_STATION_CHOICES: Tuple[str, ...] = ("0", "1", "2", "3", "4")
 DEFAULT_IMPORTANT_KEYWORDS: Tuple[str, ...] = (
     "error",
@@ -54,19 +96,6 @@ DEFAULT_IMPORTANT_KEYWORDS: Tuple[str, ...] = (
     "usage",
 )
 STEP1_MASTER_CONFIG_RELATIVE_PATH = Path("STAGE_1") / "EVENT_DATA" / "STEP_1" / "config_step_1.yaml"
-STEP1_TASK_OVERRIDE_KEYS: Tuple[str, ...] = (
-    "file_selection_mode",
-    "complete_reanalysis",
-    "create_plots",
-    "periodic_plotting_interval_hours",
-    "keep_all_columns_output",
-    "process_only_qa_retry_files",
-    "prioritize_other_than_qa_files",
-    "save_removed_channel_values",
-    "save_time_slewing_pair_residuals",
-    "joined_analysis_files",
-    "joined_analysis_time_tolerance_hours",
-)
 STEP1_METADATA_OUTPUT_TYPES: Tuple[str, ...] = (
     "activation",
     "calibration",
@@ -357,17 +386,47 @@ def add_topology_task1_channel_qt(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def add_topology_task2_strip(df: pd.DataFrame) -> pd.DataFrame:
-    columns = [
-        strip_quantity_column(plane, strip, "qsum")
-        for plane in range(1, 5)
-        for strip in range(1, 5)
-    ]
+def add_topology_task2_strip(
+    df: pd.DataFrame,
+    crosstalk_thresholds: dict[tuple[int, int], float] | None = None,
+) -> pd.DataFrame:
+    """Encode strip activity, optionally requiring charge above crosstalk width.
+
+    ``crosstalk_thresholds`` is keyed by ``(plane, strip)``. When supplied, use
+    calibrated qsum where available and mark a strip active only for
+    ``qsum > threshold``. The default preserves the historical ``qsum > 0``
+    rule for call sites that do not have Task-2 crosstalk calibration.
+    """
+    columns = []
+    for plane in range(1, 5):
+        for strip in range(1, 5):
+            column = strip_quantity_column(plane, strip, "qsum")
+            calibrated_column = f"{column}_cal"
+            accepted_column = f"{column}_task2"
+            if crosstalk_thresholds is not None and accepted_column in df.columns:
+                column = accepted_column
+            elif crosstalk_thresholds is not None and calibrated_column in df.columns:
+                column = calibrated_column
+            columns.append(column)
     if not all(col in df.columns for col in columns):
         return df
     values = df.loc[:, columns].apply(pd.to_numeric, errors="coerce").fillna(0).to_numpy(copy=False)
+    if crosstalk_thresholds is None:
+        thresholds = np.zeros((1, 16), dtype=float)
+    else:
+        thresholds = np.asarray(
+            [
+                float(crosstalk_thresholds.get((plane, strip), 0.0) or 0.0)
+                for plane in range(1, 5)
+                for strip in range(1, 5)
+            ],
+            dtype=float,
+        )[None, :]
     topology_values = [
-        "".join("1" if np.isfinite(value) and value > 0 else "0" for value in row)
+        "".join(
+            "1" if np.isfinite(value) and value > threshold else "0"
+            for value, threshold in zip(row, thresholds[0])
+        )
         for row in values
     ]
     if "topology_task2_strip" in df.columns:
@@ -1403,12 +1462,15 @@ def build_step1_task_config_paths(
     )
     step1_root = root / "STAGE_1" / "EVENT_DATA" / "STEP_1"
     task_root = step1_root / f"TASK_{task_number}"
+    plot_catalog_path = task_root / f"config_plots_task_{task_number}.yaml"
+    if not plot_catalog_path.is_file():
+        plot_catalog_path = step1_root / "config_plots_task_default.yaml"
     return {
         "config_root": root,
         "step1_root": step1_root,
         "task_root": task_root,
         "config_file_path": task_root / f"config_task_{task_number}.yaml",
-        "plot_catalog_file_path": task_root / f"config_plots_task_{task_number}.yaml",
+        "plot_catalog_file_path": plot_catalog_path,
         "parameter_config_file_path": task_root / f"config_parameters_task_{task_number}.csv",
         "plot_parameter_config_file_path": task_root / f"config_plot_parameters_task_{task_number}.csv",
         "filter_parameter_config_file_path": task_root / f"config_filter_parameters_task_{task_number}.csv",
@@ -1497,11 +1559,6 @@ def resolve_step1_effective_task_config(
         log_fn=log_fn,
         exclude_keys=filter_parameter_declared_keys,
     )
-    config = apply_step1_master_overrides(
-        config_obj=config,
-        master_config_root=config_root,
-        log_fn=log_fn,
-    )
     if filter_parameter_config_loaded:
         config.update(filter_parameter_overrides)
         log_fn(f"Info: Loaded filter parameters from {Path(filter_parameter_config_file_path)}")
@@ -1514,63 +1571,6 @@ def resolve_step1_effective_task_config(
             log_fn=log_fn,
         )
     return config
-
-
-def load_step1_shared_overrides(
-    *,
-    master_config_root: str | Path | None = None,
-) -> tuple[Path, Dict[str, object]]:
-    root = Path(master_config_root).expanduser() if master_config_root is not None else get_master_config_root()
-    config_path = root / STEP1_MASTER_CONFIG_RELATIVE_PATH
-    loaded = load_yaml_mapping(config_path)
-
-    return config_path, _extract_step1_task_overrides(
-        loaded,
-        _load_step1_override_scalar_states(config_path),
-    )
-
-
-def _load_step1_override_scalar_states(config_path: Path) -> Dict[str, str]:
-    if not config_path.exists():
-        return {}
-    try:
-        with config_path.open("r", encoding="utf-8") as handle:
-            root_node = yaml.compose(handle)
-    except Exception:
-        return {}
-    if root_node is None or not isinstance(root_node, yaml.nodes.MappingNode):
-        return {}
-
-    override_mapping_node: yaml.nodes.MappingNode | None = None
-    for key_node, value_node in root_node.value:
-        if not isinstance(key_node, yaml.nodes.ScalarNode):
-            continue
-        if key_node.value in {"step_1_overrides", "step1_overrides"} and isinstance(
-            value_node, yaml.nodes.MappingNode
-        ):
-            override_mapping_node = value_node
-            break
-    if override_mapping_node is None:
-        return {}
-
-    scalar_states: Dict[str, str] = {}
-    for key_node, value_node in override_mapping_node.value:
-        if not isinstance(key_node, yaml.nodes.ScalarNode):
-            continue
-        key = key_node.value
-        if key not in STEP1_TASK_OVERRIDE_KEYS:
-            continue
-        if isinstance(value_node, yaml.nodes.ScalarNode) and value_node.tag == "tag:yaml.org,2002:null":
-            scalar_states[key] = "blank" if value_node.value == "" else "null"
-    return scalar_states
-
-
-def _step1_override_value_is_set(value: object) -> bool:
-    if value is None:
-        return False
-    if isinstance(value, str) and not value.strip():
-        return False
-    return True
 
 
 def coerce_positive_int_config(value: object, default: int = 1) -> int:
@@ -1723,92 +1723,6 @@ def replicate_joined_metadata_rows(
                     "Replicated joined metadata rows: "
                     f"{path} primary={primary_base} targets={target_bases}"
                 )
-
-
-def _extract_step1_task_overrides(
-    loaded: Mapping[str, object],
-    scalar_states: Mapping[str, str] | None = None,
-) -> Dict[str, object]:
-    override_node = loaded.get("step_1_overrides")
-    if not isinstance(override_node, Mapping):
-        override_node = loaded.get("step1_overrides")
-    if not isinstance(override_node, Mapping):
-        return {}
-
-    overrides: Dict[str, object] = {}
-    for key in STEP1_TASK_OVERRIDE_KEYS:
-        if key not in override_node:
-            continue
-        raw_state = None if scalar_states is None else scalar_states.get(key)
-        if raw_state == "blank":
-            continue
-        if raw_state == "null":
-            overrides[key] = None
-            continue
-        if _step1_override_value_is_set(override_node.get(key)):
-            overrides[key] = override_node.get(key)
-    return overrides
-
-
-def apply_step1_master_overrides(
-    config_obj: dict,
-    *,
-    master_config_root: str | Path | None = None,
-    log_fn: Callable[..., None] = builtins.print,
-) -> dict:
-    config_path, overrides = load_step1_shared_overrides(
-        master_config_root=master_config_root,
-    )
-    if not overrides:
-        return config_obj
-
-    config_obj.update(overrides)
-    selection_mode = normalize_step1_file_selection_mode(config_obj)
-    config_obj["file_selection_mode"] = selection_mode
-    if selection_mode == "qa":
-        config_obj["process_only_qa_retry_files"] = False
-        config_obj["prioritize_other_than_qa_files"] = False
-        config_obj["last_file_test"] = True
-    elif selection_mode == "new":
-        config_obj["process_only_qa_retry_files"] = False
-        config_obj["prioritize_other_than_qa_files"] = False
-        config_obj["last_file_test"] = True
-    else:
-        config_obj["process_only_qa_retry_files"] = False
-        config_obj["prioritize_other_than_qa_files"] = False
-        config_obj["last_file_test"] = False
-    joined_overrides = ", ".join(f"{key}={value}" for key, value in overrides.items())
-    log_fn(f"Info: Loaded Step 1 shared overrides from {config_path}: {joined_overrides}")
-    return config_obj
-
-
-def normalize_step1_file_selection_mode(config_obj: Mapping[str, object]) -> str:
-    """Return qa, new, or random, with legacy-flag compatibility."""
-
-    raw_mode = config_obj.get("file_selection_mode")
-    if raw_mode is not None and str(raw_mode).strip():
-        normalized = str(raw_mode).strip().lower()
-        aliases = {
-            "qa": "qa",
-            "quality": "qa",
-            "quality_assurance": "qa",
-            "new": "new",
-            "newest": "new",
-            "latest": "new",
-            "random": "random",
-        }
-        if normalized not in aliases:
-            raise ValueError(
-                "file_selection_mode must be one of: qa, new, random "
-                f"(received {raw_mode!r})"
-            )
-        return aliases[normalized]
-
-    if bool(config_obj.get("process_only_qa_retry_files", False)):
-        return "qa"
-    if bool(config_obj.get("last_file_test", False)):
-        return "new"
-    return "random"
 
 
 def _normalize_bool_setting(value: object, default: bool = True) -> bool:
@@ -2370,6 +2284,73 @@ def _append_metadata_row_with_warning(
     _append_metadata_row(metadata_path, row, append_fields)
 
 
+def _stream_expand_metadata_schema(
+    metadata_path: Path,
+    row: Dict[str, object],
+    existing_fields: List[str],
+    preferred_fieldnames: Iterable[str] | None,
+    drop_field_predicate: Callable[[str], bool] | None,
+    *,
+    replace_filename_base: str | None = None,
+) -> bool:
+    """Expand a large CSV header without loading its rows into memory.
+
+    This path is used only when the existing header is already normalized and
+    a new metadata key needs storage. The old file remains intact unless the
+    complete streaming rewrite and append succeed.
+    """
+    fieldnames = [
+        name
+        for name in existing_fields
+        if not (drop_field_predicate and drop_field_predicate(name))
+    ]
+    seen = set(fieldnames)
+    for name in row:
+        if name not in seen and not (drop_field_predicate and drop_field_predicate(name)):
+            fieldnames.append(name)
+            seen.add(name)
+    fieldnames = _apply_preferred_field_order(fieldnames, preferred_fieldnames)
+    replace_basename = str(replace_filename_base or "").strip()
+
+    original_field_limit = csv.field_size_limit()
+    csv.field_size_limit(2**31 - 1)
+    temp_fd, temp_name = tempfile.mkstemp(
+        prefix=f".{metadata_path.name}.",
+        suffix=".schema-tmp",
+        dir=metadata_path.parent,
+    )
+    temp_path = Path(temp_name)
+    try:
+        with metadata_path.open("r", newline="") as source, os.fdopen(
+            temp_fd, "w", newline=""
+        ) as destination:
+            reader = csv.DictReader(source)
+            if list(reader.fieldnames or []) != existing_fields:
+                return False
+            writer = csv.DictWriter(destination, fieldnames=fieldnames, extrasaction="ignore")
+            writer.writeheader()
+            for old_row in reader:
+                if None in old_row and old_row[None]:
+                    return False
+                if replace_basename and str(old_row.get("filename_base", "")).strip() == replace_basename:
+                    continue
+                writer.writerow({name: old_row.get(name, "") for name in fieldnames})
+            writer.writerow(_format_metadata_row(row, fieldnames))
+            destination.flush()
+            os.fsync(destination.fileno())
+        os.chmod(temp_path, stat.S_IMODE(metadata_path.stat().st_mode))
+        os.replace(temp_path, metadata_path)
+        return True
+    except (csv.Error, OSError, ValueError):
+        return False
+    finally:
+        csv.field_size_limit(original_field_limit)
+        try:
+            temp_path.unlink()
+        except FileNotFoundError:
+            pass
+
+
 def _save_metadata_rewrite(
     metadata_path: Path,
     row: Dict[str, object],
@@ -2788,6 +2769,28 @@ def save_metadata(
                     replace_filename_base=(
                         str(row_data.get("filename_base", "")).strip() if replace_existing_basename else None
                     ),
+                )
+                _sync_filename_base_index_from_csv(metadata_path, log_fn)
+                return metadata_path
+            if (
+                rewrite_reason.startswith("new columns not present in header:")
+                and raw_existing_fields == existing_fields
+                and _stream_expand_metadata_schema(
+                    metadata_path,
+                    row_data,
+                    raw_existing_fields,
+                    preferred_fieldnames,
+                    effective_drop_field_predicate,
+                    replace_filename_base=(
+                        str(row_data.get("filename_base", "")).strip()
+                        if replace_existing_basename
+                        else None
+                    ),
+                )
+            ):
+                log_fn(
+                    f"[metadata] Expanded {metadata_path.name} schema by streaming the "
+                    f"{_metadata_size_label(metadata_file_size)} CSV; new fields were preserved."
                 )
                 _sync_filename_base_index_from_csv(metadata_path, log_fn)
                 return metadata_path

@@ -1,4 +1,4 @@
-parameter,default,station_1,station_2,station_3,station_4,source_task
+parameter,default,station_1,station_2,station_3,station_4,source_task,station_0
 T_side_left_pre_cal_debug,-500,-500,-500,-500,-500,
 T_side_right_pre_cal_debug,500,500,500,500,500,
 Q_side_left_pre_cal_debug,-500,-500,-500,-500,-500,
@@ -28,3 +28,4 @@ channel_combination_q_dif_threshold,325,40,250,250,250,
 channel_combination_t_sum_left,-140,-125,-140,-140,-140,
 channel_combination_t_sum_right,-100,-100,-100,-100,-100,
 channel_combination_t_dif_threshold,7,4,5,5,5,
+joined_analysis_files,,,,,,,1

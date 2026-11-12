@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Purpose: Check the parquet lake against the pipeline inventory without changing data.
+
 # Read-only archive check extracted from the previous cleaner. Writes only its CSV report.
 set -euo pipefail
 shopt -s nullglob

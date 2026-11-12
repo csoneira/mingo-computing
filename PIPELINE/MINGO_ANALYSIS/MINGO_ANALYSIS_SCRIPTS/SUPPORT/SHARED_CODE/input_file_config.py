@@ -1,3 +1,5 @@
+"""Select the valid detector-position configuration closest to a requested date."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

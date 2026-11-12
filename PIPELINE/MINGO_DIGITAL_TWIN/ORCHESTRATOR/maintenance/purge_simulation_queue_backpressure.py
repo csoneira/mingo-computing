@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-"""
-DATAFLOW_v3 Script Header v1
-Script: PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/purge_simulation_queue_backpressure.py
-Purpose: Purge the simulation queue when backpressure is already high.
-Owner: DATAFLOW_v3 contributors
-Sign-off: csoneira <csoneira@ucm.es>
-Last Updated: 2026-04-29
-Runtime: python3
-Usage: python3 PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/maintenance/purge_simulation_queue_backpressure.py [options]
-Inputs: Queue files, param_mesh.csv, and sim_main_pipeline_frequency.conf.
-Outputs: Deleted queue files, reset param_mesh.csv, stdout/stderr side effects.
-Notes: Keep behavior configuration-driven and reproducible.
-"""
+
+"""Purge the simulation queue when backpressure is already high."""
 
 from __future__ import annotations
 
@@ -26,8 +15,12 @@ from typing import Iterable
 
 import pandas as pd
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-REPO_ROOT = ROOT_DIR.parents[1]
+_TWIN_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_TWIN_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_TWIN_BOOTSTRAP_ROOT))
+from ORCHESTRATOR.lib.paths import digital_twin_root, repository_root
+ROOT_DIR = digital_twin_root()
+REPO_ROOT = repository_root()
 sys.path.append(str(ROOT_DIR))
 sys.path.append(str(ROOT_DIR / "MASTER_STEPS"))
 sys.path.append(str(REPO_ROOT))

@@ -1,3 +1,5 @@
+"""Test step1 metadata normalization behavior."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -5,13 +7,18 @@ import csv
 import sys
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 
 REPO_ROOT = Path(__file__).resolve().parents[6]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_shared import _normalize_metadata_row, normalize_metadata_file_schema  # noqa: E402
+from PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_shared import (  # noqa: E402
+    _normalize_metadata_row,
+    normalize_metadata_file_schema,
+    save_metadata,
+)
 
 
 class Step1MetadataNormalizationTests(unittest.TestCase):
@@ -117,6 +124,41 @@ class Step1MetadataNormalizationTests(unittest.TestCase):
             self.assertEqual(row["timtrack_projection_ellipse_contour_fractions__0"], "0.25")
             self.assertEqual(row["timtrack_projection_ellipse_contour_fractions__1"], "0.5")
             self.assertEqual(row["timtrack_projection_ellipse_contour_fractions__2"], "0.75")
+
+    def test_large_metadata_schema_expands_by_streaming_without_dropping_new_fields(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            csv_path = Path(tmp_dir) / "metadata.csv"
+            with csv_path.open("w", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=("filename_base", "existing_value"))
+                writer.writeheader()
+                writer.writerow({"filename_base": "first", "existing_value": "kept"})
+
+            with patch(
+                "PIPELINE.MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.step1_shared.METADATA_MAX_FULL_SCAN_BYTES",
+                1,
+            ):
+                save_metadata(
+                    csv_path,
+                    {
+                        "filename_base": "second",
+                        "existing_value": "also kept",
+                        "new_measurement": 12.5,
+                    },
+                )
+
+            with csv_path.open("r", newline="") as handle:
+                reader = csv.DictReader(handle)
+                self.assertEqual(
+                    reader.fieldnames,
+                    ["filename_base", "existing_value", "new_measurement"],
+                )
+                rows = list(reader)
+
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[0]["existing_value"], "kept")
+            self.assertEqual(rows[0]["new_measurement"], "")
+            self.assertEqual(rows[1]["existing_value"], "also kept")
+            self.assertEqual(rows[1]["new_measurement"], "12.5")
 
     def test_normalize_metadata_file_schema_renames_plane_strip_columns_and_keeps_values(self) -> None:
         with TemporaryDirectory() as tmp_dir:

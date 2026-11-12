@@ -1,3 +1,5 @@
+"""Test step1 periodic plot gate behavior."""
+
 from __future__ import annotations
 
 from pathlib import Path

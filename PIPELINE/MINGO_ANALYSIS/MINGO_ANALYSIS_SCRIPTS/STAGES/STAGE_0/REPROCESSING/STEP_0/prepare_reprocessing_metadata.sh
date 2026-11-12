@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Purpose: Build the Stage-0 input list for configured reprocessing requests.
 
 # Resolve the checkout from this script's location when the caller did not provide it.
 if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
@@ -15,20 +16,6 @@ if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
   fi
 fi
 unset _repo_probe
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/STEP_0/prepare_reprocessing_metadata.sh
-# Purpose: prepare_reprocessing_metadata.sh.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/STAGES/STAGE_0/REPROCESSING/STEP_0/prepare_reprocessing_metadata.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
-
 # ---------------------------------------------------------------------------
 # prepare_reprocessing_metadata.sh
 #   Refresh and clean the STEP_0 metadata CSVs for STAGE_0 reprocessing.
@@ -129,7 +116,10 @@ MASTER_DIR="$SCRIPT_DIR"
 while [[ "${MASTER_DIR}" != "/" && "$(basename "${MASTER_DIR}")" != "MINGO_ANALYSIS_SCRIPTS" ]]; do
   MASTER_DIR="$(dirname "${MASTER_DIR}")"
 done
-REPO_ROOT="$(dirname "$(dirname "${MASTER_DIR}")")"
+# Use the root resolved from the repository environment. Python imports in
+# reprocessing_qa_retry need both the repository's PIPELINE namespace and the
+# installed MINGO_ANALYSIS package path after the directory reorganization.
+REPO_ROOT="${DATAFLOW_ROOT}"
 
 config_file_shared="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_0/REPROCESSING/config_reprocessing.yaml"
 config_file_step="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/STAGE_0/REPROCESSING/STEP_0/config_step_0.yaml"
@@ -786,7 +776,7 @@ build_qa_retry_manifest() {
   local summary now_ts
   now_ts="$(date '+%Y-%m-%d %H:%M:%S')"
   if ! summary=$(
-    PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" \
+    PYTHONPATH="$REPO_ROOT:$REPO_ROOT/PIPELINE${PYTHONPATH:+:$PYTHONPATH}" \
     python3 -m MINGO_ANALYSIS.MINGO_ANALYSIS_SCRIPTS.SUPPORT.SHARED_CODE.reprocessing_qa_retry build-manifest \
       --config-path "$config_file_shared" \
       --config-path "$config_file_step" \

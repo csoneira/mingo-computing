@@ -1,17 +1,5 @@
 #!/usr/bin/env bash
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: FOR_MINGO_SYSTEMS/station_automation_scripts/hv_analysis/plateau_CLI.sh
 # Purpose: Run a stepped high-voltage plateau scan with clean DAQ file boundaries.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-07-29
-# Runtime: bash
-# Usage: ./plateau_CLI.sh [options]
-# Inputs: HV range, dwell/settling times, HV controller, and DABC start script.
-# Outputs: One clean DAQ acquisition interval per voltage and restored safe HV.
-# Notes: DABC is stopped with SIGINT; this script never uses SIGKILL.
-# =============================================================================
 
 set -Eeuo pipefail
 

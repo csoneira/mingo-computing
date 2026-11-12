@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Purpose: Back up remote station log trees into the local archive.
 
 # Resolve the checkout from this script's location when the caller did not provide it.
 if [[ -z "${DATAFLOW_ROOT:-}" ]]; then
@@ -198,16 +199,29 @@ backup_one_host() {
 
   rsync_cmd+=("$source_spec" "$current_dir/")
 
-  if "${rsync_cmd[@]}" >> "$run_log_path" 2>&1; then
-    :
-  else
-    status=$?
+  local attempt=1
+  local max_attempts=2
+  while true; do
+    if "${rsync_cmd[@]}" >> "$run_log_path" 2>&1; then
+      break
+    else
+      status=$?
+    fi
+
+    if (( attempt < max_attempts )); then
+      log "Rsync attempt $attempt failed for $host (exit $status); retrying once"
+      printf 'retry_attempt=%s\nretry_exit=%s\n' "$((attempt + 1))" "$status" >> "$run_log_path"
+      attempt=$((attempt + 1))
+      sleep 2
+      continue
+    fi
+
     printf '%s\n' "$RUN_TIMESTAMP" > "$state_dir/last_failed_run.txt"
-    printf '%s\t%s\tfailed\t0\t0\t0\trsync exit %s\n' \
-      "$RUN_TIMESTAMP" "$host" "$status" >> "$SUMMARY_FILE"
-    log "Backup failed for $host. See $run_log_path"
+    printf '%s\t%s\tfailed\t0\t0\t0\trsync exit %s after %s attempts\n' \
+      "$RUN_TIMESTAMP" "$host" "$status" "$attempt" >> "$SUMMARY_FILE"
+    log "Backup failed for $host after $attempt attempts. See $run_log_path"
     return "$status"
-  fi
+  done
 
   write_current_manifest "$current_dir" "$manifest_path"
   ln -sfn "$current_dir" "$latest_link"
@@ -233,7 +247,7 @@ backup_one_host() {
 DEFAULT_BACKUP_ROOT="${DATAFLOW_ROOT}/CONTEXTUAL/OPERATIONS/OPERATIONS_RUNTIME/REMOTE_LOG_BACKUP"
 DEFAULT_REMOTE_USER="rpcuser"
 DEFAULT_REMOTE_ROOT="/home/rpcuser/logs"
-DEFAULT_HOSTS=(mingo01 mingo02 mingo03 mingo04)
+DEFAULT_HOSTS=(mingo01 mingo02 mingo04)  # mingo03 is retired/unreachable
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 HISTORY_PRUNER="${LOG_BACKUP_HISTORY_PRUNER:-$SCRIPT_DIR/prune_log_backup_history.py}"
 DEFAULT_SELECTION_CONFIG="${DATAFLOW_ROOT}/PIPELINE/MINGO_ANALYSIS/MINGO_ANALYSIS_SCRIPTS/SUPPORT/CONFIG_FILES/config_selection.yaml"

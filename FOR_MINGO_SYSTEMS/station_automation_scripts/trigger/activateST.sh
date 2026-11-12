@@ -1,4 +1,5 @@
 #!/bin/bash
+# Purpose: Enable self-trigger acquisition temporarily, then restore the previous DAQ mode.
 
 # Enable the existing self-trigger + M3 configuration for one minute, then
 # return to the existing M3 configuration. A lock prevents overlapping runs.

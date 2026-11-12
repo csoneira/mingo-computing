@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Purpose: Display pipeline file flow in table or timeline mode.
 
 set -euo pipefail
 

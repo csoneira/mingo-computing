@@ -1,3 +1,5 @@
+"""Test the quality-assurance runner and its configured checks."""
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,17 +1,5 @@
 #!/usr/bin/env bash
-# =============================================================================
-# DATAFLOW_v3 Script Header v1
-# Script: PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/helpers/sim_structured_logging.sh
 # Purpose: Shared JSONL logging helpers for simulation orchestration scripts.
-# Owner: DATAFLOW_v3 contributors
-# Sign-off: csoneira <csoneira@ucm.es>
-# Last Updated: 2026-03-02
-# Runtime: bash
-# Usage: bash PIPELINE/MINGO_DIGITAL_TWIN/ORCHESTRATOR/helpers/sim_structured_logging.sh [options]
-# Inputs: CLI args, config files, environment variables, and/or upstream files.
-# Outputs: Files, logs, or process-level side effects.
-# Notes: Keep behavior configuration-driven and reproducible.
-# =============================================================================
 
 # Shared JSONL logging helpers for simulation orchestration scripts.
 
